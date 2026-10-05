@@ -103,6 +103,11 @@ public class DemoCatalogTests
         Assert.That(damaged.DeliveredOffsetDays, Is.EqualTo(damaged.DeliveryOffsetDays), "consegnata nel giorno pattuito");
         Assert.That(damaged.DeclaredValue, Is.GreaterThan(0));
         Assert.That(late.DeliveredOffsetDays, Is.GreaterThan(late.DeliveryOffsetDays), "consegnata dopo la data pattuita");
+
+        // Il gate tiene una spedizione per cinque giorni dopo la consegna: la prima deve essere ancora raggiungibile (con margine,
+        // perché la demo può girare qualche giorno dopo il seed), la seconda no.
+        Assert.That(damaged.DeliveredOffsetDays, Is.InRange(-3, -1), "ancora sul gate");
+        Assert.That(late.DeliveredOffsetDays, Is.LessThan(-5), "scaduta sul gate");
     }
 
     private static DemoTransportOrder Order(string code) => DemoCatalog.Orders.Single(o => o.Code == code);

@@ -146,6 +146,20 @@ public class AuthoritySubsetTests
             .Select(value => Uil.TryParse(value, out _)), Is.All.False);
     }
 
+    [Test]
+    public void GateRetention_Default_IsFiveDaysAfterDelivery()
+    {
+        //SETUP
+        var deliveredAt = new DateTimeOffset(2026, 10, 5, 10, 0, 0, TimeSpan.FromHours(1));
+
+        //SUT
+        DateTimeOffset byDefault = new EftiPlatformOptions().ExpiresAt(deliveredAt);
+        DateTimeOffset configured = new EftiPlatformOptions { GateRetentionMinutes = 15 }.ExpiresAt(deliveredAt);
+
+        Assert.That(byDefault, Is.EqualTo(deliveredAt.AddDays(5)));
+        Assert.That(configured, Is.EqualTo(deliveredAt.AddMinutes(15)));
+    }
+
     [TestCase("zz-101 aa", "ZZ101AA")]
     [TestCase("ZZ101AA", "ZZ101AA")]
     [TestCase("  ", null)]

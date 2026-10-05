@@ -160,10 +160,10 @@ Lo schema nasce vuoto: lo riempie l'importazione dal TMS (Fase 3). `TmsOrderCode
 | `TO-1002` | 2 | Vigonza (IT) → Lyon (FR) | CAP e partita IVA del destinatario mancanti, riga ADR senza numero ONU, peso di testata incoerente; i dati giusti sono nelle istruzioni del mittente |
 | `TO-1003` | 3 | Treviso (IT) → Ljubljana (SI) | righe senza colli né peso: il dettaglio è sul CMR |
 | `TO-1004` | 4 | Livorno (IT) → València (ES) | ADR completa (UN 1263), in viaggio |
-| `TO-1005` | 5 e 7 | Albino (IT) → Wien (AT) | consegnata, con valore dichiarato |
-| `TO-1006` | 6 | Torino (IT) → Grenoble (FR) | consegnata tre giorni dopo la data pattuita |
+| `TO-1005` | 5 e 7 | Albino (IT) → Wien (AT) | consegnata da due giorni, con valore dichiarato; ancora raggiungibile dal gate |
+| `TO-1006` | 6 | Torino (IT) → Grenoble (FR) | consegnata da nove giorni, tre dopo la data pattuita; sul gate è scaduta |
 
-I sei committenti demo sono clienti del POC Order-to-Cash, riconoscibili dalla ragione sociale. Le partite IVA sono proprie di questo POC: quelle di Order-to-Cash non superano il controllo della cifra di controllo che la validazione eFTI applica.
+I sei committenti demo sono clienti del POC Order-to-Cash, con la stessa ragione sociale e la stessa partita IVA: è il filo "ordine → spedizione" del portfolio. Le partite IVA sono fittizie ma formalmente corrette (ufficio `000`, cifra di controllo valida), perché la validazione eFTI le controlla; il catalogo di Order-to-Cash è stato allineato agli stessi valori.
 
 Dati sintetici: 30 clienti, 26 mezzi, 12 autisti, 150 ordini (`TO-2001`…`TO-2150`) per metà circa internazionali. Circa un terzo degli ordini generati porta uno o due **difetti voluti**:
 
@@ -309,6 +309,7 @@ flowchart LR
 
 - **UIL** = `gateId:platformId:datasetId`, dove `datasetId` è l'identificativo pubblico della spedizione.
 - Sul registro vanno **solo le spedizioni con dataset `Valid`**: è ciò che le rende raggiungibili. Con il seed di default, 105 su 147.
+- Una spedizione **consegnata scade**: resta raggiungibile per `Efti__GateRetentionMinutes` minuti dopo la consegna (default 7200, cioè cinque giorni), poi ricerca e lettura non la restituiscono più. Una spedizione non ancora consegnata non scade. La voce resta nel registro: la scadenza è un'impostazione e si valuta a ogni richiesta. Con il seed di default le voci sono 105 e quelle raggiungibili 49; fra gli ordini demo `SH-1005` (consegnata da due giorni) è ancora sul gate, `SH-1006` (da nove) no.
 - La voce del registro contiene il **sottoinsieme degli identificatori**: la proiezione del dataset sugli elementi di `consignment-identifier.xsd`. Targhe, paesi, date, modo di trasporto, indicatore di merci pericolose. Nessun soggetto, nessuna merce.
 - Con l'UIL l'autorità chiede `EU03` (dati generali) o `EU05a` (merci pericolose). `EftiSubsetProjector` tiene del dataset solo gli elementi che lo schema annota con quel sottoinsieme, a ogni livello: **nessun elenco di campi è scritto nel codice**. Un test confronta la proiezione, per ogni spedizione del seed, con un calcolo indipendente fatto sullo schema.
 
@@ -316,7 +317,7 @@ L'autorità non ha altra strada: non può elencare le spedizioni né leggerle pe
 
 ### 8.6 Accessi visibili all'operatore
 
-`GET /api/shipments/{code}/authority-access` (`Dispatcher`, `Admin`) mostra quando un'autorità ha consultato una spedizione: le letture di sottoinsieme fatte con il suo UIL e le ricerche per una delle sue targhe, se in quel momento la spedizione era sul gate. È il requisito del Reg. di esecuzione (UE) 2025/2243 sulla notifica degli accessi, letto dall'audit senza una struttura dedicata.
+`GET /api/shipments/{code}/authority-access` (`Dispatcher`, `Admin`) mostra quando un'autorità ha consultato una spedizione: le letture di sottoinsieme fatte con il suo UIL e le ricerche per una delle sue targhe, se in quel momento la spedizione era raggiungibile dal gate (già pubblicata e non ancora scaduta). È il requisito del Reg. di esecuzione (UE) 2025/2243 sulla notifica degli accessi, letto dall'audit senza una struttura dedicata.
 
 ## 9. Test e CI
 
@@ -365,6 +366,7 @@ Gli identificativi sono quelli del piano di progetto.
 | F4.3 | Append-only imposto da un trigger del database | Disciplina del codice: chiunque abbia accesso al database potrebbe riscrivere la storia |
 | F4.4 | Sottoinsiemi e identificatori sono proiezioni ricavate dallo schema | Elenco dei campi per sottoinsieme scritto a mano (era la prima versione del piano) |
 | F4.5 | Sul gate va solo un dataset `Valid` | Pubblicare tutto: un'autorità leggerebbe dati incompleti come se fossero buoni |
+| F4.9 | Una spedizione consegnata resta sul gate per un tempo impostabile (cinque giorni di default), valutato a ogni richiesta | Nessuna scadenza: una spedizione chiusa resterebbe consultabile per sempre. Scadenza salvata nella voce: cambiare l'impostazione non avrebbe effetto sulle voci esistenti |
 | F4.6 | 401 per chi non si fa riconoscere, 403 per il ruolo sbagliato, stesso codice `UNAUTHORIZED` | Un solo stato: chi chiama non distinguerebbe una chiave sbagliata da un permesso mancante |
 | F4.7 | Gli accessi dell'autorità si leggono dall'audit | Una tabella di notifiche dedicata: un secondo registro da tenere coerente con il primo |
 | F4.8 | I mezzi dei viaggi demo sono riservati a quei viaggi | Flotta condivisa: una targa demo portava a 17 spedizioni e lo scenario del controllo su strada perdeva chiarezza |

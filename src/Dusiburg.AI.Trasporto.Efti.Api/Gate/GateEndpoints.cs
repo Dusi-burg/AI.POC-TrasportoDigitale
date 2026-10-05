@@ -61,7 +61,7 @@ internal static class GateEndpoints
 
         if (dataset is null)
         {
-            return ApiProblems.NotFound("Nessuna spedizione registrata con questo UIL.");
+            return ApiProblems.NotFound("Nessuna spedizione raggiungibile con questo UIL: non è registrata oppure è scaduta dopo la consegna.");
         }
 
         // Da qui l'audit sa quale spedizione è stata toccata, anche se chi chiamava conosceva solo l'UIL.

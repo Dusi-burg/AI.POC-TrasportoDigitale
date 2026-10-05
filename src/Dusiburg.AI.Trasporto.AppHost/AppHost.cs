@@ -42,6 +42,9 @@ string[] modelSettings =
 ];
 
 eftiApi.WithConfigurationEnvironment(builder, modelSettings);
+
+// Gate simulato: per quanti minuti dopo la consegna una spedizione resta raggiungibile da un'autorità (default del codice: 15).
+eftiApi.WithConfigurationEnvironment(builder, "Efti__GateRetentionMinutes");
 agents.WithConfigurationEnvironment(builder, modelSettings);
 
 // Chiave del modello Claude: Parameters:anthropic-api-key. Il parametro si dichiara solo se valorizzato, così l'AppHost parte

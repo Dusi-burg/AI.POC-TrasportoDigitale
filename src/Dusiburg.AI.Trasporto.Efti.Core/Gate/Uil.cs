@@ -12,6 +12,21 @@ public sealed class EftiPlatformOptions
 
     /// <summary>Identificativo della piattaforma del vettore.</summary>
     public string PlatformId { get; set; } = "dusiburg-trasporto";
+
+    /// <summary>
+    /// Per quanti minuti dopo la consegna una spedizione resta raggiungibile dal gate (<c>Efti__GateRetentionMinutes</c>).
+    /// Il default è di cinque giorni; nella demo si può abbassare a pochi minuti per vedere una spedizione appena consegnata
+    /// sparire dal registro.
+    /// </summary>
+    public int GateRetentionMinutes { get; set; } = DefaultGateRetentionMinutes;
+
+    /// <summary>Cinque giorni.</summary>
+    public const int DefaultGateRetentionMinutes = 5 * 24 * 60;
+
+    /// <summary>
+    /// Istante da cui una spedizione consegnata non è più raggiungibile dal gate. Una spedizione non ancora consegnata non scade.
+    /// </summary>
+    public DateTimeOffset ExpiresAt(DateTimeOffset deliveredAt) => deliveredAt.AddMinutes(GateRetentionMinutes);
 }
 
 /// <summary>

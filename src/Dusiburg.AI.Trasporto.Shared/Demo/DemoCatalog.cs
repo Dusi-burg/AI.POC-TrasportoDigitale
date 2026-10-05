@@ -14,9 +14,9 @@ public static class DemoCatalog
         new("Dusiburg Trasporti S.r.l.", "IT04719020002", "Via del Lavoro 18", "37135", "Verona", "IT");
 
     /// <summary>
-    /// Committenti demo: sei clienti del POC Order-to-Cash, riconoscibili dalla ragione sociale. È il filo "ordine → spedizione"
-    /// del portfolio. Le partite IVA sono proprie di questo POC (ufficio <c>000</c>, cifra di controllo corretta): quelle di
-    /// Order-to-Cash non superano il controllo formale che qui la validazione eFTI applica.
+    /// Committenti demo: sei clienti del POC Order-to-Cash, con la stessa ragione sociale e la stessa partita IVA. È il filo
+    /// "ordine → spedizione" del portfolio. Le partite IVA sono fittizie ma formalmente corrette (ufficio <c>000</c>, cifra di
+    /// controllo valida), perché qui la validazione eFTI le controlla; il catalogo di Order-to-Cash usa gli stessi valori.
     /// </summary>
     public static IReadOnlyList<DemoCustomer> Customers { get; } =
     [
@@ -78,7 +78,8 @@ public static class DemoCatalog
 
         new("TO-1005", [5, 7], "Consegna con riserva per danno e colli mancanti", "CUS-005",
             new("Textilhaus Donau GmbH", "ATU99900055", "Laxenburger Straße 151", "1100", "Wien", "AT"),
-            TransportOrderStatus.Delivered, PickupOffsetDays: -6, DeliveryOffsetDays: -4, DeliveredOffsetDays: -4,
+            // Consegnata da due giorni: ancora raggiungibile dal gate, che tiene una spedizione per cinque giorni dopo la consegna.
+            TransportOrderStatus.Delivered, PickupOffsetDays: -4, DeliveryOffsetDays: -2, DeliveredOffsetDays: -2,
             [
                 new("Tessuti in pezza", 24, PackageType.Carton, 3_600m, 16.5m),
             ],
@@ -88,6 +89,7 @@ public static class DemoCatalog
 
         new("TO-1006", [6], "Reclamo per ritardo con riserva fuori termine", "CUS-006",
             new("Précision Alpine SARL", "FR99999000066", "Rue des Martyrs 31", "38000", "Grenoble", "FR"),
+            // Consegnata da nove giorni: sul gate è scaduta, un'autorità non la trova più.
             TransportOrderStatus.Delivered, PickupOffsetDays: -14, DeliveryOffsetDays: -12, DeliveredOffsetDays: -9,
             [
                 new("Componenti meccanici di precisione", 5, PackageType.Crate, 1_450m, 4.0m),

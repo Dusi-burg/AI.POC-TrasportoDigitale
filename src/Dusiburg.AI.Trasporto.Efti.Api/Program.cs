@@ -50,7 +50,12 @@ builder.Services.AddScoped<AuditQueries>();
 
 // Gate simulato: registro degli identificatori e sottoinsiemi dell'autorità, ricavati dallo schema.
 builder.Services.AddSingleton(_ => EftiSubsetProjector.CreateDefault());
-builder.Services.Configure<EftiPlatformOptions>(builder.Configuration.GetSection(EftiPlatformOptions.SectionName));
+builder.Services.AddOptions<EftiPlatformOptions>()
+    .Bind(builder.Configuration.GetSection(EftiPlatformOptions.SectionName))
+    .Validate(
+        options => options.GateRetentionMinutes >= 0,
+        $"{EftiPlatformOptions.SectionName}:{nameof(EftiPlatformOptions.GateRetentionMinutes)} non può essere negativo.")
+    .ValidateOnStart();
 builder.Services.AddScoped<IdentifierRegistry>();
 
 builder.Services.AddSingleton(TimeProvider.System);

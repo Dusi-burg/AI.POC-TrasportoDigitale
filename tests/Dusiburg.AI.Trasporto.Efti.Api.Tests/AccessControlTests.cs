@@ -33,6 +33,9 @@ public class AccessControlTests
 {
     private static readonly DateOnly SeedDate = new(2026, 10, 5);
 
+    /// <summary>L'API crede che sia mezzogiorno del giorno del seed: SH-1005 è consegnata da due giorni, SH-1006 da nove.</summary>
+    private static readonly DateTimeOffset Now = new(SeedDate, new TimeOnly(12, 0), TimeSpan.Zero);
+
     private string _connectionString = null!;
     private FakeTmsHandler _tms = null!;
     private WebApplicationFactory<EftiApiEntryPoint> _factory = null!;
@@ -68,13 +71,16 @@ public class AccessControlTests
             {
                 services.AddHttpClient<TmsApiClient>().ConfigurePrimaryHttpMessageHandler(() => _tms);
                 services.RemoveAll<IHealthProbe>();
+                services.RemoveAll<TimeProvider>();
+                services.AddSingleton<TimeProvider>(new FixedTimeProvider(Now));
             });
         });
 
         _client = _factory.CreateClient();
 
-        // SH-1001 e SH-1004 sono valide (quindi sul gate), SH-1002 è incompleta (quindi no).
-        foreach (string orderCode in new[] { "TO-1001", "TO-1002", "TO-1004" })
+        // SH-1001 e SH-1004 sono valide e in viaggio (sul gate); SH-1002 è incompleta (mai pubblicata); SH-1005 è consegnata
+        // da due giorni (ancora sul gate); SH-1006 da nove (scaduta).
+        foreach (string orderCode in new[] { "TO-1001", "TO-1002", "TO-1004", "TO-1005", "TO-1006" })
         {
             using HttpResponseMessage imported = await SendAsync(Role.Dispatcher, HttpMethod.Post, "/api/shipments/import", new ImportShipmentsRequest(orderCode));
 
@@ -221,6 +227,49 @@ public class AccessControlTests
     }
 
     [Test]
+    public async Task Authority_DeliveredShipments_StayOnTheGateForFiveDays()
+    {
+        //SUT
+        IReadOnlyList<ConsignmentIdentifiersView> deliveredTwoDaysAgo = await FindIdentifiersAsync("ZZ105AA");
+        IReadOnlyList<ConsignmentIdentifiersView> deliveredNineDaysAgo = await FindIdentifiersAsync("ZZ106AA");
+        AuthoritySubsetView subset = await GetSubsetAsync(deliveredTwoDaysAgo.Single().Uil, "EU03");
+
+        JsonElement delivery = deliveredTwoDaysAgo.Single().Identifiers.GetProperty("deliveryEvent").GetProperty("actualOccurrenceDateTime");
+        Assert.That((delivery.GetProperty("value").GetString(), delivery.GetProperty("formatId").GetString()), Is.EqualTo(("202610031015+0100", "205")));
+        Assert.That(subset.Dataset.GetProperty("consignee").GetProperty("name")[0].GetString(), Is.EqualTo("Textilhaus Donau GmbH"));
+        Assert.That(deliveredNineDaysAgo, Is.Empty, "SH-1006 è consegnata da più di cinque giorni: non è più sul gate");
+    }
+
+    [Test]
+    public async Task Authority_GateRetention_FollowsTheSetting()
+    {
+        //SETUP
+        // Stesso database e stesso orologio, cambia solo l'impostazione: con 15 giorni torna raggiungibile anche SH-1006, con
+        // 15 minuti non lo è più nemmeno SH-1005.
+        await using WebApplicationFactory<EftiApiEntryPoint> fifteenDays = _factory.WithWebHostBuilder(
+            builder => builder.UseSetting("Efti:GateRetentionMinutes", (15 * 24 * 60).ToString(System.Globalization.CultureInfo.InvariantCulture)));
+        await using WebApplicationFactory<EftiApiEntryPoint> fifteenMinutes = _factory.WithWebHostBuilder(
+            builder => builder.UseSetting("Efti:GateRetentionMinutes", "15"));
+        using HttpClient fifteenDaysClient = fifteenDays.CreateClient().ActingAs(Role.Authority);
+        using HttpClient fifteenMinutesClient = fifteenMinutes.CreateClient().ActingAs(Role.Authority);
+
+        //SUT
+        List<ConsignmentIdentifiersView> expiredByDefault = await FindAsync(fifteenDaysClient, "ZZ106AA");
+        List<ConsignmentIdentifiersView> reachableByDefault = await FindAsync(fifteenMinutesClient, "ZZ105AA");
+        List<ConsignmentIdentifiersView> notDelivered = await FindAsync(fifteenMinutesClient, "ZZ101AA");
+        string uil = expiredByDefault.Single().Uil;
+        using HttpResponseMessage subsetWithFifteenDays = await fifteenDaysClient.GetAsync($"/api/gate/subset?uil={uil}&subsetId=EU03", CancellationToken);
+        using HttpResponseMessage subsetWithDefault = await SendAsync(Role.Authority, HttpMethod.Get, $"/api/gate/subset?uil={uil}&subsetId=EU03");
+
+        Assert.That(expiredByDefault, Has.Count.EqualTo(1), "con 15 giorni SH-1006 è ancora sul gate");
+        Assert.That(reachableByDefault, Is.Empty, "con 15 minuti SH-1005 è già scaduta");
+        Assert.That(notDelivered, Has.Count.EqualTo(1), "una spedizione non consegnata non scade, qualunque sia l'impostazione");
+        Assert.That(subsetWithFifteenDays.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That((subsetWithDefault.StatusCode, await ReadProblemCodeAsync(subsetWithDefault)), Is.EqualTo((HttpStatusCode.NotFound, ErrorCodes.NotFound)),
+            "un UIL scaduto risponde come uno sconosciuto");
+    }
+
+    [Test]
     public async Task AuthorityAccess_AfterAnAuthorityLookedAtAShipment_ShowsItToTheOperator()
     {
         //SETUP
@@ -256,7 +305,7 @@ public class AccessControlTests
         Assert.That((audited.Operation, audited.Resource, audited.Outcome, audited.Role), Is.EqualTo((Operation.ShipmentRead, "SH-9999", AuditOutcome.Failed, (Role?)Role.Dispatcher)));
         Assert.That(audited.Reason, Does.StartWith("404").And.Contain("SH-9999"));
         Assert.That(audited.TraceId, Does.Match("^[0-9a-f]{32}$"), "trace id W3C, apribile nel dashboard");
-        Assert.That(audited.OccurredAt, Is.EqualTo(DateTimeOffset.UtcNow).Within(TimeSpan.FromMinutes(1)));
+        Assert.That(audited.OccurredAt, Is.EqualTo(Now));
     }
 
     [Test]
@@ -341,6 +390,9 @@ public class AccessControlTests
 
     private async Task<IReadOnlyList<ConsignmentIdentifiersView>> FindIdentifiersAsync(string plate) =>
         await GetAsync<List<ConsignmentIdentifiersView>>(Role.Authority, $"/api/gate/identifiers?plate={Uri.EscapeDataString(plate)}");
+
+    private static async Task<List<ConsignmentIdentifiersView>> FindAsync(HttpClient authorityClient, string plate) =>
+        (await authorityClient.GetFromJsonAsync<List<ConsignmentIdentifiersView>>($"/api/gate/identifiers?plate={plate}", TrasportoJson.Options, CancellationToken))!;
 
     private Task<AuthoritySubsetView> GetSubsetAsync(string uil, string subsetId) =>
         GetAsync<AuthoritySubsetView>(Role.Authority, $"/api/gate/subset?uil={uil}&subsetId={subsetId}");
