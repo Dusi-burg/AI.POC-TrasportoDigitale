@@ -23,7 +23,7 @@ public class SqlHealthProbeTests
     {
         _connectionString = TrasportoDatabaseInitializer.LocalConnectionStringFor($"Trasporto_Test_{Guid.NewGuid():N}");
 
-        await TrasportoDatabaseInitializer.RecreateAsync(_connectionString, seed: false, CancellationToken);
+        await TrasportoDatabaseInitializer.RecreateAsync(_connectionString, seed: false, cancellationToken: CancellationToken);
     }
 
     [OneTimeTearDown]

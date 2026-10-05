@@ -6,7 +6,7 @@ POC **"Trasporto digitale"**: dal punto di vista del vettore su strada, uno stra
 
 - Architettura e decisioni: [docs/architettura.md](docs/architettura.md)
 
-> **Stato**: Fase 1 completata (scaffolding). La solution si avvia sotto Aspire con i servizi vuoti e `/api/health` controlla SQL Server, Ollama, modelli e chiave del modello cloud. Prossima: Fase 2 — modello dati, TMS simulato e dati sintetici.
+> **Stato**: Fasi 1-2 completate. La solution si avvia sotto Aspire, `/api/health` controlla SQL Server, Ollama, modelli e chiave del modello cloud; il TMS simulato ha il suo modello dati, 6 ordini demo e 150 ordini sintetici con difetti voluti, e le API di lettura (`/api/views/orders`). Prossima: Fase 3 — importazione, mappatura e validazione eFTI.
 
 Tutti i dati sono **sintetici e fittizi**. Il POC non è una piattaforma eFTI certificata e non fornisce consulenza legale o assicurativa.
 
@@ -21,7 +21,7 @@ dotnet user-secrets set "ConnectionStrings:sql" "Server=(localdb)\localdev;Datab
 # 2. Facoltativo: chiave del modello cloud
 dotnet user-secrets set "Parameters:anthropic-api-key" "<chiave>" --project src/Dusiburg.AI.Trasporto.AppHost
 
-# 3. Database (lo cancella e lo ricrea)
+# 3. Database (lo cancella e lo ricrea, con i dati del TMS; --no-seed per lasciarlo vuoto)
 dotnet run --project tools/Dusiburg.AI.Trasporto.DbInit
 
 # 4. Avvio

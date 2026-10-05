@@ -18,6 +18,7 @@
   <Folder Name="/tests/">
     <Project Path="tests/Dusiburg.AI.Trasporto.Ai.Tests/Dusiburg.AI.Trasporto.Ai.Tests.csproj" />
     <Project Path="tests/Dusiburg.AI.Trasporto.Efti.Api.Tests/Dusiburg.AI.Trasporto.Efti.Api.Tests.csproj" />
+    <Project Path="tests/Dusiburg.AI.Trasporto.Tms.Api.Tests/Dusiburg.AI.Trasporto.Tms.Api.Tests.csproj" />
   </Folder>
   <Folder Name="/tools/">
     <Project Path="tools/Dusiburg.AI.Trasporto.DbInit/Dusiburg.AI.Trasporto.DbInit.csproj" />

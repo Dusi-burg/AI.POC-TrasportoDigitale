@@ -6,7 +6,7 @@
 
 - Architecture and decisions (Italian): [docs/architettura.md](docs/architettura.md)
 
-> **Status**: Phase 1 complete (scaffolding). The solution starts under Aspire with empty services, and `/api/health` checks SQL Server, Ollama, the models and the cloud model key. Next: Phase 2 — data model, simulated TMS and synthetic data.
+> **Status**: Phases 1-2 complete. The solution starts under Aspire and `/api/health` checks SQL Server, Ollama, the models and the cloud model key; the simulated TMS has its data model, 6 demo orders plus 150 synthetic orders with deliberate defects, and read APIs (`/api/views/orders`). Next: Phase 3 — eFTI import, mapping and validation.
 
 All data is **synthetic and fictitious**. The POC is not a certified eFTI platform and gives no legal or insurance advice.
 
@@ -21,7 +21,7 @@ dotnet user-secrets set "ConnectionStrings:sql" "Server=(localdb)\localdev;Datab
 # 2. Optional: cloud model key
 dotnet user-secrets set "Parameters:anthropic-api-key" "<key>" --project src/Dusiburg.AI.Trasporto.AppHost
 
-# 3. Database (drops and recreates it)
+# 3. Database (drops and recreates it, with the TMS data; --no-seed leaves it empty)
 dotnet run --project tools/Dusiburg.AI.Trasporto.DbInit
 
 # 4. Start

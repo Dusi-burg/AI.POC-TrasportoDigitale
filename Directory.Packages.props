@@ -34,6 +34,7 @@
   <ItemGroup Label="Data">
     <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.12" />
     <PackageVersion Include="Aspire.Microsoft.EntityFrameworkCore.SqlServer" Version="13.6.0" />
+    <PackageVersion Include="Bogus" Version="35.6.5" />
   </ItemGroup>
 
   <ItemGroup Label="Test">

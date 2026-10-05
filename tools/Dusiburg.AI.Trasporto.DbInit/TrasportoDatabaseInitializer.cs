@@ -1,5 +1,6 @@
 using Dusiburg.AI.Trasporto.Efti.Data;
 using Dusiburg.AI.Trasporto.Tms.Data;
+using Dusiburg.AI.Trasporto.Tms.Data.Seed;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
@@ -20,13 +21,18 @@ public static class TrasportoDatabaseInitializer
         new SqlConnectionStringBuilder(LocalConnectionString) { InitialCatalog = database }.ConnectionString;
 
     /// <summary>
-    /// Cancella il database se esiste e lo ricrea con schemi e tabelle. Il parametro <paramref name="seed"/> è già nel contratto
-    /// del tool, ma lookup e dati demo arrivano con la Fase 2: per ora il database nasce vuoto in entrambi i casi.
+    /// Cancella il database se esiste e lo ricrea con schemi, tabelle e righe delle tabelle di lookup; con <paramref name="seed"/>
+    /// inserisce anche i dati del TMS (ordini demo e dati sintetici). Lo schema efti resta vuoto: lo riempie l'importazione.
     /// </summary>
-    public static async Task RecreateAsync(string connectionString, bool seed = true, CancellationToken cancellationToken = default)
+    /// <param name="today">Giorno a cui sono relative le date dei dati; <c>null</c> = oggi.</param>
+    /// <returns>I dati inseriti nel TMS, <c>null</c> senza seed.</returns>
+    public static async Task<TmsSeedData?> RecreateAsync(
+        string connectionString,
+        bool seed = true,
+        int randomSeed = TmsSeedGenerator.DefaultRandomSeed,
+        DateOnly? today = null,
+        CancellationToken cancellationToken = default)
     {
-        _ = seed;
-
         await using TmsDbContext tms = CreateTms(connectionString);
 
         await tms.Database.EnsureDeletedAsync(cancellationToken);
@@ -42,6 +48,10 @@ public static class TrasportoDatabaseInitializer
         await using AuditDbContext audit = CreateAudit(connectionString);
 
         await audit.Database.GetService<IRelationalDatabaseCreator>().CreateTablesAsync(cancellationToken);
+
+        return seed
+            ? await TmsSeeder.SeedAsync(tms, randomSeed, today ?? DateOnly.FromDateTime(DateTime.Today), cancellationToken)
+            : null;
     }
 
     /// <summary>Cancella il database se esiste.</summary>
@@ -52,12 +62,12 @@ public static class TrasportoDatabaseInitializer
         await tms.Database.EnsureDeletedAsync(cancellationToken);
     }
 
-    private static TmsDbContext CreateTms(string connectionString) =>
+    public static TmsDbContext CreateTms(string connectionString) =>
         new(new DbContextOptionsBuilder<TmsDbContext>().UseSqlServer(connectionString).Options);
 
-    private static EftiDbContext CreateEfti(string connectionString) =>
+    public static EftiDbContext CreateEfti(string connectionString) =>
         new(new DbContextOptionsBuilder<EftiDbContext>().UseSqlServer(connectionString).Options);
 
-    private static AuditDbContext CreateAudit(string connectionString) =>
+    public static AuditDbContext CreateAudit(string connectionString) =>
         new(new DbContextOptionsBuilder<AuditDbContext>().UseSqlServer(connectionString).Options);
 }
