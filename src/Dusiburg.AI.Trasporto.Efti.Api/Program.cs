@@ -1,14 +1,19 @@
 using Dusiburg.AI.Trasporto.Ai;
+using Dusiburg.AI.Trasporto.Efti.Api.Audit;
 using Dusiburg.AI.Trasporto.Efti.Api.Dev;
+using Dusiburg.AI.Trasporto.Efti.Api.Gate;
 using Dusiburg.AI.Trasporto.Efti.Api.Health;
+using Dusiburg.AI.Trasporto.Efti.Api.Security;
 using Dusiburg.AI.Trasporto.Efti.Api.Shipments;
 using Dusiburg.AI.Trasporto.Efti.Api.Tms;
 using Dusiburg.AI.Trasporto.Efti.Core.Dataset;
+using Dusiburg.AI.Trasporto.Efti.Core.Gate;
 using Dusiburg.AI.Trasporto.Efti.Core.Import;
 using Dusiburg.AI.Trasporto.Efti.Core.Schema;
 using Dusiburg.AI.Trasporto.Efti.Core.Validation;
 using Dusiburg.AI.Trasporto.Efti.Data;
 using Dusiburg.AI.Trasporto.ServiceDefaults.Problems;
+using Dusiburg.AI.Trasporto.ServiceDefaults.Security;
 using Dusiburg.AI.Trasporto.Shared.Health;
 using Dusiburg.AI.Trasporto.Shared.Serialization;
 
@@ -37,9 +42,21 @@ builder.Services.Configure<CarrierOptions>(builder.Configuration.GetSection(Carr
 builder.Services.AddScoped<ShipmentImportService>();
 builder.Services.AddScoped<ShipmentViewQueries>();
 
+// Identità simulata, matrice dei ruoli e audit (Fase 4): ogni endpoint /api dichiara la propria operazione e passa da AccessFilter.
+builder.Services.AddSingleton<ActorResolver>();
+builder.Services.AddScoped<AuditNote>();
+builder.Services.AddScoped<AuditTrail>();
+builder.Services.AddScoped<AuditQueries>();
+
+// Gate simulato: registro degli identificatori e sottoinsiemi dell'autorità, ricavati dallo schema.
+builder.Services.AddSingleton(_ => EftiSubsetProjector.CreateDefault());
+builder.Services.Configure<EftiPlatformOptions>(builder.Configuration.GetSection(EftiPlatformOptions.SectionName));
+builder.Services.AddScoped<IdentifierRegistry>();
+
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<IHealthProbe, SqlHealthProbe>();
 builder.Services.AddSingleton<IHealthProbe, EftiSchemaHealthProbe>();
+builder.Services.AddSingleton<IHealthProbe, RoleKeysHealthProbe>();
 builder.Services.AddSingleton<HealthService>();
 builder.Services.AddSingleton<HealthReportCache>();
 builder.Services.AddHealthChecks().AddCheck<TrasportoHealthCheck>(TrasportoHealthCheck.Name);
@@ -55,11 +72,13 @@ app.UseExceptionHandler();
 
 app.MapDefaultEndpoints();
 
-app.MapGet("/", () => new { service = "Dusiburg.AI.Trasporto.Efti.Api", phase = 3 });
+app.MapGet("/", () => new { service = "Dusiburg.AI.Trasporto.Efti.Api", phase = 4 });
 
 app.MapGroup("/api")
     .MapHealthEndpoints()
-    .MapShipmentEndpoints();
+    .MapShipmentEndpoints()
+    .MapGateEndpoints()
+    .MapAuditEndpoints();
 
 if (app.Environment.IsDevelopment())
 {

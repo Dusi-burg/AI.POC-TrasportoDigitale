@@ -1,8 +1,10 @@
 using System.Text;
 using Dusiburg.AI.Trasporto.Efti.Core.Dataset;
 using Dusiburg.AI.Trasporto.Efti.Core.Schema;
+using Dusiburg.AI.Trasporto.Efti.Core.Security;
 using Dusiburg.AI.Trasporto.Efti.Core.Validation;
 using Dusiburg.AI.Trasporto.Shared.Contracts.Efti;
+using Dusiburg.AI.Trasporto.Shared.Security;
 
 namespace Dusiburg.AI.Trasporto.Efti.Core.Documents;
 
@@ -16,8 +18,10 @@ public static class GeneratedDocuments
 
     public const string CoverageFile = "copertura-dataset.md";
 
+    public const string RolesFile = "ruoli.md";
+
     /// <summary>Sottoinsiemi che il POC mostra all'autorità (D6).</summary>
-    public static readonly IReadOnlyList<string> AuthoritySubsets = ["EU03", "EU05a"];
+    public static readonly IReadOnlyList<string> AuthoritySubsets = EftiSubsets.Authority;
 
     private const string GeneratedNotice =
         "> Documento **generato dal codice**: non modificarlo a mano. Si rigenera con " +
@@ -49,6 +53,67 @@ public static class GeneratedDocuments
             {
                 text.AppendLine($"| `{rule.Code}` | {SeverityLabel(rule.Severity)} | {CodeList(rule.Field)} | {rule.Explanation} |");
             }
+        }
+
+        return text.ToString().ReplaceLineEndings("\n");
+    }
+
+    public static string RenderRoles()
+    {
+        Role[] roles = Enum.GetValues<Role>();
+        var text = new StringBuilder();
+
+        text.AppendLine("# Ruoli e operazioni");
+        text.AppendLine();
+        text.AppendLine(GeneratedNotice);
+        text.AppendLine();
+        text.AppendLine("L'identità è **simulata**: ogni richiesta porta una chiave nell'intestazione `X-Api-Key`, e la chiave dice quale dei " +
+            "quattro utenti dimostrativi sta chiamando. Non è autenticazione reale. Ciò che è reale è il controllo: ogni operazione passa " +
+            "da un unico punto che consulta questa matrice e registra l'esito nell'audit, rifiuti compresi. Ciò che non è elencato è negato.");
+        text.AppendLine();
+        text.AppendLine("## Utenti dimostrativi");
+        text.AppendLine();
+        text.AppendLine("| Ruolo | Utente | Che cosa fa |");
+        text.AppendLine("|---|---|---|");
+
+        foreach (Role role in roles)
+        {
+            text.AppendLine($"| `{role}` | {DemoActors.For(role).Name} | {RoleDescription(role)} |");
+        }
+
+        text.AppendLine();
+        text.AppendLine("## Matrice");
+        text.AppendLine();
+        text.AppendLine("Ogni cella dice **su che cosa** vale il permesso; una cella vuota è un rifiuto.");
+        text.AppendLine();
+        text.AppendLine($"| Operazione | {string.Join(" | ", roles.Select(r => $"`{r}`"))} |");
+        text.AppendLine($"|---|{string.Concat(roles.Select(_ => "---|"))}");
+
+        foreach (OperationInfo operation in AuthorizationPolicy.Operations)
+        {
+            string cells = string.Join(" | ", roles.Select(role => ScopeLabel(AuthorizationPolicy.ScopeFor(role, operation.Operation))));
+
+            text.AppendLine($"| `{operation.Operation}` | {cells} |");
+        }
+
+        text.AppendLine();
+        text.AppendLine("## Operazioni");
+        text.AppendLine();
+        text.AppendLine("| Operazione | Tipo | Endpoint | Che cosa permette |");
+        text.AppendLine("|---|---|---|---|");
+
+        foreach (OperationInfo operation in AuthorizationPolicy.Operations)
+        {
+            text.AppendLine($"| `{operation.Operation}` | {(operation.IsWrite ? "scrittura" : "lettura")} | `{operation.Endpoint}` | {operation.Description} |");
+        }
+
+        text.AppendLine();
+        text.AppendLine("## Ambiti");
+        text.AppendLine();
+
+        foreach (AccessScope scope in Enum.GetValues<AccessScope>().Where(s => s != AccessScope.Denied))
+        {
+            text.AppendLine($"- **{ScopeLabel(scope)}**: {ScopeDescription(scope)}");
         }
 
         return text.ToString().ReplaceLineEndings("\n");
@@ -148,6 +213,38 @@ public static class GeneratedDocuments
         RuleCategory.Advisory => "Avvisi",
         RuleCategory.Schema => "Conformità allo schema",
         _ => category.ToString()
+    };
+
+    private static string RoleDescription(Role role) => role switch
+    {
+        Role.Dispatcher => "Ufficio traffico del vettore: importa le spedizioni, le completa, vede chi le ha consultate.",
+        Role.ClaimsManager => "Ufficio reclami del vettore: legge le spedizioni; le operazioni sui reclami arrivano con la Release 2.",
+        Role.Authority => "Autorità di controllo: parte da una targa, ottiene un UIL e con quello legge un sottoinsieme.",
+        Role.Admin => "Amministratore della piattaforma: legge spedizioni e audit, non modifica i dati di trasporto.",
+        _ => role.ToString()
+    };
+
+    private static string ScopeLabel(AccessScope scope) => scope switch
+    {
+        AccessScope.Denied => "—",
+        AccessScope.Self => "sé",
+        AccessScope.AllShipments => "tutte le spedizioni",
+        AccessScope.IdentifierRegistry => "registro degli identificatori",
+        AccessScope.AuthoritySubset => "sottoinsieme per UIL",
+        AccessScope.AuthorityAccesses => "accessi dell'autorità",
+        AccessScope.AuditTrail => "tutto l'audit",
+        _ => scope.ToString()
+    };
+
+    private static string ScopeDescription(AccessScope scope) => scope switch
+    {
+        AccessScope.Self => "solo la propria identità e l'elenco di ciò che il proprio ruolo può fare.",
+        AccessScope.AllShipments => "tutte le spedizioni del vettore, con dataset completo e dati contrattuali.",
+        AccessScope.IdentifierRegistry => "solo il registro degli identificatori, cercato per targa: UIL, targhe, date, modo di trasporto, indicatore di merci pericolose. Nessun soggetto, nessuna merce.",
+        AccessScope.AuthoritySubset => $"solo i sottoinsiemi {string.Join(" ed ", AuthoritySubsets.Select(s => $"`{s}`"))} di una spedizione di cui si conosce l'UIL. Nessun elenco, nessun dato contrattuale.",
+        AccessScope.AuthorityAccesses => "solo gli eventi di audit in cui un'autorità ha consultato una spedizione.",
+        AccessScope.AuditTrail => "tutto il registro di audit, in sola lettura: il database rifiuta modifiche e cancellazioni.",
+        _ => string.Empty
     };
 
     private static string SeverityLabel(IssueSeverity severity) => severity == IssueSeverity.Error ? "Errore" : "Avviso";

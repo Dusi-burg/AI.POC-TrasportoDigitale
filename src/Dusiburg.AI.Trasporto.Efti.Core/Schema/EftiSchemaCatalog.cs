@@ -50,15 +50,21 @@ public sealed class EftiSchemaCatalog
 
     private static readonly XNamespace Xsd = "http://www.w3.org/2001/XMLSchema";
 
+    /// <summary>Sottoinsieme degli identificatori: ciò che la piattaforma registra sul gate.</summary>
+    public const string IdentifierSchemaFile = "consignment-identifier.xsd";
+
     private static readonly Lazy<EftiSchemaCatalog> LazyDefault = new(() => Load(DefaultDirectory));
+
+    private static readonly Lazy<EftiSchemaCatalog> LazyIdentifier = new(() => Load(DefaultDirectory, IdentifierSchemaFile));
 
     private readonly Dictionary<string, IReadOnlyList<SchemaElement>> _types;
 
     private EftiSchemaCatalog(
-        string directory, string version, string targetNamespace, string rootElementName, string rootTypeName,
+        string directory, string fileName, string version, string targetNamespace, string rootElementName, string rootTypeName,
         Dictionary<string, IReadOnlyList<SchemaElement>> types, IReadOnlySet<string> countryCodes)
     {
         Directory = directory;
+        FileName = fileName;
         Version = version;
         TargetNamespace = targetNamespace;
         RootElementName = rootElementName;
@@ -70,13 +76,19 @@ public sealed class EftiSchemaCatalog
     /// <summary>Gli schemi copiati accanto all'assembly da <c>data/efti-schema/v0</c>.</summary>
     public static string DefaultDirectory => Path.Combine(AppContext.BaseDirectory, "efti-schema", "v0");
 
+    /// <summary>Lo schema comune: il dataset completo.</summary>
     public static EftiSchemaCatalog Default => LazyDefault.Value;
+
+    /// <summary>Lo schema degli identificatori: stessi nomi e stessi tipi dello schema comune, ridotti a ciò che va sul gate.</summary>
+    public static EftiSchemaCatalog Identifier => LazyIdentifier.Value;
 
     public string Directory { get; }
 
-    public string CommonSchemaPath => Path.Combine(Directory, CommonSchemaFile);
+    public string FileName { get; }
 
-    /// <summary>Attributo <c>version</c> dello schema comune (es. <c>0.8</c>).</summary>
+    public string SchemaPath => Path.Combine(Directory, FileName);
+
+    /// <summary>Attributo <c>version</c> dello schema (es. <c>0.8</c> per quello comune).</summary>
     public string Version { get; }
 
     public string TargetNamespace { get; }
@@ -90,10 +102,10 @@ public sealed class EftiSchemaCatalog
 
     public IEnumerable<string> ComplexTypeNames => _types.Keys;
 
-    public static EftiSchemaCatalog Load(string directory)
+    public static EftiSchemaCatalog Load(string directory, string fileName = CommonSchemaFile)
     {
-        XDocument schema = XDocument.Load(Path.Combine(directory, CommonSchemaFile));
-        XElement root = schema.Root ?? throw new InvalidDataException($"{CommonSchemaFile}: documento vuoto.");
+        XDocument schema = XDocument.Load(Path.Combine(directory, fileName));
+        XElement root = schema.Root ?? throw new InvalidDataException($"{fileName}: documento vuoto.");
         XElement rootElement = root.Elements(Xsd + "element").Single();
 
         Dictionary<string, IReadOnlyList<SchemaElement>> types = root
@@ -104,6 +116,7 @@ public sealed class EftiSchemaCatalog
 
         return new EftiSchemaCatalog(
             directory,
+            fileName,
             Required(root, "version"),
             Required(root, "targetNamespace"),
             Required(rootElement, "name"),

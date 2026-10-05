@@ -57,6 +57,9 @@ public sealed class Shipment
 
     public string? VehicleCountryCode { get; set; }
 
+    /// <summary>Tipo di mezzo, codice UN/ECE Rec. 28 (<c>31</c> autocarro, <c>33</c> trattore).</summary>
+    public string? VehicleTypeCode { get; set; }
+
     public string? TrailerPlateNumber { get; set; }
 
     public string? TrailerCountryCode { get; set; }
@@ -92,6 +95,33 @@ public sealed class Shipment
     public List<ConsignmentItem> Items { get; set; } = [];
 
     public List<EftiDataset> Datasets { get; set; } = [];
+}
+
+/// <summary>
+/// Voce del registro degli identificatori del gate simulato (D7): ciò che la piattaforma pubblica di una spedizione con
+/// dataset valido, perché un'autorità possa trovarla da una targa. Una riga per spedizione.
+/// </summary>
+public sealed class IdentifierRegistryEntry
+{
+    public int Id { get; set; }
+
+    public int ShipmentId { get; set; }
+
+    public Shipment Shipment { get; set; } = null!;
+
+    /// <summary>Identificativo con cui l'autorità chiede i dati: gate, piattaforma, dataset. Univoco.</summary>
+    public required string Uil { get; set; }
+
+    /// <summary>Targa della motrice in maiuscolo, senza spazi né trattini: è la chiave di ricerca.</summary>
+    public string? VehiclePlateNumber { get; set; }
+
+    /// <summary>Targa del rimorchio, normalizzata come quella della motrice.</summary>
+    public string? TrailerPlateNumber { get; set; }
+
+    /// <summary>Sottoinsieme degli identificatori in JSON: la proiezione del dataset su <c>consignment-identifier.xsd</c>.</summary>
+    public required string IdentifiersJson { get; set; }
+
+    public DateTimeOffset RegisteredAt { get; set; }
 }
 
 /// <summary>Soggetto che compare in una o più spedizioni.</summary>

@@ -115,6 +115,10 @@ public class TmsSeedGeneratorTests
         Assert.That(generated.Where(o => o.Status == TransportOrderStatus.Cancelled),
             Is.All.Matches<TransportOrder>(o => o.PickedUpAt is null && o.Trip is null));
         Assert.That(Data.Trips, Is.All.Matches<Trip>(t => (t.Vehicle.Type == VehicleType.Tractor) == (t.Trailer is not null)), "rimorchio solo con il trattore");
+
+        // Ogni targa demo compare in un solo viaggio, quello del suo ordine demo: è ciò che il controllo su strada cerca.
+        string[] demoPlates = [.. DemoCatalog.Orders.SelectMany(o => new[] { o.Trip.TractorPlate, o.Trip.TrailerPlate })];
+        Assert.That(demoPlates.Select(plate => Data.Trips.Count(t => t.Vehicle.PlateNumber == plate || t.Trailer?.PlateNumber == plate)), Is.All.EqualTo(1));
     }
 
     [Test]

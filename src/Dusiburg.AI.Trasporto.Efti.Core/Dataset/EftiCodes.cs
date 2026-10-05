@@ -1,4 +1,5 @@
 using Dusiburg.AI.Trasporto.Shared.Contracts;
+using Dusiburg.AI.Trasporto.Shared.Contracts.Tms;
 
 namespace Dusiburg.AI.Trasporto.Efti.Core.Dataset;
 
@@ -26,6 +27,17 @@ public static class EftiCodes
 
     /// <summary>UN/EDIFACT 2379: data, ora e scostamento da UTC.</summary>
     public const string DateTimeWithOffsetFormat = "205";
+
+    /// <summary>
+    /// UN/ECE Rec. 28, tipo di mezzo: <c>31</c> = veicolo a motore per il trasporto di carichi (autocarro), <c>33</c> = veicolo a
+    /// motore progettato per il traino (trattore stradale). Un rimorchio non è un mezzo ma un'attrezzatura: non ha questo codice.
+    /// </summary>
+    public static string? TransportMeansTypeCode(VehicleType type) => type switch
+    {
+        VehicleType.Truck => "31",
+        VehicleType.Tractor => "33",
+        _ => null
+    };
 
     /// <summary>UN/ECE Rec. 21, da riconfermare.</summary>
     public static string PackageTypeCode(PackageType type) => type switch

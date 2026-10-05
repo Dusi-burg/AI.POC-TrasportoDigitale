@@ -1,3 +1,4 @@
+using Dusiburg.AI.Trasporto.Efti.Api.Gate;
 using Dusiburg.AI.Trasporto.Efti.Api.Tms;
 using Dusiburg.AI.Trasporto.Efti.Core.Import;
 using Dusiburg.AI.Trasporto.Efti.Core.Validation;
@@ -27,6 +28,7 @@ public sealed class ShipmentImportService(
     EftiDbContext db,
     TmsApiClient tms,
     EftiValidator validator,
+    IdentifierRegistry registry,
     IOptions<CarrierOptions> carrier,
     TimeProvider timeProvider,
     ILogger<ShipmentImportService> logger)
@@ -89,9 +91,18 @@ public sealed class ShipmentImportService(
         DateTimeOffset now = timeProvider.GetUtcNow();
         Shipment shipment = ShipmentFactory.Create(order, carrier.Value, now);
 
+        // L'identificativo pubblico si genera qui e non nel database: serve all'UIL prima del salvataggio.
+        shipment.PublicId = Guid.CreateVersion7(now);
+
         await ReuseCarrierPartyAsync(shipment, cancellationToken);
 
         DatasetEvaluation evaluation = validator.Evaluate(shipment);
+
+        // Solo un dataset valido si pubblica sul gate: è ciò che rende la spedizione raggiungibile da un'autorità (D7).
+        if (evaluation.Status == DatasetStatus.Valid)
+        {
+            db.IdentifierRegistry.Add(registry.CreateEntry(shipment, evaluation.Json, now));
+        }
 
         shipment.Datasets.Add(new EftiDataset
         {

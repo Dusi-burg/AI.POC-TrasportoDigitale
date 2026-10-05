@@ -5,6 +5,7 @@ using Dusiburg.AI.Trasporto.Efti.Core.Documents;
 using Dusiburg.AI.Trasporto.Efti.Core.Schema;
 using Dusiburg.AI.Trasporto.Efti.Core.Tests.Support;
 using Dusiburg.AI.Trasporto.Efti.Core.Validation;
+using Dusiburg.AI.Trasporto.Shared.Security;
 
 namespace Dusiburg.AI.Trasporto.Efti.Core.Tests;
 
@@ -45,6 +46,19 @@ public class GeneratedDocumentsTests
     }
 
     [Test]
+    public void RolesDocument_InRepository_MatchesTheMatrix()
+    {
+        //SETUP
+        string onDisk = ReadDocument(GeneratedDocuments.RolesFile);
+
+        //SUT
+        string rendered = GeneratedDocuments.RenderRoles();
+
+        Assert.That(onDisk, Is.EqualTo(rendered), $"docs/{GeneratedDocuments.RolesFile} non è allineato alla matrice dei ruoli: {Regenerate}");
+        Assert.That(Enum.GetNames<Operation>().Concat(Enum.GetNames<Role>()).Select(name => $"`{name}`"), Is.All.Matches<string>(rendered.Contains));
+    }
+
+    [Test]
     public void Coverage_EveryDeclaredElement_ExistsInTheSchemaAsDataElement()
     {
         //SUT
@@ -74,13 +88,14 @@ public class GeneratedDocumentsTests
     }
 
     [Test]
-    public void UncoveredSubsetElements_IncludeTheKnownGap_AndNoCoveredElement()
+    public void UncoveredSubsetElements_AreDeclared_AndNoCoveredElementIsAmongThem()
     {
         //SUT
         IReadOnlyList<(string Path, SchemaElement Element)> uncovered = GeneratedDocuments.UncoveredSubsetElements(Catalog);
 
         string[] paths = [.. uncovered.Select(u => u.Path)];
-        Assert.That(paths, Does.Contain("mainCarriageTransportMovement/usedTransportMeans/typeCode"), "tipo di mezzo: codice non verificato, dichiarato come non coperto");
+        Assert.That(paths, Does.Contain("consignor/id").And.Contain("includedConsignmentItem/transportDangerousGoods/tunnelRestrictionCode"));
+        Assert.That(paths, Has.None.EqualTo("mainCarriageTransportMovement/usedTransportMeans/typeCode"), "tipo di mezzo: coperto dalla Fase 4");
         Assert.That(paths.Intersect(DatasetCoverage.Elements.Select(e => e.Path)), Is.Empty);
         Assert.That(uncovered.Select(u => u.Element), Is.All.Matches<SchemaElement>(e => GeneratedDocuments.AuthoritySubsets.Any(e.IsInSubset)));
     }

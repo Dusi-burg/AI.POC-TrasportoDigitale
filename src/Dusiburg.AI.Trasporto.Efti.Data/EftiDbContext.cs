@@ -26,6 +26,8 @@ public sealed class EftiDbContext(DbContextOptions<EftiDbContext> options) : DbC
 
     public DbSet<ValidationIssue> ValidationIssues => Set<ValidationIssue>();
 
+    public DbSet<IdentifierRegistryEntry> IdentifierRegistry => Set<IdentifierRegistryEntry>();
+
     public DbSet<EnumLookup<PartyRole>> PartyRoles => Set<EnumLookup<PartyRole>>();
 
     public DbSet<EnumLookup<DatasetStatus>> DatasetStatuses => Set<EnumLookup<DatasetStatus>>();

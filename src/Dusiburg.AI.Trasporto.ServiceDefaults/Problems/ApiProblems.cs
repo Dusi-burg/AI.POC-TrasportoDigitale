@@ -22,6 +22,14 @@ public static class ApiProblems
     public static ProblemHttpResult Conflict(string detail) =>
         Create(StatusCodes.Status409Conflict, ErrorCodes.Conflict, "Conflitto", detail);
 
+    /// <summary>Chiave assente o sconosciuta: non si sa chi sta chiamando.</summary>
+    public static ProblemHttpResult Unauthorized(string detail) =>
+        Create(StatusCodes.Status401Unauthorized, ErrorCodes.Unauthorized, "Non autorizzato", detail);
+
+    /// <summary>Si sa chi sta chiamando, ma il suo ruolo non può fare questa operazione. Stesso codice del 401: per chi chiama è comunque un rifiuto.</summary>
+    public static ProblemHttpResult Forbidden(string detail) =>
+        Create(StatusCodes.Status403Forbidden, ErrorCodes.Unauthorized, "Operazione non consentita al ruolo", detail);
+
     public static ProblemHttpResult UpstreamUnavailable(string detail) =>
         Create(StatusCodes.Status503ServiceUnavailable, ErrorCodes.UpstreamUnavailable, "Servizio a valle non disponibile", detail);
 
@@ -35,6 +43,7 @@ public static class ApiProblems
             {
                 StatusCodes.Status400BadRequest => ErrorCodes.ValidationError,
                 StatusCodes.Status401Unauthorized => ErrorCodes.Unauthorized,
+                StatusCodes.Status403Forbidden => ErrorCodes.Unauthorized,
                 StatusCodes.Status404NotFound => ErrorCodes.NotFound,
                 StatusCodes.Status409Conflict => ErrorCodes.Conflict,
                 StatusCodes.Status503ServiceUnavailable => ErrorCodes.UpstreamUnavailable,

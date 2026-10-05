@@ -1,3 +1,4 @@
+using Dusiburg.AI.Trasporto.Efti.Core.Dataset;
 using Dusiburg.AI.Trasporto.Efti.Data.Entities;
 using Dusiburg.AI.Trasporto.Shared.Contracts.Efti;
 using Dusiburg.AI.Trasporto.Shared.Contracts.Views.Tms;
@@ -54,6 +55,7 @@ public static class ShipmentFactory
             TotalVolumeM3 = order.Lines.Any(l => l.VolumeM3 is not null) ? order.Lines.Sum(l => l.VolumeM3 ?? 0) : null,
             VehiclePlateNumber = order.Trip?.Vehicle.PlateNumber,
             VehicleCountryCode = order.Trip?.Vehicle.CountryCode,
+            VehicleTypeCode = order.Trip is { } trip ? EftiCodes.TransportMeansTypeCode(trip.Vehicle.Type) : null,
             TrailerPlateNumber = order.Trip?.Trailer?.PlateNumber,
             TrailerCountryCode = order.Trip?.Trailer?.CountryCode,
             HasDangerousGoods = order.Lines.Any(l => l.IsDangerousGoods),

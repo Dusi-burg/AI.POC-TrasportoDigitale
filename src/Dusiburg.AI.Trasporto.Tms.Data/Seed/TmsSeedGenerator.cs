@@ -378,8 +378,11 @@ public sealed class TmsSeedGenerator
     /// </summary>
     private void AssignTrips(List<TransportOrder> orders, List<Vehicle> vehicles, List<Driver> drivers, List<Trip> trips)
     {
-        Vehicle[] tractive = [.. vehicles.Where(v => v.Type != VehicleType.SemiTrailer)];
-        Vehicle[] trailers = [.. vehicles.Where(v => v.Type == VehicleType.SemiTrailer)];
+        // I mezzi dei viaggi demo restano riservati a quelli: nello scenario del controllo su strada una targa demo deve
+        // portare a una sola spedizione.
+        HashSet<string> demoPlates = [.. DemoCatalog.Orders.SelectMany(o => new[] { o.Trip.TractorPlate, o.Trip.TrailerPlate })];
+        Vehicle[] tractive = [.. vehicles.Where(v => v.Type != VehicleType.SemiTrailer && !demoPlates.Contains(v.PlateNumber))];
+        Vehicle[] trailers = [.. vehicles.Where(v => v.Type == VehicleType.SemiTrailer && !demoPlates.Contains(v.PlateNumber))];
 
         List<TransportOrder> needingTrip =
         [

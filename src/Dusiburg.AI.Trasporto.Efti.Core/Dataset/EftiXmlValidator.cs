@@ -17,7 +17,7 @@ public sealed class EftiXmlValidator
     {
         // Lo schema comune importa i tipi e le liste di codici con percorsi relativi: si carica dal file, non da una risorsa.
         _schemas = new XmlSchemaSet { XmlResolver = new XmlUrlResolver() };
-        _schemas.Add(catalog.TargetNamespace, catalog.CommonSchemaPath);
+        _schemas.Add(catalog.TargetNamespace, catalog.SchemaPath);
         _schemas.Compile();
     }
 

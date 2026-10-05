@@ -14,6 +14,7 @@ using Dusiburg.AI.Trasporto.Shared.Contracts.Views.Efti;
 using Dusiburg.AI.Trasporto.Shared.Demo;
 using Dusiburg.AI.Trasporto.Shared.Errors;
 using Dusiburg.AI.Trasporto.Shared.Health;
+using Dusiburg.AI.Trasporto.Shared.Security;
 using Dusiburg.AI.Trasporto.Shared.Serialization;
 using Dusiburg.AI.Trasporto.Tms.Data.Seed;
 using Microsoft.AspNetCore.Hosting;
@@ -53,6 +54,7 @@ public class ShipmentImportTests
         {
             builder.UseSetting("ConnectionStrings:sql", _connectionString);
             builder.UseSetting(TmsApiClient.BaseAddressConfigurationKey, "http://tms.test");
+            builder.UseTestApiKeys();
 
             builder.ConfigureTestServices(services =>
             {
@@ -70,7 +72,8 @@ public class ShipmentImportTests
             });
         });
 
-        _client = _factory.CreateClient();
+        // Importazione e viste sono operazioni dell'ufficio traffico: la matrice dei ruoli ha i suoi test in AccessControlTests.
+        _client = _factory.CreateClient().ActingAs(Role.Dispatcher);
     }
 
     [SetUp]

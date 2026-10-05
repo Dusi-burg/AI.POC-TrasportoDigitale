@@ -94,6 +94,9 @@ public sealed record EftiTransportMeans
     public string? Id { get; init; }
 
     public EftiTradeCountry? RegistrationCountry { get; init; }
+
+    /// <summary>Tipo di mezzo, UN/ECE Rec. 28.</summary>
+    public string? TypeCode { get; init; }
 }
 
 public sealed record EftiTransportMovement

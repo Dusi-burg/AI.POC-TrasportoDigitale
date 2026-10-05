@@ -110,7 +110,12 @@ public static class EftiDatasetMapper
         DangerousGoodsIndicator = shipment.HasDangerousGoods,
         ModeCode = EftiCodes.RoadTransportMode,
         UsedTransportMeans = Present(shipment.VehiclePlateNumber) is { } plate
-            ? new EftiTransportMeans { Id = plate, RegistrationCountry = ToCountry(shipment.VehicleCountryCode) }
+            ? new EftiTransportMeans
+            {
+                Id = plate,
+                RegistrationCountry = ToCountry(shipment.VehicleCountryCode),
+                TypeCode = Present(shipment.VehicleTypeCode)
+            }
             : null
     };
 

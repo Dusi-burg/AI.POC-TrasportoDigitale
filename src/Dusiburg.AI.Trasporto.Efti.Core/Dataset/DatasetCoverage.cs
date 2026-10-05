@@ -54,6 +54,7 @@ public static class DatasetCoverage
         new("mainCarriageTransportMovement/dangerousGoodsIndicator", $"{Lines}: almeno una riga ADR"),
         new("mainCarriageTransportMovement/usedTransportMeans/id", $"{Trip}: targa della motrice"),
         new("mainCarriageTransportMovement/usedTransportMeans/registrationCountry/code", $"{Trip}: paese della motrice"),
+        new("mainCarriageTransportMovement/usedTransportMeans/typeCode", $"{Trip}: tipo di mezzo (autocarro o trattore)"),
         new("usedTransportEquipment/id", $"{Trip}: targa del rimorchio"),
         new("usedTransportEquipment/categoryCode", "fisso: semirimorchio"),
         new("usedTransportEquipment/registrationCountry/code", $"{Trip}: paese del rimorchio"),

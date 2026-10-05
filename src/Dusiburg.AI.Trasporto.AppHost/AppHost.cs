@@ -55,11 +55,29 @@ if (builder.Configuration["Parameters:anthropic-api-key"] is { Length: > 0 })
 }
 
 // UI: solo HTTP verso i servizi proprietari dei dati, nessun riferimento a sql.
-builder.AddProject<Projects.Dusiburg_AI_Trasporto_Web>("web")
+var web = builder.AddProject<Projects.Dusiburg_AI_Trasporto_Web>("web")
     .WithReference(eftiApi)
     .WithReference(tmsApi)
     .WithReference(agents)
     .WithHttpHealthCheck("/health");
+
+// Identità simulata (G12): una chiave per ruolo, Parameters:api-key-<ruolo> negli user-secrets. Efti.Api ed Efti.Mcp le
+// usano per riconoscere chi chiama; Agents e Web per chiamare con il ruolo dell'utente. Un ruolo senza chiave non si dichiara:
+// l'AppHost parte lo stesso e /api/health dice quale manca.
+foreach (string role in new[] { "Dispatcher", "ClaimsManager", "Authority", "Admin" })
+{
+    string parameterName = $"api-key-{role.ToLowerInvariant()}";
+
+    if (builder.Configuration[$"Parameters:{parameterName}"] is { Length: > 0 })
+    {
+        var apiKey = builder.AddParameter(parameterName, secret: true);
+
+        foreach (var service in new[] { eftiApi, eftiMcp, agents, web })
+        {
+            service.WithEnvironment($"ApiKeys__{role}", apiKey);
+        }
+    }
+}
 
 builder.Build().Run();
 

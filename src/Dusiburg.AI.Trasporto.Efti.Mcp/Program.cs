@@ -6,7 +6,8 @@ builder.AddServiceDefaults();
 
 builder.Services.AddProblemDetails();
 
-// Server MCP stateless su /mcp, ancora senza tool: i contratti della Fase 5 arrivano dopo ruoli e audit (Fase 4).
+// Server MCP stateless su /mcp, raggiungibile solo con la chiave di un ruolo (ApiKeys__<Ruolo>, passate dall'AppHost).
+// Ancora senza tool: i contratti arrivano con la Fase 5.
 builder.AddTrasportoMcpServer();
 
 var app = builder.Build();

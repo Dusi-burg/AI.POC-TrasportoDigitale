@@ -10,7 +10,8 @@ internal static class EftiDevEndpoints
     {
         var dev = app.MapGroup("/dev");
 
-        // Svuota lo schema efti per ripetere l'importazione dal TMS: spedizioni, dataset, problemi e soggetti.
+        // Svuota lo schema efti per ripetere l'importazione dal TMS: spedizioni, dataset, problemi, soggetti e registro degli
+        // identificatori. L'audit non si tocca: è append-only anche per la demo.
         dev.MapPost("/reset", async (EftiDbContext db, CancellationToken cancellationToken) =>
         {
             var strategy = db.Database.CreateExecutionStrategy();
@@ -19,6 +20,7 @@ internal static class EftiDevEndpoints
             {
                 await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
 
+                await db.IdentifierRegistry.ExecuteDeleteAsync(cancellationToken);
                 await db.ValidationIssues.ExecuteDeleteAsync(cancellationToken);
                 await db.Datasets.ExecuteDeleteAsync(cancellationToken);
                 await db.ConsignmentItems.ExecuteDeleteAsync(cancellationToken);

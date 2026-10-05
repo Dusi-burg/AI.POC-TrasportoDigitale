@@ -70,6 +70,7 @@ internal sealed class ShipmentConfiguration : IEntityTypeConfiguration<Shipment>
         builder.Property(s => s.TotalVolumeM3).HasPrecision(10, 3);
         builder.Property(s => s.VehiclePlateNumber).HasMaxLength(ColumnSizes.PlateNumber).IsUnicode(false);
         builder.Property(s => s.VehicleCountryCode).HasMaxLength(ColumnSizes.CountryCode).IsUnicode(false);
+        builder.Property(s => s.VehicleTypeCode).HasMaxLength(3).IsUnicode(false);
         builder.Property(s => s.TrailerPlateNumber).HasMaxLength(ColumnSizes.PlateNumber).IsUnicode(false);
         builder.Property(s => s.TrailerCountryCode).HasMaxLength(ColumnSizes.CountryCode).IsUnicode(false);
         builder.Property(s => s.CmrNumber).HasMaxLength(35).IsUnicode(false);
@@ -106,6 +107,32 @@ internal sealed class ShipmentConfiguration : IEntityTypeConfiguration<Shipment>
         location.Property(l => l.PostalCode).HasColumnName(prefix + "PostalCode").HasMaxLength(ColumnSizes.PostalCode).IsUnicode(false);
         location.Property(l => l.City).HasColumnName(prefix + "City").HasMaxLength(ColumnSizes.City);
         location.Property(l => l.CountryCode).HasColumnName(prefix + "CountryCode").HasMaxLength(ColumnSizes.CountryCode).IsUnicode(false);
+    }
+}
+
+internal sealed class IdentifierRegistryEntryConfiguration : IEntityTypeConfiguration<IdentifierRegistryEntry>
+{
+    public void Configure(EntityTypeBuilder<IdentifierRegistryEntry> builder)
+    {
+        builder.ToTable("IdentifierRegistryEntry");
+
+        builder.HasKey(e => e.Id);
+
+        builder.Property(e => e.Uil).HasMaxLength(150).IsUnicode(false);
+        builder.Property(e => e.VehiclePlateNumber).HasMaxLength(ColumnSizes.PlateNumber).IsUnicode(false);
+        builder.Property(e => e.TrailerPlateNumber).HasMaxLength(ColumnSizes.PlateNumber).IsUnicode(false);
+
+        builder.HasIndex(e => e.Uil).IsUnique();
+        builder.HasIndex(e => e.ShipmentId).IsUnique();
+
+        // La ricerca dell'autorità è per targa, della motrice o del rimorchio.
+        builder.HasIndex(e => e.VehiclePlateNumber);
+        builder.HasIndex(e => e.TrailerPlateNumber);
+
+        builder.HasOne(e => e.Shipment)
+            .WithOne()
+            .HasForeignKey<IdentifierRegistryEntry>(e => e.ShipmentId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }
 

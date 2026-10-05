@@ -5,13 +5,14 @@ using Dusiburg.AI.Trasporto.Efti.Core.Schema;
 // bench models) arrivano con la Fase 9.
 //
 // Uso: dotnet run --project tools/Dusiburg.AI.Trasporto.Eval -- docs
-//   docs   rigenera i documenti di docs/ che nascono dal codice (regole di validazione, copertura del dataset)
+//   docs   rigenera i documenti di docs/ che nascono dal codice (regole di validazione, copertura del dataset, ruoli)
 if (args is ["docs"])
 {
     string docs = Path.Combine(FindRepositoryRoot(), "docs");
 
     Write(Path.Combine(docs, GeneratedDocuments.ValidationRulesFile), GeneratedDocuments.RenderValidationRules());
     Write(Path.Combine(docs, GeneratedDocuments.CoverageFile), GeneratedDocuments.RenderCoverage(EftiSchemaCatalog.Default));
+    Write(Path.Combine(docs, GeneratedDocuments.RolesFile), GeneratedDocuments.RenderRoles());
 
     return 0;
 }

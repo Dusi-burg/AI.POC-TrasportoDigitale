@@ -1,8 +1,10 @@
 using System.Xml.Linq;
+using Dusiburg.AI.Trasporto.Efti.Api.Security;
 using Dusiburg.AI.Trasporto.Efti.Core.Dataset;
 using Dusiburg.AI.Trasporto.ServiceDefaults.Problems;
 using Dusiburg.AI.Trasporto.Shared.Contracts.Efti;
 using Dusiburg.AI.Trasporto.Shared.Contracts.Views.Efti;
+using Dusiburg.AI.Trasporto.Shared.Security;
 using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace Dusiburg.AI.Trasporto.Efti.Api.Shipments;
@@ -15,10 +17,17 @@ internal static class ShipmentEndpoints
 
     public static RouteGroupBuilder MapShipmentEndpoints(this RouteGroupBuilder api)
     {
-        api.MapPost("/shipments/import", ImportAsync);
-        api.MapGet("/shipments/{code}/dataset.xml", ExportDatasetAsync);
-        api.MapGet("/views/shipments", ListAsync);
-        api.MapGet("/views/shipments/{code}", GetAsync);
+        api.MapPost("/shipments/import", ImportAsync)
+            .RequireOperation(Operation.ShipmentImport);
+
+        api.MapGet("/shipments/{code}/dataset.xml", ExportDatasetAsync)
+            .RequireOperation(Operation.DatasetExport, http => http.RouteValue("code"));
+
+        api.MapGet("/views/shipments", ListAsync)
+            .RequireOperation(Operation.ShipmentList);
+
+        api.MapGet("/views/shipments/{code}", GetAsync)
+            .RequireOperation(Operation.ShipmentRead, http => http.RouteValue("code"));
 
         return api;
     }
@@ -28,7 +37,7 @@ internal static class ShipmentEndpoints
     /// binding delle Minimal API rifiuterebbe con 415 una POST senza corpo e senza Content-Type.
     /// </summary>
     private static async Task<Results<Ok<ImportShipmentsResponse>, ProblemHttpResult>> ImportAsync(
-        HttpRequest http, ShipmentImportService service, CancellationToken cancellationToken)
+        HttpRequest http, ShipmentImportService service, AuditNote note, CancellationToken cancellationToken)
     {
         try
         {
@@ -37,9 +46,15 @@ internal static class ShipmentEndpoints
                 : null;
             string? orderCode = string.IsNullOrWhiteSpace(request?.OrderCode) ? null : request.OrderCode.Trim();
 
-            return TypedResults.Ok(orderCode is null
+            ImportShipmentsResponse response = orderCode is null
                 ? await service.ImportAllAsync(cancellationToken)
-                : await service.ImportOneAsync(orderCode, cancellationToken));
+                : await service.ImportOneAsync(orderCode, cancellationToken);
+
+            note.ShipmentCode = orderCode is null ? null : response.Imported.FirstOrDefault()?.ShipmentCode;
+            note.Detail = $"{(orderCode is null ? "tutti gli ordini" : orderCode)}: {response.Imported.Count} importate, " +
+                $"{response.AlreadyImported.Count} già presenti, {response.Skipped.Count} annullate";
+
+            return TypedResults.Ok(response);
         }
         catch (TransportOrderNotFoundException exception)
         {

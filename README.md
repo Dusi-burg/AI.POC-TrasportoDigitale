@@ -7,8 +7,11 @@
 - Architecture and decisions (Italian): [docs/architettura.md](docs/architettura.md)
 - Dataset validation rules, one by one (Italian): [docs/regole-di-validazione.md](docs/regole-di-validazione.md)
 - Which eFTI dataset elements are covered and which are not (Italian): [docs/copertura-dataset.md](docs/copertura-dataset.md)
+- Who can do what (Italian): [docs/ruoli.md](docs/ruoli.md)
 
-> **Status**: Phases 1-3 complete. The simulated TMS exposes 6 demo orders plus 150 synthetic orders with deliberate defects; `Efti.Api` imports them, builds the eFTI dataset with the element names of the XSD schema (v0, 0.8), validates it with 29 declarative rules and exports it as schema-conformant XML. Next: Phase 4 — simulated identity, authorisation and audit trail.
+> **Status**: Phases 1-4 complete. The simulated TMS exposes 6 demo orders plus 150 synthetic orders with deliberate defects; `Efti.Api` imports them, builds the eFTI dataset with the element names of the XSD schema (v0, 0.8), validates it with 29 declarative rules and exports it as schema-conformant XML. Every operation requires a role and lands in an append-only audit trail; an authority reaches a consignment only from a licence plate, through an identifier registry, and reads the `EU03` and `EU05a` subsets derived from the schema. Next: Phase 5 — eFTI MCP server.
+
+Identity is **simulated**: one key per role in the `X-Api-Key` header, no real authentication.
 
 The eFTI XSD schemas in `data/efti-schema/` are unmodified copies from the reference implementation, under the Apache-2.0 licence ([attribution](data/efti-schema/README.md)).
 
@@ -24,6 +27,9 @@ dotnet user-secrets set "ConnectionStrings:sql" "Server=(localdb)\localdev;Datab
 
 # 2. Optional: cloud model key
 dotnet user-secrets set "Parameters:anthropic-api-key" "<key>" --project src/Dusiburg.AI.Trasporto.AppHost
+
+# 2b. One key per role (dispatcher, claimsmanager, authority, admin): any value, long and different for each
+dotnet user-secrets set "Parameters:api-key-dispatcher" "<key>" --project src/Dusiburg.AI.Trasporto.AppHost
 
 # 3. Database (drops and recreates it, with the TMS data; --no-seed leaves it empty)
 dotnet run --project tools/Dusiburg.AI.Trasporto.DbInit

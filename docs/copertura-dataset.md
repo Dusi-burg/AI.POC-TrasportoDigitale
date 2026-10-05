@@ -6,7 +6,7 @@ Schema: `consignment-common.xsd` versione **0.8** (`data/efti-schema/`). Identif
 
 Il POC copre il trasporto su strada e solo una parte del dataset comune. Lo stato nei sottoinsiemi è riportato come scritto nello schema (`M`, `C`, `O`, `SI` e combinazioni): il significato ufficiale di `SI` non è stato verificato sul Reg. delegato (UE) 2024/2024. Le caselle del CMR seguono il modello IRU e sono da riconfermare.
 
-## Elementi coperti (63)
+## Elementi coperti (64)
 
 | Elemento | Id eFTI | Formato | EU03 | EU05a | Origine | CMR |
 |---|---|---|---|---|---|---|
@@ -60,6 +60,7 @@ Il POC copre il trasporto su strada e solo una parte del dataset comune. Lo stat
 | `mainCarriageTransportMovement/dangerousGoodsIndicator` | eFTI1451 | — | — | — | righe dell'ordine: almeno una riga ADR | — |
 | `mainCarriageTransportMovement/usedTransportMeans/id` | eFTI618 | an..17 | M | C | viaggio: targa della motrice | — |
 | `mainCarriageTransportMovement/usedTransportMeans/registrationCountry/code` | eFTI578 | a2 | M | — | viaggio: paese della motrice | — |
+| `mainCarriageTransportMovement/usedTransportMeans/typeCode` | eFTI617 | an..3 | M | — | viaggio: tipo di mezzo (autocarro o trattore) | — |
 | `usedTransportEquipment/id` | eFTI374 | an..17 | M | O/C | viaggio: targa del rimorchio | — |
 | `usedTransportEquipment/categoryCode` | eFTI378 | an..3 | M | C | fisso: semirimorchio | — |
 | `usedTransportEquipment/registrationCountry/code` | eFTI578 | a2 | M | — | viaggio: paese del rimorchio | — |
@@ -74,7 +75,7 @@ Il POC copre il trasporto su strada e solo una parte del dataset comune. Lo stat
 | `transshipmentPermittedIndicator` | eFTI857 | n1 | — | — | ordine del TMS: trasbordo ammesso | 19 |
 | `consignorProvidedInformationText` | eFTI858 | an..256 | — | — | ordine del TMS: istruzioni del mittente | 13 |
 
-## Elementi dei sottoinsiemi non coperti (93)
+## Elementi dei sottoinsiemi non coperti (92)
 
 Elementi che lo schema assegna a EU03 o EU05a e che il POC non valorizza, limitati ai contenitori che il POC usa. Sono il perimetro dichiarato: un'autorità non li troverebbe nel dataset.
 
@@ -160,7 +161,6 @@ Elementi che lo schema assegna a EU03 o EU05a e che il POC non valorizza, limita
 | `includedConsignmentItem/transportDangerousGoods/dangerousGoodsLogisticsPackage/shippingMarks` | ASBIE1074 | — | — | SI |
 | `includedConsignmentItem/transportDangerousGoods/dangerousGoodsLogisticsPackage/statedCondition` | ASBIE1076 | — | — | SI |
 | `includedConsignmentItem/transportDangerousGoods/dangerousGoodsLogisticsPackage/typeText` | eFTI298 | an..35 | — | C |
-| `mainCarriageTransportMovement/usedTransportMeans/typeCode` | eFTI617 | an..3 | M | — |
 | `natureIdentificationCargo/operationalCategoryCode` | eFTI700 | an..3 | O | — |
 | `natureIdentificationCargo/statisticalClassificationCode` | eFTI701 | an..3 | O | — |
 | `natureIdentificationCargo/typeCode` | eFTI698 | an..3 | O | — |

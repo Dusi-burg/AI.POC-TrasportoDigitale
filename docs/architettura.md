@@ -1,12 +1,12 @@
 # Trasporto digitale — architettura
 
-> Aggiornato alla **Fase 3 (importazione, mappatura e validazione eFTI)**. Il documento cresce fase per fase: descrive ciò che il repository contiene oggi e segnala ciò che è previsto ma non ancora scritto.
+> Aggiornato alla **Fase 4 (identità simulata, autorizzazione e audit trail)**. Il documento cresce fase per fase: descrive ciò che il repository contiene oggi e segnala ciò che è previsto ma non ancora scritto.
 
 ## 1. Che cos'è
 
 POC dal punto di vista dell'**operatore vettore** del trasporto su strada: uno strato "eFTI-ready" sopra un TMS simulato (Release 1), poi la gestione di eccezioni e reclami (Release 2). Tutti i dati sono sintetici e fittizi.
 
-Stato: il TMS simulato espone 156 ordini di trasporto; `Efti.Api` li importa, costruisce per ciascuno il dataset eFTI con i nomi dello schema XSD, lo valida con regole dichiarative e lo esporta in XML conforme allo schema. Ruoli e audit, tool MCP, agenti ed estrazione dai CMR arrivano con le fasi 4–7.
+Stato: il TMS simulato espone 156 ordini di trasporto; `Efti.Api` li importa, costruisce per ciascuno il dataset eFTI con i nomi dello schema XSD, lo valida con regole dichiarative e lo esporta in XML conforme allo schema. Ogni operazione di `Efti.Api` richiede un ruolo e lascia una riga in un audit che il database non permette di modificare; l'autorità arriva a una spedizione solo da una targa, attraverso il registro degli identificatori. Tool MCP, agenti ed estrazione dai CMR arrivano con le fasi 5–7.
 
 ## 2. Topologia
 
@@ -32,7 +32,7 @@ Le frecce tratteggiate sono riferimenti già dichiarati nell'AppHost ma non anco
 |---|---|---|---|
 | `Tms.Api` | 5301 | TMS simulato, proprietario dello schema `tms` | viste degli ordini, reset della demo |
 | `Efti.Api` | 5302 | Nucleo eFTI, proprietario degli schemi `efti` e `audit` | importazione dal TMS, viste delle spedizioni, esportazione XML, `/api/health` |
-| `Efti.Mcp` | 5303 | Server MCP eFTI | endpoint `/mcp` senza tool |
+| `Efti.Mcp` | 5303 | Server MCP eFTI | endpoint `/mcp` raggiungibile solo con la chiave di un ruolo, ancora senza tool |
 | `Agents` | 5304 | Agenti, client MCP, nessun accesso al database | `/`, `/health` |
 | `Web` | 5306 | UI | pagina di stato |
 
@@ -56,7 +56,7 @@ Regole di confine, valide da subito:
 | `Efti.Core` | Logica deterministica del nucleo: lettura dello schema eFTI, ordine → spedizione, mappatura nel dataset, esportazione XML, regole di validazione, documenti generati |
 | `Ai` | Manopole dei modelli, fabbriche dei client, cattura dei prompt, probe di health |
 | `Documents.Extraction` | Estrazione dai CMR (vuoto), libreria ospitata da `Efti.Api` |
-| `Mcp.Hosting` | Composizione comune dei server MCP |
+| `Mcp.Hosting` | Composizione comune dei server MCP: trasporto e chiave di ruolo |
 | `tools/DbInit` | Ricrea il database dal modello, senza migration, e inserisce i dati del TMS |
 | `tools/Eval` | CLI: per ora il solo comando `docs`, che rigenera i documenti nati dal codice; i comandi di valutazione arrivano con la Fase 9 |
 
@@ -111,6 +111,7 @@ Segreti, solo negli user-secrets dell'AppHost: `ConnectionStrings:sql` e `Parame
 | 9 | Chiave Anthropic | assente con estrazione o mappatura instradate sul cloud | assente, nessun compito attivo la richiede |
 | 10 | Posizionamento dei modelli | — | embedding in VRAM, chat non tutta in VRAM |
 | 11 | Schema eFTI | i file XSD non si leggono o non si compilano | — |
+| 12 | Chiavi di ruolo | — | un ruolo non ha la sua chiave e non può autenticarsi |
 
 Il controllo 9 guarda solo se la chiave è presente: non chiama l'API.
 
@@ -144,6 +145,7 @@ Il TMS è **permissivo per scelta**: mittente e destinatario sono testo dell'ord
 | `ConsignmentItem` | (`ShipmentId`, `SequenceNumber`) | riga di merce |
 | `EftiDataset` | (`ShipmentId`, `Version`) | dataset in JSON, versione dello schema, stato |
 | `ValidationIssue` | — | regola, gravità, campo e messaggio di un problema |
+| `IdentifierRegistryEntry` | `Uil` univoco; una riga per spedizione | voce del registro degli identificatori: UIL, targhe normalizzate, sottoinsieme degli identificatori in JSON |
 | Lookup | — | `PartyRole`, `DatasetStatus`, `IssueSeverity`, `PackageType`, `FreightPayment` |
 
 Lo schema nasce vuoto: lo riempie l'importazione dal TMS (Fase 3). `TmsOrderCode` univoco rende l'importazione idempotente. `PackageType` e `FreightPayment` hanno una lookup per schema, perché uno schema non referenzia tabelle di un altro proprietario.
@@ -175,7 +177,7 @@ Dati sintetici: 30 clienti, 26 mezzi, 12 autisti, 150 ordini (`TO-2001`…`TO-21
 | `InvalidCountryCode` | paese del destinatario non ISO a due lettere |
 | `DeliveryBeforePickup` | data di consegna pattuita precedente alla presa |
 
-Con il seed di default: 47 ordini difettosi su 150, 59 difetti. I difetti assegnati non sono una tabella: `DbInit` ne stampa la distribuzione e un test verifica, ordine per ordine, che ogni difetto assegnato si veda nel dato e che non ce ne siano altri.
+Con il seed di default: 42 ordini difettosi su 150, 53 difetti. I mezzi dei viaggi demo sono riservati a quei viaggi, così una targa demo porta a una sola spedizione. I difetti assegnati non sono una tabella: `DbInit` ne stampa la distribuzione e un test verifica, ordine per ordine, che ogni difetto assegnato si veda nel dato e che non ce ne siano altri.
 
 Identificativi fittizi: targhe con prefisso `ZZ` e `XZ` (serie non assegnate), partite IVA italiane generate con codice ufficio `000` (inesistente) e cifra di controllo corretta, partite IVA estere con il blocco `999`, email sul dominio riservato `.example`.
 
@@ -220,7 +222,7 @@ flowchart LR
 
 Particolarità dello schema che la mappatura rispetta: le righe di merce non hanno descrizione né peso propri (natura della merce, colli e peso stanno sulla spedizione; la riga porta volume e merci pericolose); la partita IVA sta in `taxRegistration/id`, che non è nei sottoinsiemi dell'autorità; le date hanno un formato proprio (`102` = `CCYYMMDD`, `205` = `CCYYMMDDHHMM±HHMM`).
 
-La copertura è dichiarata in `DatasetCoverage` e documentata in [copertura-dataset.md](copertura-dataset.md), generato dallo schema: 63 elementi coperti, e l'elenco dei 93 elementi dei sottoinsiemi `EU03` ed `EU05a` che il POC non valorizza (limitato ai contenitori che il POC usa).
+La copertura è dichiarata in `DatasetCoverage` e documentata in [copertura-dataset.md](copertura-dataset.md), generato dallo schema: 64 elementi coperti, e l'elenco dei 92 elementi dei sottoinsiemi `EU03` ed `EU05a` che il POC non valorizza (limitato ai contenitori che il POC usa).
 
 ### 7.3 Validazione
 
@@ -240,21 +242,91 @@ Nessun modello partecipa alla validazione. Il golden set `data/golden_validation
 | `GET /api/shipments/{code}/dataset.xml` | XML del dataset; l'intestazione `X-Efti-Dataset-Status` ne dice lo stato |
 | `POST /dev/reset` | solo in Development: svuota lo schema `efti` |
 
-L'importazione è **idempotente sul codice dell'ordine**: una spedizione già importata non viene riletta né toccata, perché da quel momento il dataset cambia solo con una decisione umana registrata. Gli ordini annullati non diventano spedizioni. Con il seed di default: 147 spedizioni, 100 `Valid` e 47 `Incomplete`.
+L'importazione è **idempotente sul codice dell'ordine**: una spedizione già importata non viene riletta né toccata, perché da quel momento il dataset cambia solo con una decisione umana registrata. Gli ordini annullati non diventano spedizioni. Con il seed di default: 147 spedizioni, 105 `Valid` e 42 `Incomplete`.
 
 ### 7.5 Documenti generati
 
-`docs/regole-di-validazione.md` e `docs/copertura-dataset.md` nascono dal codice e si rigenerano con `dotnet run --project tools/Dusiburg.AI.Trasporto.Eval -- docs`. Un test confronta i file con ciò che il codice produce: se una regola o la copertura cambiano senza rigenerare, la build dei test fallisce.
+`docs/regole-di-validazione.md`, `docs/copertura-dataset.md` e `docs/ruoli.md` nascono dal codice e si rigenerano con `dotnet run --project tools/Dusiburg.AI.Trasporto.Eval -- docs`. Un test confronta i file con ciò che il codice produce: se una regola o la copertura cambiano senza rigenerare, la build dei test fallisce.
 
-## 8. Test e CI
+## 8. Identità, ruoli e audit
+
+### 8.1 Identità simulata
+
+Chi chiama `Efti.Api` manda una chiave nell'intestazione `X-Api-Key`; la chiave dice quale dei quattro utenti dimostrativi sta chiamando (uno per ruolo: `Dispatcher`, `ClaimsManager`, `Authority`, `Admin`). Le chiavi stanno negli user-secrets dell'AppHost (`Parameters:api-key-<ruolo>`) e arrivano ai servizi come `ApiKeys__<Ruolo>`. Non è autenticazione reale, e il POC non la presenta come tale: ciò che dimostra è il controllo che viene dopo.
+
+Senza chiave o con una chiave sconosciuta la risposta è 401; con un ruolo non autorizzato è 403. In entrambi i casi il corpo è un `ProblemDetails` con `code = UNAUTHORIZED`.
+
+### 8.2 Matrice dei ruoli
+
+La matrice ruolo × operazione × ambito è un elenco dichiarativo (`AuthorizationPolicy` in `Efti.Core`): ciò che non è elencato è negato. Il documento [ruoli.md](ruoli.md) è generato da quell'elenco.
+
+| Operazione | `Dispatcher` | `ClaimsManager` | `Authority` | `Admin` |
+|---|---|---|---|---|
+| `IdentityRead` | sé | sé | sé | sé |
+| `ShipmentList`, `ShipmentRead`, `DatasetExport` | tutte | tutte | — | tutte |
+| `ShipmentImport` | tutte | — | — | — |
+| `IdentifierSearch` | — | — | registro | — |
+| `SubsetRead` | — | — | sottoinsieme | — |
+| `AuthorityAccessRead` | accessi | — | — | accessi |
+| `AuditRead` | — | — | — | audit |
+
+`/api/health` è il solo endpoint pubblico. Un test elenca gli endpoint sotto `/api` e fallisce se uno non dichiara la propria operazione, o se l'endpoint scritto nella matrice non è quello vero.
+
+### 8.3 Un solo punto di passaggio
+
+Ogni endpoint dichiara la propria operazione con `RequireOperation(...)`. Da lì passa per `AccessFilter`, che fa quattro cose in ordine: riconosce l'attore dalla chiave, consulta la matrice, lascia eseguire l'operazione, registra l'esito.
+
+| Esito nell'audit | Quando |
+|---|---|
+| `Denied` | chiave assente o sconosciuta, oppure ruolo non autorizzato |
+| `Success` | operazione riuscita |
+| `Failed` | operazione autorizzata ma non riuscita (risorsa inesistente, conflitto, errore) |
+
+Se l'audit non si può scrivere, la richiesta fallisce: nessuna operazione senza traccia.
+
+### 8.4 Audit append-only
+
+Tabella `audit.AuditEvent`: istante, attore, ruolo, operazione, risorsa, spedizione interessata, esito, motivo, dettaglio, trace id. Il trace id è quello della traccia OpenTelemetry della richiesta, quindi ogni evento si apre nel dashboard di Aspire.
+
+L'audit è append-only **per vincolo del database**: un trigger `INSTEAD OF UPDATE, DELETE` solleva un errore. EF non descrive i trigger nel modello, quindi lo crea `DbInit` subito dopo le tabelle. Un test prova a modificare e a cancellare, in tre modi, e verifica che il database rifiuti.
+
+`GET /api/audit` (solo `Admin`) lo legge con filtri per ruolo, operazione, esito, spedizione e risorsa.
+
+### 8.5 Gate simulato e sottoinsiemi dell'autorità
+
+Nell'eFTI reale l'autorità non interroga la piattaforma: passa da un gate nazionale, che tiene un registro di identificatori. Il POC ne simula il minimo.
+
+```mermaid
+flowchart LR
+    A([Autorità]) -- "targa" --> R["Registro degli identificatori<br/>GET /api/gate/identifiers"]
+    R -- "UIL + identificatori" --> A
+    A -- "UIL + EU03 | EU05a" --> S["Sottoinsieme<br/>GET /api/gate/subset"]
+    S -- "solo gli elementi del sottoinsieme" --> A
+    S --> AU[("audit.AuditEvent")]
+    R --> AU
+    AU --> O([Operatore])
+```
+
+- **UIL** = `gateId:platformId:datasetId`, dove `datasetId` è l'identificativo pubblico della spedizione.
+- Sul registro vanno **solo le spedizioni con dataset `Valid`**: è ciò che le rende raggiungibili. Con il seed di default, 105 su 147.
+- La voce del registro contiene il **sottoinsieme degli identificatori**: la proiezione del dataset sugli elementi di `consignment-identifier.xsd`. Targhe, paesi, date, modo di trasporto, indicatore di merci pericolose. Nessun soggetto, nessuna merce.
+- Con l'UIL l'autorità chiede `EU03` (dati generali) o `EU05a` (merci pericolose). `EftiSubsetProjector` tiene del dataset solo gli elementi che lo schema annota con quel sottoinsieme, a ogni livello: **nessun elenco di campi è scritto nel codice**. Un test confronta la proiezione, per ogni spedizione del seed, con un calcolo indipendente fatto sullo schema.
+
+L'autorità non ha altra strada: non può elencare le spedizioni né leggerle per codice. Partita IVA e dati contrattuali non sono in nessuno dei due sottoinsiemi.
+
+### 8.6 Accessi visibili all'operatore
+
+`GET /api/shipments/{code}/authority-access` (`Dispatcher`, `Admin`) mostra quando un'autorità ha consultato una spedizione: le letture di sottoinsieme fatte con il suo UIL e le ricerche per una delle sue targhe, se in quel momento la spedizione era sul gate. È il requisito del Reg. di esecuzione (UE) 2025/2243 sulla notifica degli accessi, letto dall'audit senza una struttura dedicata.
+
+## 9. Test e CI
 
 - `Ai.Tests`: manopole, fabbriche dei client, aggregazione dei controlli. Nessuna chiamata a un modello.
-- `Efti.Core.Tests`: catalogo dello schema; mappatura; esportazione XML e conformità all'XSD; regole sugli ordini demo, sui difetti del seed (esiti esatti) e sul golden set; allineamento dei documenti generati e della copertura dichiarata. Nessun database.
-- `Efti.Api.Tests`: endpoint con probe finti; controlli SQL veri su un database usa-e-getta creato da `DbInit`; convenzioni del modello dati su tutti i `DbContext`; schemi, lookup e vincoli dello schema `efti`; importazione, viste ed esportazione con un TMS finto.
+- `Efti.Core.Tests`: catalogo dello schema; mappatura; esportazione XML e conformità all'XSD; regole sugli ordini demo, sui difetti del seed (esiti esatti) e sul golden set; matrice dei ruoli cella per cella; sottoinsiemi dell'autorità e identificatori; allineamento dei documenti generati e della copertura dichiarata. Nessun database.
+- `Efti.Api.Tests`: endpoint con probe finti; controlli SQL veri su un database usa-e-getta creato da `DbInit`; convenzioni del modello dati su tutti i `DbContext`; schemi, lookup e vincoli dello schema `efti`; importazione, viste ed esportazione con un TMS finto; **l'intera matrice dei ruoli via HTTP** con il relativo evento di audit; flusso dell'autorità; audit non modificabile.
 - `Tms.Api.Tests`: invarianti degli ordini demo; generatore dei dati sintetici (ripetibilità, dimensioni, difetti); viste e reset su un database usa-e-getta.
 - La CI gira su Windows con LocalDB. I test della categoria `RequiresSql2025` si saltano se LocalDB è più vecchio della versione 17 e restano obbligatori in locale.
 
-## 9. Decisioni
+## 10. Decisioni
 
 Gli identificativi sono quelli del piano di progetto.
 
@@ -286,7 +358,16 @@ Gli identificativi sono quelli del piano di progetto.
 | F3.4 | La conformità all'XSD si controlla solo se nessuna regola bloccante è violata | Controllarla sempre: per lo stesso difetto un messaggio comprensibile e uno dell'XSD |
 | F3.5 | Una spedizione importata non si reimporta | Aggiornarla a ogni importazione: il dataset cambierebbe senza una decisione umana |
 | F3.6 | Mapper e importazione non correggono il dato | Normalizzare in ingresso: nasconderebbe i difetti che la demo deve mostrare e risolvere con una decisione registrata |
-| F3.7 | I codici non verificabili sullo schema sono dichiarati tali; il tipo di mezzo (obbligatorio in `EU03`) resta non coperto | Scrivere un codice non verificato in un campo obbligatorio |
+| F3.7 | I codici non verificabili sullo schema sono dichiarati tali; il tipo di mezzo (obbligatorio in `EU03`) è stato mappato solo in Fase 4, dopo averlo riscontrato sulla lista UN/ECE Rec. 28 (`31` autocarro, `33` trattore) | Scrivere un codice non verificato in un campo obbligatorio |
+| G12 | Identità simulata: una chiave per ruolo, un utente dimostrativo per ruolo | Entra ID o OIDC: i ruoli sono il cuore della demo, l'autenticazione no |
+| F4.1 | Autorizzazione e audit in un filtro di endpoint, uno per tutti | Controlli scritti dentro ogni endpoint: basta dimenticarne uno |
+| F4.2 | L'audit registra anche i rifiuti e le operazioni fallite | Registrare solo ciò che riesce: i tentativi negati sono la parte più interessante |
+| F4.3 | Append-only imposto da un trigger del database | Disciplina del codice: chiunque abbia accesso al database potrebbe riscrivere la storia |
+| F4.4 | Sottoinsiemi e identificatori sono proiezioni ricavate dallo schema | Elenco dei campi per sottoinsieme scritto a mano (era la prima versione del piano) |
+| F4.5 | Sul gate va solo un dataset `Valid` | Pubblicare tutto: un'autorità leggerebbe dati incompleti come se fossero buoni |
+| F4.6 | 401 per chi non si fa riconoscere, 403 per il ruolo sbagliato, stesso codice `UNAUTHORIZED` | Un solo stato: chi chiama non distinguerebbe una chiave sbagliata da un permesso mancante |
+| F4.7 | Gli accessi dell'autorità si leggono dall'audit | Una tabella di notifiche dedicata: un secondo registro da tenere coerente con il primo |
+| F4.8 | I mezzi dei viaggi demo sono riservati a quei viaggi | Flotta condivisa: una targa demo portava a 17 spedizioni e lo scenario del controllo su strada perdeva chiarezza |
 
 ### Versioni
 

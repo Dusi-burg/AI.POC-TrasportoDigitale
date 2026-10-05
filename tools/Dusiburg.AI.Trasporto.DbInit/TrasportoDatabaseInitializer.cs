@@ -49,6 +49,9 @@ public static class TrasportoDatabaseInitializer
 
         await audit.Database.GetService<IRelationalDatabaseCreator>().CreateTablesAsync(cancellationToken);
 
+        // L'audit è append-only per vincolo del database, non per disciplina del codice: il trigger non fa parte del modello EF.
+        await audit.Database.ExecuteSqlRawAsync(AuditDbContext.AppendOnlyTriggerSql, cancellationToken);
+
         return seed
             ? await TmsSeeder.SeedAsync(tms, randomSeed, today ?? DateOnly.FromDateTime(DateTime.Today), cancellationToken)
             : null;

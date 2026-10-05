@@ -7,8 +7,11 @@ POC **"Trasporto digitale"**: dal punto di vista del vettore su strada, uno stra
 - Architettura e decisioni: [docs/architettura.md](docs/architettura.md)
 - Regole di validazione del dataset, una per una: [docs/regole-di-validazione.md](docs/regole-di-validazione.md)
 - Quali elementi del dataset eFTI sono coperti e quali no: [docs/copertura-dataset.md](docs/copertura-dataset.md)
+- Chi può fare che cosa: [docs/ruoli.md](docs/ruoli.md)
 
-> **Stato**: Fasi 1-3 completate. Il TMS simulato espone 6 ordini demo e 150 ordini sintetici con difetti voluti; `Efti.Api` li importa, costruisce il dataset eFTI con i nomi dello schema XSD (v0, 0.8), lo valida con 29 regole dichiarative e lo esporta in XML conforme allo schema. Prossima: Fase 4 — identità simulata, autorizzazione e audit trail.
+> **Stato**: Fasi 1-4 completate. Il TMS simulato espone 6 ordini demo e 150 ordini sintetici con difetti voluti; `Efti.Api` li importa, costruisce il dataset eFTI con i nomi dello schema XSD (v0, 0.8), lo valida con 29 regole dichiarative e lo esporta in XML conforme allo schema. Ogni operazione richiede un ruolo e finisce in un audit append-only; l'autorità arriva a una spedizione solo da una targa, attraverso un registro degli identificatori, e legge i sottoinsiemi `EU03` ed `EU05a` ricavati dallo schema. Prossima: Fase 5 — server MCP eFTI.
+
+L'identità è **simulata**: una chiave per ruolo nell'intestazione `X-Api-Key`, nessuna autenticazione reale.
 
 Gli schemi XSD eFTI in `data/efti-schema/` sono copie inalterate dell'implementazione di riferimento, sotto licenza Apache-2.0 ([attribuzione](data/efti-schema/README.md)).
 
@@ -24,6 +27,9 @@ dotnet user-secrets set "ConnectionStrings:sql" "Server=(localdb)\localdev;Datab
 
 # 2. Facoltativo: chiave del modello cloud
 dotnet user-secrets set "Parameters:anthropic-api-key" "<chiave>" --project src/Dusiburg.AI.Trasporto.AppHost
+
+# 2b. Una chiave per ruolo (dispatcher, claimsmanager, authority, admin): un valore qualsiasi, lungo e diverso per ciascuno
+dotnet user-secrets set "Parameters:api-key-dispatcher" "<chiave>" --project src/Dusiburg.AI.Trasporto.AppHost
 
 # 3. Database (lo cancella e lo ricrea, con i dati del TMS; --no-seed per lasciarlo vuoto)
 dotnet run --project tools/Dusiburg.AI.Trasporto.DbInit
