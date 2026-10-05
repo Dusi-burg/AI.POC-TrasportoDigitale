@@ -1,0 +1,26 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Dusiburg.AI.Trasporto.Agents/Dusiburg.AI.Trasporto.Agents.csproj" />
+    <Project Path="src/Dusiburg.AI.Trasporto.Ai/Dusiburg.AI.Trasporto.Ai.csproj" />
+    <Project Path="src/Dusiburg.AI.Trasporto.AppHost/Dusiburg.AI.Trasporto.AppHost.csproj" />
+    <Project Path="src/Dusiburg.AI.Trasporto.Documents.Extraction/Dusiburg.AI.Trasporto.Documents.Extraction.csproj" />
+    <Project Path="src/Dusiburg.AI.Trasporto.Efti.Api/Dusiburg.AI.Trasporto.Efti.Api.csproj" />
+    <Project Path="src/Dusiburg.AI.Trasporto.Efti.Core/Dusiburg.AI.Trasporto.Efti.Core.csproj" />
+    <Project Path="src/Dusiburg.AI.Trasporto.Efti.Data/Dusiburg.AI.Trasporto.Efti.Data.csproj" />
+    <Project Path="src/Dusiburg.AI.Trasporto.Efti.Mcp/Dusiburg.AI.Trasporto.Efti.Mcp.csproj" />
+    <Project Path="src/Dusiburg.AI.Trasporto.Mcp.Hosting/Dusiburg.AI.Trasporto.Mcp.Hosting.csproj" />
+    <Project Path="src/Dusiburg.AI.Trasporto.ServiceDefaults/Dusiburg.AI.Trasporto.ServiceDefaults.csproj" />
+    <Project Path="src/Dusiburg.AI.Trasporto.Shared/Dusiburg.AI.Trasporto.Shared.csproj" />
+    <Project Path="src/Dusiburg.AI.Trasporto.Tms.Api/Dusiburg.AI.Trasporto.Tms.Api.csproj" />
+    <Project Path="src/Dusiburg.AI.Trasporto.Tms.Data/Dusiburg.AI.Trasporto.Tms.Data.csproj" />
+    <Project Path="src/Dusiburg.AI.Trasporto.Web/Dusiburg.AI.Trasporto.Web.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Dusiburg.AI.Trasporto.Ai.Tests/Dusiburg.AI.Trasporto.Ai.Tests.csproj" />
+    <Project Path="tests/Dusiburg.AI.Trasporto.Efti.Api.Tests/Dusiburg.AI.Trasporto.Efti.Api.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tools/">
+    <Project Path="tools/Dusiburg.AI.Trasporto.DbInit/Dusiburg.AI.Trasporto.DbInit.csproj" />
+    <Project Path="tools/Dusiburg.AI.Trasporto.Eval/Dusiburg.AI.Trasporto.Eval.csproj" />
+  </Folder>
+</Solution>

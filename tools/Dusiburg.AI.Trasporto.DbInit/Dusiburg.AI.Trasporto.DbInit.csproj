@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Inizializzazione da zero del database Trasporto dal modello EF, senza migration (G9). -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Dusiburg.AI.Trasporto.Tms.Data\Dusiburg.AI.Trasporto.Tms.Data.csproj" />
+    <ProjectReference Include="..\..\src\Dusiburg.AI.Trasporto.Efti.Data\Dusiburg.AI.Trasporto.Efti.Data.csproj" />
+  </ItemGroup>
+
+</Project>

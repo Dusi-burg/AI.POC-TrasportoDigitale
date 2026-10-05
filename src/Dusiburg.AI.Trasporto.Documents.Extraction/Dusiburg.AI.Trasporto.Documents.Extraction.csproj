@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Testo dal PDF ed estrazione tipizzata del CMR (Fase 7): libreria ospitata da Efti.Api (P3). -->
+
+  <ItemGroup>
+    <ProjectReference Include="..\Dusiburg.AI.Trasporto.Shared\Dusiburg.AI.Trasporto.Shared.csproj" />
+    <ProjectReference Include="..\Dusiburg.AI.Trasporto.Ai\Dusiburg.AI.Trasporto.Ai.csproj" />
+  </ItemGroup>
+
+</Project>

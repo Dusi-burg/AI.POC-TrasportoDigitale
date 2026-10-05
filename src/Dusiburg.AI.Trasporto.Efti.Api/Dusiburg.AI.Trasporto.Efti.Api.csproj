@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <ItemGroup>
+    <PackageReference Include="Aspire.Microsoft.EntityFrameworkCore.SqlServer" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Dusiburg.AI.Trasporto.ServiceDefaults\Dusiburg.AI.Trasporto.ServiceDefaults.csproj" />
+    <ProjectReference Include="..\Dusiburg.AI.Trasporto.Efti.Data\Dusiburg.AI.Trasporto.Efti.Data.csproj" />
+    <ProjectReference Include="..\Dusiburg.AI.Trasporto.Efti.Core\Dusiburg.AI.Trasporto.Efti.Core.csproj" />
+    <!-- Librerie ospitate dall'API, non servizi separati (P3) -->
+    <ProjectReference Include="..\Dusiburg.AI.Trasporto.Ai\Dusiburg.AI.Trasporto.Ai.csproj" />
+    <ProjectReference Include="..\Dusiburg.AI.Trasporto.Documents.Extraction\Dusiburg.AI.Trasporto.Documents.Extraction.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Dusiburg.AI.Trasporto.Efti.Api.Tests" />
+  </ItemGroup>
+
+</Project>

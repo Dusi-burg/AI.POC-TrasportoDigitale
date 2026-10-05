@@ -1,0 +1,35 @@
+@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Stato";
+}
+
+<h1 class="h3 mb-3">Stato del sistema</h1>
+<p class="text-muted">SQL Server 2025, Ollama, modelli di chat e di embedding, chiave del modello cloud. Il database si crea da riga di
+    comando con <code>DbInit</code>.</p>
+
+@if (Model.Error is { } error)
+{
+    <div class="alert alert-danger">@error</div>
+}
+
+@if (Model.Report is { } report)
+{
+    <div class="table-responsive">
+        <table class="table table-sm align-middle">
+            <thead><tr><th>#</th><th>Controllo</th><th>Esito</th><th class="text-end">Durata</th><th>Dettaglio</th></tr></thead>
+            <tbody>
+                @foreach (var check in report.Checks)
+                {
+                    <tr>
+                        <td>@check.Number</td>
+                        <td>@check.Name</td>
+                        <td><span class="badge @HealthPresentation.BadgeClass(check.Status)">@HealthPresentation.Label(check.Status)</span></td>
+                        <td class="text-end">@check.Duration.TotalMilliseconds.ToString("0") ms</td>
+                        <td class="small">@check.Detail</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

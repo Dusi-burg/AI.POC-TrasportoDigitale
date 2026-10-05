@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- CLI di valutazione e confronto dei modelli (Fase 9). -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Dusiburg.AI.Trasporto.Shared\Dusiburg.AI.Trasporto.Shared.csproj" />
+    <ProjectReference Include="..\..\src\Dusiburg.AI.Trasporto.Ai\Dusiburg.AI.Trasporto.Ai.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Infrastruttura comune dei server MCP: trasporto; dalle fasi 4-5 API key di ruolo, filtro sui tool, errori strutturati. -->
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+
+    <PackageReference Include="ModelContextProtocol.AspNetCore" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Dusiburg.AI.Trasporto.ServiceDefaults\Dusiburg.AI.Trasporto.ServiceDefaults.csproj" />
+  </ItemGroup>
+
+</Project>

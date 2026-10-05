@@ -1,0 +1,17 @@
+<Project Sdk="Aspire.AppHost.Sdk/13.6.0">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AspireUseCliBundle>true</AspireUseCliBundle>
+    <UserSecretsId>58c46292-d7e6-4c1a-bec4-16d48b31292f</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Dusiburg.AI.Trasporto.Tms.Api\Dusiburg.AI.Trasporto.Tms.Api.csproj" />
+    <ProjectReference Include="..\Dusiburg.AI.Trasporto.Efti.Api\Dusiburg.AI.Trasporto.Efti.Api.csproj" />
+    <ProjectReference Include="..\Dusiburg.AI.Trasporto.Efti.Mcp\Dusiburg.AI.Trasporto.Efti.Mcp.csproj" />
+    <ProjectReference Include="..\Dusiburg.AI.Trasporto.Agents\Dusiburg.AI.Trasporto.Agents.csproj" />
+    <ProjectReference Include="..\Dusiburg.AI.Trasporto.Web\Dusiburg.AI.Trasporto.Web.csproj" />
+  </ItemGroup>
+
+</Project>

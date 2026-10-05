@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Modello dati del nucleo eFTI (schemi efti e audit, un DbContext per schema: P1): usato da Efti.Api e dal tool DbInit. Nessuna migration (G9). -->
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Dusiburg.AI.Trasporto.Shared\Dusiburg.AI.Trasporto.Shared.csproj" />
+  </ItemGroup>
+
+</Project>

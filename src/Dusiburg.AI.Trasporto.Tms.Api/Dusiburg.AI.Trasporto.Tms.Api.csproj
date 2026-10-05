@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <ItemGroup>
+    <PackageReference Include="Aspire.Microsoft.EntityFrameworkCore.SqlServer" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Dusiburg.AI.Trasporto.ServiceDefaults\Dusiburg.AI.Trasporto.ServiceDefaults.csproj" />
+    <ProjectReference Include="..\Dusiburg.AI.Trasporto.Tms.Data\Dusiburg.AI.Trasporto.Tms.Data.csproj" />
+  </ItemGroup>
+
+</Project>
