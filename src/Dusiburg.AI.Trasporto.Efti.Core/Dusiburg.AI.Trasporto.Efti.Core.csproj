@@ -1,9 +1,20 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- Logica deterministica del nucleo (mapper, regole di validazione, autorizzazione, confidenza): nessun accesso a database o modelli. -->
+  <!-- Logica deterministica del nucleo (schema eFTI, mappatura, regole di validazione; poi autorizzazione e confidenza):
+       lavora sul grafo delle entità in memoria, senza DbContext e senza modelli. -->
 
   <ItemGroup>
     <ProjectReference Include="..\Dusiburg.AI.Trasporto.Shared\Dusiburg.AI.Trasporto.Shared.csproj" />
+    <ProjectReference Include="..\Dusiburg.AI.Trasporto.Efti.Data\Dusiburg.AI.Trasporto.Efti.Data.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Schemi XSD eFTI (Apache-2.0, data/efti-schema/README.md): copiati accanto all'assembly, in efti-schema/. -->
+    <Content Include="..\..\data\efti-schema\**\*.xsd" Link="efti-schema\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Dusiburg.AI.Trasporto.Efti.Core.Tests" />
   </ItemGroup>
 
 </Project>

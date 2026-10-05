@@ -21,6 +21,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Dusiburg.AI.Trasporto.Efti.Api\Dusiburg.AI.Trasporto.Efti.Api.csproj" />
+    <!-- TMS finto dei test di importazione: serve gli ordini del seed con le viste vere di Tms.Api -->
+    <ProjectReference Include="..\..\src\Dusiburg.AI.Trasporto.Tms.Api\Dusiburg.AI.Trasporto.Tms.Api.csproj" />
     <!-- Creazione dei database di test dal modello -->
     <ProjectReference Include="..\..\tools\Dusiburg.AI.Trasporto.DbInit\Dusiburg.AI.Trasporto.DbInit.csproj" />
   </ItemGroup>

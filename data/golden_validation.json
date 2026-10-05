@@ -1,0 +1,111 @@
+{
+  "description": "Golden set della validazione eFTI. Ogni caso parte da un ordine del TMS valido (base), cambia alcuni campi (set) e dichiara i codici delle regole che devono scattare, tutti e soli. I percorsi di 'set' seguono il JSON della vista del TMS; il prefisso 'carrier.' cambia l'anagrafica del vettore.",
+  "bases": {
+    "international": {
+      "order": {
+        "code": "TO-G001", "customerCode": "CUS-001", "customerName": "Officine Meccaniche Brambilla S.r.l.", "status": "InTransit",
+        "orderDate": "2026-10-01", "consignorName": "Officine Meccaniche Brambilla S.r.l.", "pickupCity": "Segrate", "pickupCountryCode": "IT",
+        "consigneeName": "Maschinenbau Neckartal GmbH", "deliveryCity": "Stuttgart", "deliveryCountryCode": "DE",
+        "pickupDate": "2026-10-04", "deliveryDate": "2026-10-06", "totalPackages": 8, "totalGrossWeightKg": 2460,
+        "hasDangerousGoods": false, "tripCode": "TR-G001"
+      },
+      "consignor": { "name": "Officine Meccaniche Brambilla S.r.l.", "vatNumber": "IT01000010007", "street": "Via dell'Industria 12", "postalCode": "20054", "city": "Segrate", "countryCode": "IT" },
+      "consignee": { "name": "Maschinenbau Neckartal GmbH", "vatNumber": "DE999000011", "street": "Industriestraße 40", "postalCode": "70565", "city": "Stuttgart", "countryCode": "DE" },
+      "pickup": { "street": "Via dell'Industria 12", "postalCode": "20054", "city": "Segrate", "countryCode": "IT" },
+      "delivery": { "street": "Industriestraße 40", "postalCode": "70565", "city": "Stuttgart", "countryCode": "DE" },
+      "pickedUpAt": "2026-10-04T08:30:00+01:00",
+      "deliveredAt": null,
+      "cmrNumber": "CMR-G001001",
+      "freightAmount": 1450,
+      "freightPayment": "Prepaid",
+      "currencyCode": "EUR",
+      "codAmount": null,
+      "declaredValue": null,
+      "transshipmentAllowed": true,
+      "senderInstructions": null,
+      "trip": {
+        "code": "TR-G001", "departureDate": "2026-10-04",
+        "vehicle": { "plateNumber": "ZZ101AA", "countryCode": "IT", "type": "Tractor" },
+        "trailer": { "plateNumber": "XZ101AA", "countryCode": "IT", "type": "SemiTrailer" },
+        "driverCode": "DRV-01", "subcontractor": null
+      },
+      "lines": [
+        { "lineNumber": 1, "description": "Cuscinetti e supporti industriali", "packageCount": 6, "packageType": "Pallet", "grossWeightKg": 1840, "volumeM3": 7.2, "isDangerousGoods": false, "unNumber": null, "properShippingName": null, "adrClass": null, "packingGroup": null },
+        { "lineNumber": 2, "description": "Motori elettrici trifase", "packageCount": 2, "packageType": "Crate", "grossWeightKg": 620, "volumeM3": 1.8, "isDangerousGoods": false, "unNumber": null, "properShippingName": null, "adrClass": null, "packingGroup": null }
+      ]
+    },
+    "nationalAdr": {
+      "order": {
+        "code": "TO-G002", "customerCode": "CUS-004", "customerName": "Imballaggi Tirreno S.r.l.", "status": "Planned",
+        "orderDate": "2026-10-03", "consignorName": "Imballaggi Tirreno S.r.l.", "pickupCity": "Livorno", "pickupCountryCode": "IT",
+        "consigneeName": "Colorificio Padano S.r.l.", "deliveryCity": "Piacenza", "deliveryCountryCode": "IT",
+        "pickupDate": "2026-10-07", "deliveryDate": "2026-10-08", "totalPackages": 28, "totalGrossWeightKg": 5300,
+        "hasDangerousGoods": true, "tripCode": "TR-G002"
+      },
+      "consignor": { "name": "Imballaggi Tirreno S.r.l.", "vatNumber": "IT01000040004", "street": "Via Aurelia 150", "postalCode": "57121", "city": "Livorno", "countryCode": "IT" },
+      "consignee": { "name": "Colorificio Padano S.r.l.", "vatNumber": "IT10000010008", "street": "Via Enrico Fermi 21", "postalCode": "29122", "city": "Piacenza", "countryCode": "IT" },
+      "pickup": { "street": "Via Aurelia 150", "postalCode": "57121", "city": "Livorno", "countryCode": "IT" },
+      "delivery": { "street": "Via Enrico Fermi 21", "postalCode": "29122", "city": "Piacenza", "countryCode": "IT" },
+      "pickedUpAt": null,
+      "deliveredAt": null,
+      "cmrNumber": null,
+      "freightAmount": 620,
+      "freightPayment": "Collect",
+      "currencyCode": "EUR",
+      "codAmount": null,
+      "declaredValue": null,
+      "transshipmentAllowed": false,
+      "senderInstructions": "Scarico con sponda idraulica.",
+      "trip": {
+        "code": "TR-G002", "departureDate": "2026-10-07",
+        "vehicle": { "plateNumber": "ZZ104AA", "countryCode": "IT", "type": "Tractor" },
+        "trailer": { "plateNumber": "XZ104AA", "countryCode": "IT", "type": "SemiTrailer" },
+        "driverCode": "DRV-04", "subcontractor": null
+      },
+      "lines": [
+        { "lineNumber": 1, "description": "Vernici industriali a solvente", "packageCount": 20, "packageType": "Drum", "grossWeightKg": 4200, "volumeM3": 5.4, "isDangerousGoods": true, "unNumber": "1263", "properShippingName": "PITTURE", "adrClass": "3", "packingGroup": "II" },
+        { "lineNumber": 2, "description": "Imballaggi in cartone ondulato", "packageCount": 8, "packageType": "Pallet", "grossWeightKg": 1100, "volumeM3": 12.8, "isDangerousGoods": false, "unNumber": null, "properShippingName": null, "adrClass": null, "packingGroup": null }
+      ]
+    }
+  },
+  "cases": [
+    { "name": "Internazionale completa", "base": "international", "set": {}, "expected": [] },
+    { "name": "Nazionale ADR completa, non ancora partita", "base": "nationalAdr", "set": {}, "expected": [] },
+
+    { "name": "Mittente senza nome", "base": "international", "set": { "consignor.name": null }, "expected": ["M-CONSIGNOR-NAME"] },
+    { "name": "Mittente senza CAP e città", "base": "international", "set": { "consignor.postalCode": null, "consignor.city": null }, "expected": ["M-CONSIGNOR-ADDRESS"] },
+    { "name": "Destinatario con nome vuoto", "base": "international", "set": { "consignee.name": "  " }, "expected": ["M-CONSIGNEE-NAME"] },
+    { "name": "Destinatario senza CAP e senza partita IVA", "base": "international", "set": { "consignee.postalCode": null, "consignee.vatNumber": null }, "expected": ["M-CONSIGNEE-ADDRESS", "W-PARTY-VAT"] },
+    { "name": "Vettore senza nome", "base": "international", "set": { "carrier.name": "" }, "expected": ["M-CARRIER-NAME"] },
+    { "name": "Luogo di presa in carico senza città", "base": "international", "set": { "pickup.city": null }, "expected": ["M-PICKUP-LOCATION"] },
+    { "name": "Luogo di consegna senza paese", "base": "international", "set": { "delivery.countryCode": null }, "expected": ["M-DELIVERY-LOCATION"] },
+    { "name": "Nessuna data di presa in carico", "base": "nationalAdr", "set": { "order.pickupDate": null }, "expected": ["M-PICKUP-DATE"] },
+    { "name": "Nessuna data di consegna pattuita", "base": "international", "set": { "order.deliveryDate": null }, "expected": ["M-DELIVERY-DATE"] },
+    { "name": "Riga senza descrizione", "base": "international", "set": { "lines[1].description": null }, "expected": ["M-GOODS-DESCRIPTION"] },
+    { "name": "Riga con colli a zero, totale coerente", "base": "international", "set": { "lines[0].packageCount": 0, "order.totalPackages": 2 }, "expected": ["M-PACKAGES"] },
+    { "name": "Riga con colli a zero, totale non aggiornato", "base": "international", "set": { "lines[0].packageCount": 0 }, "expected": ["M-PACKAGES", "C-PACKAGES-SUM"] },
+    { "name": "Peso lordo a zero", "base": "international", "set": { "order.totalGrossWeightKg": 0 }, "expected": ["M-GROSS-WEIGHT"] },
+    { "name": "Presa in carico senza mezzo", "base": "international", "set": { "trip": null }, "expected": ["M-VEHICLE"] },
+    { "name": "Non ancora partita, senza mezzo", "base": "nationalAdr", "set": { "trip": null }, "expected": ["W-VEHICLE-NOT-ASSIGNED"] },
+    { "name": "ADR senza numero ONU", "base": "nationalAdr", "set": { "lines[0].unNumber": null }, "expected": ["M-ADR-UN-NUMBER"] },
+    { "name": "ADR senza denominazione ufficiale", "base": "nationalAdr", "set": { "lines[0].properShippingName": null }, "expected": ["M-ADR-SHIPPING-NAME"] },
+    { "name": "ADR senza classe", "base": "nationalAdr", "set": { "lines[0].adrClass": null }, "expected": ["M-ADR-CLASS"] },
+
+    { "name": "Paese del destinatario 'UK'", "base": "international", "set": { "consignee.countryCode": "UK" }, "expected": ["F-COUNTRY"] },
+    { "name": "Paese a tre lettere su soggetto e luogo", "base": "international", "set": { "consignee.countryCode": "DEU", "delivery.countryCode": "DEU" }, "expected": ["F-COUNTRY"] },
+    { "name": "Partita IVA italiana con cifra di controllo sbagliata", "base": "international", "set": { "consignor.vatNumber": "IT01234560158" }, "expected": ["F-VAT"] },
+    { "name": "Partita IVA senza prefisso del paese", "base": "international", "set": { "consignee.vatNumber": "999000011" }, "expected": ["F-VAT"] },
+    { "name": "Targa troppo corta", "base": "international", "set": { "trip.vehicle.plateNumber": "AB 12" }, "expected": ["F-PLATE"] },
+    { "name": "Numero ONU con una lettera", "base": "nationalAdr", "set": { "lines[0].unNumber": "12A3" }, "expected": ["F-UN-NUMBER"] },
+    { "name": "Gruppo di imballaggio inesistente", "base": "nationalAdr", "set": { "lines[0].packingGroup": "IV" }, "expected": ["F-PACKING-GROUP"] },
+
+    { "name": "Peso dichiarato molto diverso dalle righe", "base": "international", "set": { "order.totalGrossWeightKg": 3000 }, "expected": ["C-WEIGHT-SUM"] },
+    { "name": "Peso dichiarato entro la tolleranza", "base": "international", "set": { "order.totalGrossWeightKg": 2480 }, "expected": [] },
+    { "name": "Colli dichiarati diversi dalle righe", "base": "international", "set": { "order.totalPackages": 9 }, "expected": ["C-PACKAGES-SUM"] },
+    { "name": "Consegna pattuita prima della presa", "base": "international", "set": { "order.deliveryDate": "2026-10-02" }, "expected": ["C-DELIVERY-BEFORE-PICKUP"] },
+    { "name": "Consegna effettiva prima della presa effettiva", "base": "international", "set": { "deliveredAt": "2026-10-03T10:00:00+01:00" }, "expected": ["C-DELIVERED-BEFORE-PICKED-UP"] },
+
+    { "name": "Internazionale in viaggio senza numero di CMR", "base": "international", "set": { "cmrNumber": null }, "expected": ["W-CMR-NUMBER"] },
+    { "name": "Via del destinatario più lunga del formato", "base": "international", "set": { "consignee.street": "Industriegebiet Neckartal Süd, Gewerbestraße am Hafen 140" }, "expected": ["X-SCHEMA"] }
+  ]
+}

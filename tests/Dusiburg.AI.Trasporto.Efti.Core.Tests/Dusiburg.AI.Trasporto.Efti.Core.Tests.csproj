@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <!-- Runner NUnit su Microsoft.Testing.Platform, come impostato in global.json -->
+    <EnableNUnitRunner>true</EnableNUnitRunner>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Using Include="NUnit.Framework" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NUnit" />
+    <PackageReference Include="NUnit3TestAdapter" />
+    <PackageReference Include="NUnit.Analyzers" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Dusiburg.AI.Trasporto.Efti.Core\Dusiburg.AI.Trasporto.Efti.Core.csproj" />
+    <!-- Ordini del seed e loro vista di dettaglio: sono l'ingresso dell'importazione -->
+    <ProjectReference Include="..\..\src\Dusiburg.AI.Trasporto.Tms.Api\Dusiburg.AI.Trasporto.Tms.Api.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Golden set della validazione, copiato accanto ai test -->
+    <Content Include="..\..\data\golden_validation.json" Link="data\golden_validation.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

@@ -22,6 +22,9 @@ public static class ApiProblems
     public static ProblemHttpResult Conflict(string detail) =>
         Create(StatusCodes.Status409Conflict, ErrorCodes.Conflict, "Conflitto", detail);
 
+    public static ProblemHttpResult UpstreamUnavailable(string detail) =>
+        Create(StatusCodes.Status503ServiceUnavailable, ErrorCodes.UpstreamUnavailable, "Servizio a valle non disponibile", detail);
+
     /// <summary>
     /// Per <c>AddProblemDetails</c>: dà un <c>code</c> anche ai ProblemDetails generati dal framework
     /// (binding non valido, eccezioni non gestite), in base allo status.

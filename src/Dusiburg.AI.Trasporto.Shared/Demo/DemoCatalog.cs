@@ -14,16 +14,18 @@ public static class DemoCatalog
         new("Dusiburg Trasporti S.r.l.", "IT04719020002", "Via del Lavoro 18", "37135", "Verona", "IT");
 
     /// <summary>
-    /// Committenti demo: sei clienti del POC Order-to-Cash, con le stesse partite IVA. È il filo "ordine → spedizione" del portfolio.
+    /// Committenti demo: sei clienti del POC Order-to-Cash, riconoscibili dalla ragione sociale. È il filo "ordine → spedizione"
+    /// del portfolio. Le partite IVA sono proprie di questo POC (ufficio <c>000</c>, cifra di controllo corretta): quelle di
+    /// Order-to-Cash non superano il controllo formale che qui la validazione eFTI applica.
     /// </summary>
     public static IReadOnlyList<DemoCustomer> Customers { get; } =
     [
-        new("CUS-001", "Officine Meccaniche Brambilla S.r.l.", "IT01234560157", "Via dell'Industria 12", "20054", "Segrate", "IT", "acquisti@brambilla-om.it"),
-        new("CUS-002", "Cartiera del Brenta S.p.A.", "IT04567890280", "Via Riviera 3", "35010", "Vigonza", "IT", "approvvigionamenti@cartierabrenta.it"),
-        new("CUS-003", "Automazioni Nord-Est S.r.l.", "IT03456780268", "Viale Venezia 88", "31100", "Treviso", "IT", "purchasing@automazioni-ne.it"),
-        new("CUS-004", "Imballaggi Tirreno S.r.l.", "IT06789010484", "Via Aurelia 150", "57121", "Livorno", "IT", "ordini@imballaggitirreno.it"),
-        new("CUS-005", "Tessitura Valle Seriana S.p.A.", "IT02345670163", "Via Provinciale 45", "24021", "Albino", "IT", "ordini@tessituravs.it"),
-        new("CUS-006", "Meccanica di Precisione Torinese S.p.A.", "IT08901230019", "Corso Francia 300", "10146", "Torino", "IT", "supply@mptorinese.it"),
+        new("CUS-001", "Officine Meccaniche Brambilla S.r.l.", "IT01000010007", "Via dell'Industria 12", "20054", "Segrate", "IT", "acquisti@brambilla-om.it"),
+        new("CUS-002", "Cartiera del Brenta S.p.A.", "IT01000020006", "Via Riviera 3", "35010", "Vigonza", "IT", "approvvigionamenti@cartierabrenta.it"),
+        new("CUS-003", "Automazioni Nord-Est S.r.l.", "IT01000030005", "Viale Venezia 88", "31100", "Treviso", "IT", "purchasing@automazioni-ne.it"),
+        new("CUS-004", "Imballaggi Tirreno S.r.l.", "IT01000040004", "Via Aurelia 150", "57121", "Livorno", "IT", "ordini@imballaggitirreno.it"),
+        new("CUS-005", "Tessitura Valle Seriana S.p.A.", "IT01000050003", "Via Provinciale 45", "24021", "Albino", "IT", "ordini@tessituravs.it"),
+        new("CUS-006", "Meccanica di Precisione Torinese S.p.A.", "IT01000060002", "Corso Francia 300", "10146", "Torino", "IT", "supply@mptorinese.it"),
     ];
 
     public static IReadOnlyList<DemoTransportOrder> Orders { get; } =

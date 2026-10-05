@@ -9,6 +9,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Dusiburg.AI.Trasporto.Shared\Dusiburg.AI.Trasporto.Shared.csproj" />
     <ProjectReference Include="..\..\src\Dusiburg.AI.Trasporto.Ai\Dusiburg.AI.Trasporto.Ai.csproj" />
+    <ProjectReference Include="..\..\src\Dusiburg.AI.Trasporto.Efti.Core\Dusiburg.AI.Trasporto.Efti.Core.csproj" />
   </ItemGroup>
 
 </Project>

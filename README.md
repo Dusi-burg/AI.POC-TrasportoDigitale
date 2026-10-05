@@ -5,8 +5,12 @@
 **"Digital transport"** POC: from a road carrier's point of view, an eFTI-ready layer on top of a simulated TMS — eFTI dataset, validation, roles, audit, MCP tools, agents and CMR extraction — followed by exception and claim handling.
 
 - Architecture and decisions (Italian): [docs/architettura.md](docs/architettura.md)
+- Dataset validation rules, one by one (Italian): [docs/regole-di-validazione.md](docs/regole-di-validazione.md)
+- Which eFTI dataset elements are covered and which are not (Italian): [docs/copertura-dataset.md](docs/copertura-dataset.md)
 
-> **Status**: Phases 1-2 complete. The solution starts under Aspire and `/api/health` checks SQL Server, Ollama, the models and the cloud model key; the simulated TMS has its data model, 6 demo orders plus 150 synthetic orders with deliberate defects, and read APIs (`/api/views/orders`). Next: Phase 3 — eFTI import, mapping and validation.
+> **Status**: Phases 1-3 complete. The simulated TMS exposes 6 demo orders plus 150 synthetic orders with deliberate defects; `Efti.Api` imports them, builds the eFTI dataset with the element names of the XSD schema (v0, 0.8), validates it with 29 declarative rules and exports it as schema-conformant XML. Next: Phase 4 — simulated identity, authorisation and audit trail.
+
+The eFTI XSD schemas in `data/efti-schema/` are unmodified copies from the reference implementation, under the Apache-2.0 licence ([attribution](data/efti-schema/README.md)).
 
 All data is **synthetic and fictitious**. The POC is not a certified eFTI platform and gives no legal or insurance advice.
 

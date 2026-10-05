@@ -35,7 +35,10 @@ public sealed class Shipment
 
     public Location Delivery { get; set; } = new();
 
-    /// <summary>Presa in carico da parte del vettore.</summary>
+    /// <summary>Data di presa in carico prevista: vale finché la merce non è stata ritirata.</summary>
+    public DateOnly? PickupDate { get; set; }
+
+    /// <summary>Presa in carico effettiva da parte del vettore.</summary>
     public DateTimeOffset? PickedUpAt { get; set; }
 
     /// <summary>Data di consegna pattuita.</summary>

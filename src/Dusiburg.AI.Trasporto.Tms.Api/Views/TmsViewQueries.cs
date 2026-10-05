@@ -64,7 +64,8 @@ public sealed class TmsViewQueries(TmsDbContext db)
         return order is null ? null : ToDetail(order);
     }
 
-    private static TransportOrderDetailView ToDetail(TransportOrder order)
+    /// <summary>Vista di dettaglio di un ordine già caricato con cliente, righe e viaggio (mezzi e autista compresi).</summary>
+    public static TransportOrderDetailView ToDetail(TransportOrder order)
     {
         var summary = new TransportOrderSummaryView(
             order.Code, order.Customer.Code, order.Customer.Name, order.Status, order.OrderDate,

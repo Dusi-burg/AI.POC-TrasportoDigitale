@@ -1,12 +1,12 @@
 # Trasporto digitale — architettura
 
-> Aggiornato alla **Fase 2 (modello dati, TMS simulato e dati sintetici)**. Il documento cresce fase per fase: descrive ciò che il repository contiene oggi e segnala ciò che è previsto ma non ancora scritto.
+> Aggiornato alla **Fase 3 (importazione, mappatura e validazione eFTI)**. Il documento cresce fase per fase: descrive ciò che il repository contiene oggi e segnala ciò che è previsto ma non ancora scritto.
 
 ## 1. Che cos'è
 
 POC dal punto di vista dell'**operatore vettore** del trasporto su strada: uno strato "eFTI-ready" sopra un TMS simulato (Release 1), poi la gestione di eccezioni e reclami (Release 2). Tutti i dati sono sintetici e fittizi.
 
-Stato: la solution si avvia, `/api/health` controlla le dipendenze, il TMS simulato ha il suo modello dati, 156 ordini di trasporto e le API di lettura; lo schema `efti` ha le tabelle ma è vuoto. Importazione e validazione eFTI, ruoli, tool MCP, agenti ed estrazione dai CMR arrivano con le fasi 3–7.
+Stato: il TMS simulato espone 156 ordini di trasporto; `Efti.Api` li importa, costruisce per ciascuno il dataset eFTI con i nomi dello schema XSD, lo valida con regole dichiarative e lo esporta in XML conforme allo schema. Ruoli e audit, tool MCP, agenti ed estrazione dai CMR arrivano con le fasi 4–7.
 
 ## 2. Topologia
 
@@ -18,7 +18,7 @@ flowchart LR
     W -.-> TA["Tms.Api · :5301"]
     AG -.-> EM["Efti.Mcp · :5303"]
     EM -.-> EA
-    EA -.-> TA
+    EA -- "pull HTTP" --> TA
     EA --> DB[("LocalDB localdev<br/>database Trasporto")]
     TA --> DB
     EA --> OL{{"Ollama<br/>qwen3.5:9b · embeddinggemma"}}
@@ -31,7 +31,7 @@ Le frecce tratteggiate sono riferimenti già dichiarati nell'AppHost ma non anco
 | Servizio | Porta | Ruolo | Oggi |
 |---|---|---|---|
 | `Tms.Api` | 5301 | TMS simulato, proprietario dello schema `tms` | viste degli ordini, reset della demo |
-| `Efti.Api` | 5302 | Nucleo eFTI, proprietario degli schemi `efti` e `audit` | `/`, `/health`, `/api/health` |
+| `Efti.Api` | 5302 | Nucleo eFTI, proprietario degli schemi `efti` e `audit` | importazione dal TMS, viste delle spedizioni, esportazione XML, `/api/health` |
 | `Efti.Mcp` | 5303 | Server MCP eFTI | endpoint `/mcp` senza tool |
 | `Agents` | 5304 | Agenti, client MCP, nessun accesso al database | `/`, `/health` |
 | `Web` | 5306 | UI | pagina di stato |
@@ -53,12 +53,12 @@ Regole di confine, valide da subito:
 | `Shared` | Contratti e helper puri: enum e viste, `DemoCatalog`, codici d'errore, nomi di telemetria, contratti di health, regole JSON |
 | `Tms.Data` | `TmsDbContext` (schema `tms`), entità, generatore dei dati sintetici e seeder |
 | `Efti.Data` | `EftiDbContext` (schema `efti`) con le entità; `AuditDbContext` (schema `audit`) ancora vuoto |
-| `Efti.Core` | Logica deterministica del nucleo (vuoto) |
+| `Efti.Core` | Logica deterministica del nucleo: lettura dello schema eFTI, ordine → spedizione, mappatura nel dataset, esportazione XML, regole di validazione, documenti generati |
 | `Ai` | Manopole dei modelli, fabbriche dei client, cattura dei prompt, probe di health |
 | `Documents.Extraction` | Estrazione dai CMR (vuoto), libreria ospitata da `Efti.Api` |
 | `Mcp.Hosting` | Composizione comune dei server MCP |
 | `tools/DbInit` | Ricrea il database dal modello, senza migration, e inserisce i dati del TMS |
-| `tools/Eval` | CLI di valutazione (segnaposto) |
+| `tools/Eval` | CLI: per ora il solo comando `docs`, che rigenera i documenti nati dal codice; i comandi di valutazione arrivano con la Fase 9 |
 
 ## 4. Modelli
 
@@ -110,6 +110,7 @@ Segreti, solo negli user-secrets dell'AppHost: `ConnectionStrings:sql` e `Parame
 | 8 | Dimensione dell'embedding | diversa da `EMBEDDING_DIMENSIONS` | — |
 | 9 | Chiave Anthropic | assente con estrazione o mappatura instradate sul cloud | assente, nessun compito attivo la richiede |
 | 10 | Posizionamento dei modelli | — | embedding in VRAM, chat non tutta in VRAM |
+| 11 | Schema eFTI | i file XSD non si leggono o non si compilano | — |
 
 Il controllo 9 guarda solo se la chiave è presente: non chiama l'API.
 
@@ -160,7 +161,7 @@ Lo schema nasce vuoto: lo riempie l'importazione dal TMS (Fase 3). `TmsOrderCode
 | `TO-1005` | 5 e 7 | Albino (IT) → Wien (AT) | consegnata, con valore dichiarato |
 | `TO-1006` | 6 | Torino (IT) → Grenoble (FR) | consegnata tre giorni dopo la data pattuita |
 
-I sei committenti demo sono clienti del POC Order-to-Cash, con le stesse partite IVA.
+I sei committenti demo sono clienti del POC Order-to-Cash, riconoscibili dalla ragione sociale. Le partite IVA sono proprie di questo POC: quelle di Order-to-Cash non superano il controllo della cifra di controllo che la validazione eFTI applica.
 
 Dati sintetici: 30 clienti, 26 mezzi, 12 autisti, 150 ordini (`TO-2001`…`TO-2150`) per metà circa internazionali. Circa un terzo degli ordini generati porta uno o due **difetti voluti**:
 
@@ -188,14 +189,72 @@ Identificativi fittizi: targhe con prefisso `ZZ` e `XZ` (serie non assegnate), p
 
 Gli errori sono `ProblemDetails` con l'estensione `code` (`NOT_FOUND`, `VALIDATION_ERROR`, `CONFLICT`, `UNAUTHORIZED`, `UPSTREAM_UNAVAILABLE`, `INTERNAL`).
 
-## 7. Test e CI
+## 7. Nucleo eFTI
+
+### 7.1 Lo schema come fonte
+
+Lo schema XSD di riferimento (`consignment-common.xsd` 0.8, Apache-2.0) è copiato senza modifiche in `data/efti-schema/v0/`, con l'attribuzione in `data/efti-schema/README.md`. `EftiSchemaCatalog` lo legge e ne ricava, per ogni elemento, nome, tipo, cardinalità, identificativo eFTI, formato, definizione e sottoinsiemi con il loro stato, oltre alla lista dei codici paese. Nomi, identificativi, formati e sottoinsiemi non sono scritti a mano in nessun punto del codice.
+
+Un elemento appartiene a un sottoinsieme se la sua annotazione lo elenca, come fanno gli strumenti di riferimento. Lo stato (`M`, `C`, `O`, `SI`) è riportato com'è: il significato ufficiale di `SI` non è stato verificato sul regolamento.
+
+Lo schema dichiara **facoltativo ogni elemento**: la conformità all'XSD controlla struttura, ordine, tipi, lunghezze e liste di codici, non l'obbligatorietà. Quella la danno le regole.
+
+### 7.2 Dall'ordine al dataset
+
+```mermaid
+flowchart LR
+    T["Tms.Api<br/>GET /api/views/orders/{code}"] --> F["ShipmentFactory<br/>ordine → spedizione"]
+    F --> V["EftiValidator<br/>regole dichiarative"]
+    F --> M["EftiDatasetMapper<br/>spedizione → dataset"]
+    M --> J["JSON<br/>nomi dello schema"]
+    J --> X["EftiXmlExporter<br/>ordine dallo schema"]
+    X --> S["XSD"]
+    V --> D[("efti.Shipment<br/>EftiDataset · ValidationIssue")]
+    S --> D
+```
+
+- **`ShipmentFactory`** copia l'ordine del TMS in una spedizione così com'è, lacune ed errori compresi, e aggiunge il vettore dalla configurazione (`Carrier`).
+- **`EftiDatasetMapper`** è una funzione pura: non corregge e non inventa. Un dato mancante resta fuori dal dataset, un dato sbagliato ci entra com'è.
+- Il **JSON** salvato in `efti.EftiDataset` usa i nomi degli elementi dello schema. Un elemento ripetibile è un array; un valore con attributo (unità, valuta, formato) è un oggetto `{ "value": …, "unitId": … }`.
+- **`EftiXmlExporter`** è guidato dallo schema: l'ordine degli elementi e la distinzione fra contenitori e valori vengono dal catalogo. Un nome che lo schema non conosce è un errore, quindi il JSON non può divergere dai nomi dello schema.
+
+Particolarità dello schema che la mappatura rispetta: le righe di merce non hanno descrizione né peso propri (natura della merce, colli e peso stanno sulla spedizione; la riga porta volume e merci pericolose); la partita IVA sta in `taxRegistration/id`, che non è nei sottoinsiemi dell'autorità; le date hanno un formato proprio (`102` = `CCYYMMDD`, `205` = `CCYYMMDDHHMM±HHMM`).
+
+La copertura è dichiarata in `DatasetCoverage` e documentata in [copertura-dataset.md](copertura-dataset.md), generato dallo schema: 63 elementi coperti, e l'elenco dei 93 elementi dei sottoinsiemi `EU03` ed `EU05a` che il POC non valorizza (limitato ai contenitori che il POC usa).
+
+### 7.3 Validazione
+
+Le regole sono un elenco dichiarativo (`ValidationRules`): codice, categoria, gravità, elemento eFTI, spiegazione. Sono 29, di cui 26 bloccanti, in cinque categorie: obbligatorietà (`M-`), formato (`F-`), coerenza (`C-`), avvisi (`W-`), conformità allo schema (`X-`). L'elenco completo è in [regole-di-validazione.md](regole-di-validazione.md), generato dal codice.
+
+Un dataset è `Valid` quando nessuna regola bloccante è violata **e** l'XML esportato è conforme allo schema; altrimenti è `Incomplete`. Gli avvisi non cambiano lo stato. La conformità allo schema si controlla solo se le altre regole passano: intercetta ciò che le regole non prevedono (per esempio un testo più lungo del formato) senza duplicare i loro messaggi.
+
+Nessun modello partecipa alla validazione. Il golden set `data/golden_validation.json` (34 casi) deve passare al 100%, e copre ogni regola.
+
+### 7.4 API
+
+| Endpoint | Scopo |
+|---|---|
+| `POST /api/shipments/import` | corpo `{ "orderCode": "TO-1001" }` per un ordine; senza corpo, tutti gli ordini non annullati |
+| `GET /api/views/shipments?status=` | elenco con stato del dataset e numero di problemi |
+| `GET /api/views/shipments/{code}` | dettaglio con soggetti, righe, dataset JSON e problemi |
+| `GET /api/shipments/{code}/dataset.xml` | XML del dataset; l'intestazione `X-Efti-Dataset-Status` ne dice lo stato |
+| `POST /dev/reset` | solo in Development: svuota lo schema `efti` |
+
+L'importazione è **idempotente sul codice dell'ordine**: una spedizione già importata non viene riletta né toccata, perché da quel momento il dataset cambia solo con una decisione umana registrata. Gli ordini annullati non diventano spedizioni. Con il seed di default: 147 spedizioni, 100 `Valid` e 47 `Incomplete`.
+
+### 7.5 Documenti generati
+
+`docs/regole-di-validazione.md` e `docs/copertura-dataset.md` nascono dal codice e si rigenerano con `dotnet run --project tools/Dusiburg.AI.Trasporto.Eval -- docs`. Un test confronta i file con ciò che il codice produce: se una regola o la copertura cambiano senza rigenerare, la build dei test fallisce.
+
+## 8. Test e CI
 
 - `Ai.Tests`: manopole, fabbriche dei client, aggregazione dei controlli. Nessuna chiamata a un modello.
-- `Efti.Api.Tests`: endpoint con probe finti; controlli SQL veri su un database usa-e-getta creato da `DbInit`; convenzioni del modello dati su tutti i `DbContext`; schemi, lookup e vincoli dello schema `efti`.
+- `Efti.Core.Tests`: catalogo dello schema; mappatura; esportazione XML e conformità all'XSD; regole sugli ordini demo, sui difetti del seed (esiti esatti) e sul golden set; allineamento dei documenti generati e della copertura dichiarata. Nessun database.
+- `Efti.Api.Tests`: endpoint con probe finti; controlli SQL veri su un database usa-e-getta creato da `DbInit`; convenzioni del modello dati su tutti i `DbContext`; schemi, lookup e vincoli dello schema `efti`; importazione, viste ed esportazione con un TMS finto.
 - `Tms.Api.Tests`: invarianti degli ordini demo; generatore dei dati sintetici (ripetibilità, dimensioni, difetti); viste e reset su un database usa-e-getta.
 - La CI gira su Windows con LocalDB. I test della categoria `RequiresSql2025` si saltano se LocalDB è più vecchio della versione 17 e restano obbligatori in locale.
 
-## 8. Decisioni
+## 9. Decisioni
 
 Gli identificativi sono quelli del piano di progetto.
 
@@ -220,6 +279,14 @@ Gli identificativi sono quelli del piano di progetto.
 | F2.3 | I difetti assegnati restano nel risultato del generatore | Tabella dei difetti attesi nel database: sarebbe un dato che un TMS vero non ha |
 | F2.4 | Le spedizioni demo nascono come ordini del TMS e diventano spedizioni con l'importazione | Seed diretto dello schema `efti`: salterebbe il flusso che la demo deve mostrare |
 | F2.5 | Il generatore sta in `Tms.Data`, accanto al seeder | Un progetto di ingestione separato, come in Sinistri: qui serve anche a `POST /dev/reset` |
+| D5 | Lo schema XSD eFTI è la fonte di nomi, identificativi, formati e sottoinsiemi | Tabella dei campi scritta a mano |
+| F3.1 | Schema `v0`, `consignment-common.xsd` 0.8 | `v1`: organizzato per messaggio, struttura diversa, sottoinsiemi senza stato |
+| F3.2 | `Efti.Core` lavora sul grafo delle entità di `Efti.Data` in memoria, senza `DbContext` | Un modello intermedio proprio di `Efti.Core`: un terzo modello parallelo da tenere allineato |
+| F3.3 | L'esportazione XML è guidata dallo schema a partire dal JSON | XML scritto campo per campo: ordine e nomi andrebbero mantenuti a mano |
+| F3.4 | La conformità all'XSD si controlla solo se nessuna regola bloccante è violata | Controllarla sempre: per lo stesso difetto un messaggio comprensibile e uno dell'XSD |
+| F3.5 | Una spedizione importata non si reimporta | Aggiornarla a ogni importazione: il dataset cambierebbe senza una decisione umana |
+| F3.6 | Mapper e importazione non correggono il dato | Normalizzare in ingresso: nasconderebbe i difetti che la demo deve mostrare e risolvere con una decisione registrata |
+| F3.7 | I codici non verificabili sullo schema sono dichiarati tali; il tipo di mezzo (obbligatorio in `EU03`) resta non coperto | Scrivere un codice non verificato in un campo obbligatorio |
 
 ### Versioni
 
