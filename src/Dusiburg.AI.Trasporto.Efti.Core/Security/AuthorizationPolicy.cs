@@ -26,7 +26,11 @@ public static class AuthorizationPolicy
         new(Operation.IdentifierSearch, false, "GET /api/gate/identifiers?plate=", "Cercare una targa nel registro degli identificatori: restituisce UIL e identificatori, nessun altro dato."),
         new(Operation.SubsetRead, false, "GET /api/gate/subset?uil=&subsetId=", "Leggere un sottoinsieme del dataset di una spedizione, dati UIL e sottoinsieme."),
         new(Operation.AuthorityAccessRead, false, "GET /api/shipments/{code}/authority-access", "Vedere quando un'autorità ha consultato una spedizione."),
-        new(Operation.AuditRead, false, "GET /api/audit", "Leggere il registro di audit.")
+        new(Operation.AuditRead, false, "GET /api/audit", "Leggere il registro di audit."),
+        new(Operation.TmsOrderRead, false, "GET /api/shipments/{code}/tms-order", "Leggere l'ordine di origine nel TMS, per motivare una proposta di completamento."),
+        new(Operation.FieldProposalCreate, true, "POST /api/shipments/{code}/proposals", "Proporre il valore di un campo del dataset: la proposta non modifica il dataset."),
+        new(Operation.FieldProposalRead, false, "GET /api/shipments/{code}/proposals", "Leggere le proposte di completamento di una spedizione e il loro esito."),
+        new(Operation.FieldProposalDecide, true, "POST /api/proposals/{id}/decision", "Accettare o rifiutare una proposta: l'accettazione crea una nuova versione del dataset. È un'azione umana, nessun tool la espone.")
     ];
 
     public static IReadOnlyList<Permission> Permissions { get; } =
@@ -36,6 +40,10 @@ public static class AuthorizationPolicy
         .. Shipments(Role.Dispatcher, Operation.ShipmentList, Operation.ShipmentRead, Operation.ShipmentImport, Operation.DatasetExport),
         .. Shipments(Role.ClaimsManager, Operation.ShipmentList, Operation.ShipmentRead, Operation.DatasetExport),
         .. Shipments(Role.Admin, Operation.ShipmentList, Operation.ShipmentRead, Operation.DatasetExport),
+
+        // Completare una spedizione è lavoro dell'ufficio traffico: propone (anche tramite un agente) e decide. Admin guarda soltanto.
+        .. Shipments(Role.Dispatcher, Operation.TmsOrderRead, Operation.FieldProposalCreate, Operation.FieldProposalRead, Operation.FieldProposalDecide),
+        .. Shipments(Role.Admin, Operation.FieldProposalRead),
 
         // L'autorità non elenca e non legge spedizioni: passa solo dal registro degli identificatori e dall'UIL (D7).
         new(Role.Authority, Operation.IdentifierSearch, AccessScope.IdentifierRegistry),

@@ -29,7 +29,11 @@ public enum Operation : byte
     IdentifierSearch = 6,
     SubsetRead = 7,
     AuthorityAccessRead = 8,
-    AuditRead = 9
+    AuditRead = 9,
+    TmsOrderRead = 10,
+    FieldProposalCreate = 11,
+    FieldProposalRead = 12,
+    FieldProposalDecide = 13
 }
 
 /// <summary>Su che cosa vale un permesso. Non è una tabella: descrive la cella della matrice dei ruoli.</summary>

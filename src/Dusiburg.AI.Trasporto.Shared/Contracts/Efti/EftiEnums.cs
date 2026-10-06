@@ -33,3 +33,26 @@ public enum IssueSeverity : byte
 
     Warning = 2
 }
+
+/// <summary>Stato di una proposta di completamento: la decide una persona, mai un tool.</summary>
+public enum ProposalStatus : byte
+{
+    Pending = 1,
+
+    Accepted = 2,
+
+    Rejected = 3
+}
+
+/// <summary>Da dove viene il valore proposto.</summary>
+public enum ProposalSource : byte
+{
+    /// <summary>Un dato dell'ordine nel TMS.</summary>
+    TmsOrder = 1,
+
+    /// <summary>Un documento caricato (Fase 7).</summary>
+    Document = 2,
+
+    /// <summary>Dedotto da altri dati della spedizione, senza una fonte che lo riporti alla lettera.</summary>
+    Inference = 3
+}

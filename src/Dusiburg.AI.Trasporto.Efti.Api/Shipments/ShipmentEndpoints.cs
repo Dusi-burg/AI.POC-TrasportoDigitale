@@ -1,9 +1,12 @@
+using System.Globalization;
 using System.Xml.Linq;
 using Dusiburg.AI.Trasporto.Efti.Api.Security;
+using Dusiburg.AI.Trasporto.Efti.Api.Tms;
 using Dusiburg.AI.Trasporto.Efti.Core.Dataset;
 using Dusiburg.AI.Trasporto.ServiceDefaults.Problems;
 using Dusiburg.AI.Trasporto.Shared.Contracts.Efti;
 using Dusiburg.AI.Trasporto.Shared.Contracts.Views.Efti;
+using Dusiburg.AI.Trasporto.Shared.Contracts.Views.Tms;
 using Dusiburg.AI.Trasporto.Shared.Security;
 using Microsoft.AspNetCore.Http.HttpResults;
 
@@ -22,6 +25,9 @@ internal static class ShipmentEndpoints
 
         api.MapGet("/shipments/{code}/dataset.xml", ExportDatasetAsync)
             .RequireOperation(Operation.DatasetExport, http => http.RouteValue("code"));
+
+        api.MapGet("/shipments/{code}/tms-order", GetTmsOrderAsync)
+            .RequireOperation(Operation.TmsOrderRead, http => http.RouteValue("code"));
 
         api.MapGet("/views/shipments", ListAsync)
             .RequireOperation(Operation.ShipmentList);
@@ -71,8 +77,13 @@ internal static class ShipmentEndpoints
     }
 
     private static async Task<Results<Ok<IReadOnlyList<ShipmentSummaryView>>, ProblemHttpResult>> ListAsync(
-        string? status, ShipmentViewQueries queries, CancellationToken cancellationToken)
+        string? status, string? customer, string? from, string? to, ShipmentViewQueries queries, CancellationToken cancellationToken)
     {
+        if (!TryParseDay(from, out DateOnly? fromDay) || !TryParseDay(to, out DateOnly? toDay))
+        {
+            return ApiProblems.Validation($"Filtri from e to: date nel formato {DayFormat}.");
+        }
+
         DatasetStatus? statusFilter = null;
 
         if (!string.IsNullOrWhiteSpace(status))
@@ -85,7 +96,60 @@ internal static class ShipmentEndpoints
             statusFilter = parsed;
         }
 
-        return TypedResults.Ok(await queries.ListAsync(statusFilter, cancellationToken));
+        var filter = new ShipmentFilter(statusFilter, string.IsNullOrWhiteSpace(customer) ? null : customer.Trim(), fromDay, toDay);
+
+        return TypedResults.Ok(await queries.ListAsync(filter, cancellationToken));
+    }
+
+    /// <summary>
+    /// L'ordine di origine nel TMS, così com'è oggi: serve a motivare una proposta di completamento. Passa da qui, e non da una
+    /// chiamata diretta al TMS, perché anche questa lettura abbia un ruolo e una riga di audit.
+    /// </summary>
+    private static async Task<Results<Ok<TransportOrderDetailView>, ProblemHttpResult>> GetTmsOrderAsync(
+        string code, ShipmentViewQueries queries, TmsApiClient tms, AuditNote note, CancellationToken cancellationToken)
+    {
+        string? orderCode = await queries.FindTmsOrderCodeAsync(code, cancellationToken);
+
+        if (orderCode is null)
+        {
+            return ApiProblems.NotFound($"Spedizione {code} non trovata.");
+        }
+
+        note.ShipmentCode = code;
+        note.Detail = orderCode;
+
+        try
+        {
+            TransportOrderDetailView? order = await tms.FindOrderAsync(orderCode, cancellationToken);
+
+            return order is null ? ApiProblems.NotFound($"L'ordine {orderCode} non è più nel TMS.") : TypedResults.Ok(order);
+        }
+        catch (HttpRequestException exception)
+        {
+            return ApiProblems.UpstreamUnavailable($"Il TMS non risponde: {exception.Message}");
+        }
+    }
+
+    private const string DayFormat = "yyyy-MM-dd";
+
+    /// <summary>Un filtro assente non filtra; una data scritta in un altro formato è un errore.</summary>
+    private static bool TryParseDay(string? value, out DateOnly? day)
+    {
+        day = null;
+
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return true;
+        }
+
+        if (!DateOnly.TryParseExact(value.Trim(), DayFormat, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateOnly parsed))
+        {
+            return false;
+        }
+
+        day = parsed;
+
+        return true;
     }
 
     private static async Task<Results<Ok<ShipmentDetailView>, ProblemHttpResult>> GetAsync(

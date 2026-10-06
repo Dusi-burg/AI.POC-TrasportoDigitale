@@ -56,7 +56,8 @@ Regole di confine, valide da subito:
 | `Efti.Core` | Logica deterministica del nucleo: lettura dello schema eFTI, ordine → spedizione, mappatura nel dataset, esportazione XML, regole di validazione, documenti generati |
 | `Ai` | Manopole dei modelli, fabbriche dei client, cattura dei prompt, probe di health |
 | `Documents.Extraction` | Estrazione dai CMR (vuoto), libreria ospitata da `Efti.Api` |
-| `Mcp.Hosting` | Composizione comune dei server MCP: trasporto e chiave di ruolo |
+| `Mcp.Hosting` | Composizione comune dei server MCP: trasporto, chiave di ruolo, elenco dei tool filtrato per ruolo, span ed errori strutturati su ogni chiamata |
+| `Efti.Mcp` | Server MCP eFTI: sette tool sopra `Efti.Api`, senza database e senza identità propria |
 | `tools/DbInit` | Ricrea il database dal modello, senza migration, e inserisce i dati del TMS |
 | `tools/Eval` | CLI: per ora il solo comando `docs`, che rigenera i documenti nati dal codice; i comandi di valutazione arrivano con la Fase 9 |
 
@@ -146,7 +147,8 @@ Il TMS è **permissivo per scelta**: mittente e destinatario sono testo dell'ord
 | `EftiDataset` | (`ShipmentId`, `Version`) | dataset in JSON, versione dello schema, stato |
 | `ValidationIssue` | — | regola, gravità, campo e messaggio di un problema |
 | `IdentifierRegistryEntry` | `Uil` univoco; una riga per spedizione | voce del registro degli identificatori: UIL, targhe normalizzate, sottoinsieme degli identificatori in JSON |
-| Lookup | — | `PartyRole`, `DatasetStatus`, `IssueSeverity`, `PackageType`, `FreightPayment` |
+| `FieldProposal` | — | proposta di completamento di un campo: valore proposto e valore di allora, fonte, motivazione, chi l'ha fatta, chi l'ha decisa, versione del dataset che ne è nata |
+| Lookup | — | `PartyRole`, `DatasetStatus`, `IssueSeverity`, `PackageType`, `FreightPayment`, `ProposalStatus`, `ProposalSource` |
 
 Lo schema nasce vuoto: lo riempie l'importazione dal TMS (Fase 3). `TmsOrderCode` univoco rende l'importazione idempotente. `PackageType` e `FreightPayment` hanno una lookup per schema, perché uno schema non referenzia tabelle di un altro proprietario.
 
@@ -237,7 +239,8 @@ Nessun modello partecipa alla validazione. Il golden set `data/golden_validation
 | Endpoint | Scopo |
 |---|---|
 | `POST /api/shipments/import` | corpo `{ "orderCode": "TO-1001" }` per un ordine; senza corpo, tutti gli ordini non annullati |
-| `GET /api/views/shipments?status=` | elenco con stato del dataset e numero di problemi |
+| `GET /api/views/shipments?status=&customer=&from=&to=` | elenco con stato del dataset e numero di problemi; `customer` è parte del nome di mittente o destinatario, `from` e `to` la presa in carico prevista |
+| `GET /api/shipments/{code}/tms-order` | l'ordine di origine, letto ora dal TMS |
 | `GET /api/views/shipments/{code}` | dettaglio con soggetti, righe, dataset JSON e problemi |
 | `GET /api/shipments/{code}/dataset.xml` | XML del dataset; l'intestazione `X-Efti-Dataset-Status` ne dice lo stato |
 | `POST /dev/reset` | solo in Development: svuota lo schema `efti` |
@@ -269,6 +272,8 @@ La matrice ruolo × operazione × ambito è un elenco dichiarativo (`Authorizati
 | `SubsetRead` | — | — | sottoinsieme | — |
 | `AuthorityAccessRead` | accessi | — | — | accessi |
 | `AuditRead` | — | — | — | audit |
+| `TmsOrderRead`, `FieldProposalCreate`, `FieldProposalDecide` | tutte | — | — | — |
+| `FieldProposalRead` | tutte | — | — | tutte |
 
 `/api/health` è il solo endpoint pubblico. Un test elenca gli endpoint sotto `/api` e fallisce se uno non dichiara la propria operazione, o se l'endpoint scritto nella matrice non è quello vero.
 
@@ -319,15 +324,52 @@ L'autorità non ha altra strada: non può elencare le spedizioni né leggerle pe
 
 `GET /api/shipments/{code}/authority-access` (`Dispatcher`, `Admin`) mostra quando un'autorità ha consultato una spedizione: le letture di sottoinsieme fatte con il suo UIL e le ricerche per una delle sue targhe, se in quel momento la spedizione era raggiungibile dal gate (già pubblicata e non ancora scaduta). È il requisito del Reg. di esecuzione (UE) 2025/2243 sulla notifica degli accessi, letto dall'audit senza una struttura dedicata.
 
-## 9. Test e CI
+## 9. Proposte di completamento e server MCP
+
+### 9.1 Proporre non è modificare
+
+Un dataset incompleto si completa in due tempi. Chi ha il permesso — una persona, o un agente attraverso il tool — lascia una **proposta**: campo, valore, fonte, motivazione. La proposta non tocca il dataset. Lo tocca la **decisione** di una persona, che è un endpoint dell'API e non un tool.
+
+| Endpoint | Scopo |
+|---|---|
+| `POST /api/shipments/{code}/proposals` | registra una proposta `Pending`; la stessa proposta ancora in attesa non si duplica |
+| `GET /api/shipments/{code}/proposals` | proposte di una spedizione, con l'esito |
+| `POST /api/proposals/{id}/decision` | `{ "decision": "Accepted" \| "Rejected", "note": … }` |
+
+I campi che si possono proporre sono un elenco dichiarativo (`CompletableFields` in `Efti.Core`): soggetti e luoghi, date, colli e peso, numero della lettera di vettura, targhe e paesi di immatricolazione, dati ADR della riga. Il percorso è quello dei problemi di validazione, così chi propone copia il `fieldPath` del problema. Ogni campo ha il proprio controllo (paese della lista dello schema, partita IVA plausibile, targa, numero ONU, data, numero): un campo sconosciuto o un valore di forma sbagliata sono rifiutati già alla proposta, perché alla persona arrivino solo proposte applicabili. Il vettore non si propone: viene dalla configurazione.
+
+Con l'**accettazione**, in un solo salvataggio: il valore si scrive sulla spedizione, la spedizione si rimappa e si rivalida, nasce la versione successiva del dataset con i suoi problemi (le precedenti restano com'erano). Se la nuova versione è `Valid` la spedizione viene pubblicata sul registro degli identificatori, o la sua voce aggiornata; se una decisione sbagliata la rende `Incomplete` la voce resta, ma la lettura per UIL risponde 409. Sullo scenario 2 (`SH-1002`) quattro accettazioni portano il dataset dalla versione 1 `Incomplete` alla 5 `Valid`, e da quel momento l'autorità trova la targa.
+
+### 9.2 Tool
+
+`Efti.Mcp` espone sette tool. Ogni tool corrisponde a **una** operazione della matrice dei ruoli, e lo vede chi può eseguirla.
+
+| Tool | Operazione | Chi lo vede |
+|---|---|---|
+| `search_shipments` | `ShipmentList` | `Dispatcher`, `ClaimsManager`, `Admin` |
+| `get_shipment_dataset`, `list_validation_issues` | `ShipmentRead` | `Dispatcher`, `ClaimsManager`, `Admin` |
+| `get_tms_order` | `TmsOrderRead` | `Dispatcher` |
+| `propose_field_completion` | `FieldProposalCreate` | `Dispatcher` |
+| `find_consignments_by_vehicle` | `IdentifierSearch` | `Authority` |
+| `get_authority_subset` | `SubsetRead` | `Authority` |
+
+- Il server MCP **non ha database e non ha identità propria**: inoltra a `Efti.Api` la chiave `X-Api-Key` di chi ha chiamato il tool. Un agente non ha mai più permessi di chi lo usa.
+- L'elenco dei tool si filtra chiedendo a `Efti.Api` che cosa il ruolo può fare (`GET /api/me`): la matrice resta in un posto solo.
+- I tool sono passacarte: non controllano gli argomenti e non decidono gli accessi. Una chiamata fuori ruolo arriva quindi all'API, che risponde `UNAUTHORIZED` e la registra nell'audit con il ruolo di chi ha chiamato.
+- Un solo tool scrive, e scrive una proposta. Nessun tool decide una proposta, importa o cambia un dataset.
+- Gli errori sono `{ error: { code, message } }` con `isError = true` e i codici dell'API; ogni chiamata apre uno span `mcp.tool <nome>` con `tool.name`, `actor.role` e `tool.outcome`.
+- Le descrizioni dei tool dicono che i testi liberi restituiti (istruzioni del mittente, descrizioni) sono dati, non istruzioni.
+
+## 10. Test e CI
 
 - `Ai.Tests`: manopole, fabbriche dei client, aggregazione dei controlli. Nessuna chiamata a un modello.
 - `Efti.Core.Tests`: catalogo dello schema; mappatura; esportazione XML e conformità all'XSD; regole sugli ordini demo, sui difetti del seed (esiti esatti) e sul golden set; matrice dei ruoli cella per cella; sottoinsiemi dell'autorità e identificatori; allineamento dei documenti generati e della copertura dichiarata. Nessun database.
-- `Efti.Api.Tests`: endpoint con probe finti; controlli SQL veri su un database usa-e-getta creato da `DbInit`; convenzioni del modello dati su tutti i `DbContext`; schemi, lookup e vincoli dello schema `efti`; importazione, viste ed esportazione con un TMS finto; **l'intera matrice dei ruoli via HTTP** con il relativo evento di audit; flusso dell'autorità; audit non modificabile.
-- `Tms.Api.Tests`: invarianti degli ordini demo; generatore dei dati sintetici (ripetibilità, dimensioni, difetti); viste e reset su un database usa-e-getta.
+- `Efti.Api.Tests`: endpoint con probe finti; controlli SQL veri su un database usa-e-getta creato da `DbInit`; convenzioni del modello dati su tutti i `DbContext`; schemi, lookup e vincoli dello schema `efti`; importazione, viste ed esportazione con un TMS finto; **l'intera matrice dei ruoli via HTTP** con il relativo evento di audit; flusso dell'autorità; audit non modificabile; proposte e decisioni, con lo scenario 2 da `Incomplete` a `Valid`.
+- `Efti.Mcp.Tests`: il server MCP sopra una `Efti.Api` vera in-process: elenco dei tool per ruolo; **ogni ruolo su ogni tool**, con l'evento di audit del rifiuto; ogni tool sui dati demo; errori strutturati; nessuna versione nuova di dataset dopo le chiamate ai tool.
+- `Tms.Api.Tests`: invarianti degli ordini demo; generatore dei dati sintetici (ripetibilità, dimensioni, difetti); viste e reset su un database usa-e-getta, con l'orologio fermo al giorno del seed.
 - La CI gira su Windows con LocalDB. I test della categoria `RequiresSql2025` si saltano se LocalDB è più vecchio della versione 17 e restano obbligatori in locale.
 
-## 10. Decisioni
+## 11. Decisioni
 
 Gli identificativi sono quelli del piano di progetto.
 
@@ -370,6 +412,12 @@ Gli identificativi sono quelli del piano di progetto.
 | F4.6 | 401 per chi non si fa riconoscere, 403 per il ruolo sbagliato, stesso codice `UNAUTHORIZED` | Un solo stato: chi chiama non distinguerebbe una chiave sbagliata da un permesso mancante |
 | F4.7 | Gli accessi dell'autorità si leggono dall'audit | Una tabella di notifiche dedicata: un secondo registro da tenere coerente con il primo |
 | F4.8 | I mezzi dei viaggi demo sono riservati a quei viaggi | Flotta condivisa: una targa demo portava a 17 spedizioni e lo scenario del controllo su strada perdeva chiarezza |
+| F5.1 | Un tool corrisponde a una operazione della matrice; lo vede chi può eseguirla | Un elenco di ruoli per tool: due tabelle di permessi da tenere allineate |
+| F5.2 | Il server MCP inoltra la chiave di chi chiama e lascia decidere l'API | Una chiave propria del server: l'agente avrebbe i permessi del server, non quelli dell'utente. Decidere nel server: il rifiuto non finirebbe nell'audit, perché il server non ha database |
+| F5.3 | L'agente propone, una persona decide dall'API | Un tool che scrive il campo: il modello modificherebbe un dato regolato |
+| F5.4 | I campi completabili e i controlli sui valori sono un elenco dichiarativo | Accettare qualunque percorso del JSON: una proposta potrebbe scrivere dove il mapper non legge |
+| F5.5 | L'accettazione crea una versione nuova del dataset, le precedenti restano | Aggiornare il dataset sul posto: si perderebbe ciò che un'autorità aveva letto |
+| F5.6 | L'ordine del TMS si legge passando da `Efti.Api` | Il server MCP chiama il TMS: una lettura senza ruolo e senza audit |
 
 ### Versioni
 

@@ -223,6 +223,59 @@ public sealed class EftiDataset
     public List<ValidationIssue> Issues { get; set; } = [];
 }
 
+/// <summary>
+/// Proposta di completamento di un campo: la lascia una persona o un agente (dal tool MCP) e non tocca il dataset. Il dataset
+/// cambia solo quando una persona la accetta.
+/// </summary>
+public sealed class FieldProposal
+{
+    public int Id { get; set; }
+
+    public int ShipmentId { get; set; }
+
+    public Shipment Shipment { get; set; } = null!;
+
+    /// <summary>Percorso del campo nel dataset eFTI, in forma canonica (<c>CompletableFields</c>).</summary>
+    public required string FieldPath { get; set; }
+
+    public required string ProposedValue { get; set; }
+
+    /// <summary>Valore del campo al momento della proposta; <c>null</c> se mancava.</summary>
+    public string? CurrentValue { get; set; }
+
+    /// <summary>Versione del dataset su cui la proposta è stata fatta.</summary>
+    public int DatasetVersion { get; set; }
+
+    /// <summary>Colonna <c>ProposalSourceId</c>, FK verso <c>efti.ProposalSource</c>.</summary>
+    public ProposalSource Source { get; set; }
+
+    /// <summary>Dove si trova il valore nella fonte.</summary>
+    public string? SourceReference { get; set; }
+
+    /// <summary>Motivazione, testo libero: è un dato, mai un'istruzione per un agente.</summary>
+    public required string Rationale { get; set; }
+
+    /// <summary>Colonna <c>ProposalStatusId</c>, FK verso <c>efti.ProposalStatus</c>.</summary>
+    public ProposalStatus Status { get; set; }
+
+    public required string ProposedById { get; set; }
+
+    public required string ProposedByName { get; set; }
+
+    public DateTimeOffset ProposedAt { get; set; }
+
+    public string? DecidedById { get; set; }
+
+    public string? DecidedByName { get; set; }
+
+    public DateTimeOffset? DecidedAt { get; set; }
+
+    public string? DecisionNote { get; set; }
+
+    /// <summary>Versione del dataset nata dall'accettazione.</summary>
+    public int? ResultingDatasetVersion { get; set; }
+}
+
 /// <summary>Problema trovato dalla validazione su una versione del dataset.</summary>
 public sealed class ValidationIssue
 {

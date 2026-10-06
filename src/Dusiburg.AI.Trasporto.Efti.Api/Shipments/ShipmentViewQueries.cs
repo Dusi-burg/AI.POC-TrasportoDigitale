@@ -10,6 +10,12 @@ namespace Dusiburg.AI.Trasporto.Efti.Api.Shipments;
 /// <summary>Il JSON dell'ultima versione del dataset di una spedizione, con il suo stato.</summary>
 public sealed record StoredDataset(string Json, DatasetStatus Status, int Version);
 
+/// <summary>Filtri dell'elenco delle spedizioni; un valore <c>null</c> non filtra.</summary>
+/// <param name="Customer">Parte del nome del mittente o del destinatario.</param>
+/// <param name="From">Data di presa in carico prevista, dal giorno indicato compreso.</param>
+/// <param name="To">Data di presa in carico prevista, fino al giorno indicato compreso.</param>
+public sealed record ShipmentFilter(DatasetStatus? Status = null, string? Customer = null, DateOnly? From = null, DateOnly? To = null);
+
 /// <summary>
 /// Letture delle spedizioni in sola lettura: query senza tracking, nessuna paginazione ma un limite fisso di righe con
 /// ordinamento stabile. Lo stato è quello dell'ultima versione del dataset.
@@ -22,13 +28,30 @@ public sealed class ShipmentViewQueries(EftiDbContext db)
     /// Spedizioni dalla più recente. L'ultima versione del dataset si trova con l'indice univoco (<c>ShipmentId</c>, <c>Version</c>),
     /// i problemi con l'indice su <c>EftiDatasetId</c>.
     /// </summary>
-    public async Task<IReadOnlyList<ShipmentSummaryView>> ListAsync(DatasetStatus? status, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<ShipmentSummaryView>> ListAsync(ShipmentFilter filter, CancellationToken cancellationToken)
     {
         IQueryable<Shipment> query = db.Shipments.AsNoTracking();
 
-        if (status is { } wanted)
+        if (filter.Status is { } wanted)
         {
             query = query.Where(s => s.Datasets.OrderByDescending(d => d.Version).Select(d => (DatasetStatus?)d.Status).FirstOrDefault() == wanted);
+        }
+
+        // Ricerca per nome e per periodo senza indici dedicati: scansione, accettabile sulle poche centinaia di righe del POC.
+        if (filter.Customer is { } customer)
+        {
+            query = query.Where(s => s.Parties.Any(p =>
+                (p.Role == PartyRole.Consignor || p.Role == PartyRole.Consignee) && p.Party.Name != null && p.Party.Name.Contains(customer)));
+        }
+
+        if (filter.From is { } from)
+        {
+            query = query.Where(s => s.PickupDate >= from);
+        }
+
+        if (filter.To is { } to)
+        {
+            query = query.Where(s => s.PickupDate <= to);
         }
 
         var rows = await query
@@ -80,6 +103,10 @@ public sealed class ShipmentViewQueries(EftiDbContext db)
 
         return ToDetail(shipment, dataset);
     }
+
+    /// <summary>Codice dell'ordine del TMS da cui è nata la spedizione (lettura per chiave univoca); <c>null</c> se la spedizione non esiste.</summary>
+    public async Task<string?> FindTmsOrderCodeAsync(string code, CancellationToken cancellationToken) =>
+        await db.Shipments.AsNoTracking().Where(s => s.Code == code).Select(s => s.TmsOrderCode).SingleOrDefaultAsync(cancellationToken);
 
     /// <summary>Ultima versione del dataset di una spedizione; <c>null</c> se la spedizione non esiste.</summary>
     public async Task<StoredDataset?> FindDatasetAsync(string code, CancellationToken cancellationToken) =>

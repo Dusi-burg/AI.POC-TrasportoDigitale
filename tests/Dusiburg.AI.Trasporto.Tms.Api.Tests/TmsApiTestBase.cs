@@ -4,7 +4,9 @@ using Dusiburg.AI.Trasporto.Tms.Data;
 using Dusiburg.AI.Trasporto.Tms.Data.Seed;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Dusiburg.AI.Trasporto.Tms.Api.Tests;
 
@@ -32,8 +34,25 @@ public abstract class TmsApiTestBase
 
         Seed = (await TrasportoDatabaseInitializer.RecreateAsync(_connectionString, seed: true, today: SeedDate, cancellationToken: CancellationToken))!;
 
-        Factory = new WebApplicationFactory<TmsApiEntryPoint>()
-            .WithWebHostBuilder(builder => builder.UseSetting("ConnectionStrings:sql", _connectionString));
+        Factory = new WebApplicationFactory<TmsApiEntryPoint>().WithWebHostBuilder(builder =>
+        {
+            builder.UseSetting("ConnectionStrings:sql", _connectionString);
+
+            // Per l'API è sempre il giorno del seed: POST /dev/reset rigenera i dati con le date relative a "oggi", e con
+            // l'orologio vero i test darebbero un esito diverso a seconda del giorno in cui si eseguono.
+            builder.ConfigureTestServices(services =>
+            {
+                services.RemoveAll<TimeProvider>();
+                services.AddSingleton<TimeProvider>(new SeedDayTimeProvider());
+            });
+        });
+    }
+
+    private sealed class SeedDayTimeProvider : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => new(SeedDate, new TimeOnly(12, 0), TimeSpan.Zero);
+
+        public override TimeZoneInfo LocalTimeZone => TimeZoneInfo.Utc;
     }
 
     [OneTimeTearDown]

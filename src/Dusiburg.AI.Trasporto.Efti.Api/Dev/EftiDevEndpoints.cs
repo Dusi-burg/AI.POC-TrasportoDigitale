@@ -20,6 +20,7 @@ internal static class EftiDevEndpoints
             {
                 await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
 
+                await db.FieldProposals.ExecuteDeleteAsync(cancellationToken);
                 await db.IdentifierRegistry.ExecuteDeleteAsync(cancellationToken);
                 await db.ValidationIssues.ExecuteDeleteAsync(cancellationToken);
                 await db.Datasets.ExecuteDeleteAsync(cancellationToken);

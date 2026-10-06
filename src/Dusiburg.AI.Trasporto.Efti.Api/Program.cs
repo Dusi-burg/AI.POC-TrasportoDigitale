@@ -3,6 +3,7 @@ using Dusiburg.AI.Trasporto.Efti.Api.Audit;
 using Dusiburg.AI.Trasporto.Efti.Api.Dev;
 using Dusiburg.AI.Trasporto.Efti.Api.Gate;
 using Dusiburg.AI.Trasporto.Efti.Api.Health;
+using Dusiburg.AI.Trasporto.Efti.Api.Proposals;
 using Dusiburg.AI.Trasporto.Efti.Api.Security;
 using Dusiburg.AI.Trasporto.Efti.Api.Shipments;
 using Dusiburg.AI.Trasporto.Efti.Api.Tms;
@@ -58,6 +59,9 @@ builder.Services.AddOptions<EftiPlatformOptions>()
     .ValidateOnStart();
 builder.Services.AddScoped<IdentifierRegistry>();
 
+// Proposte di completamento (Fase 5): le lascia chi ha il permesso, anche un agente dal tool MCP; le decide una persona.
+builder.Services.AddScoped<FieldProposalService>();
+
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<IHealthProbe, SqlHealthProbe>();
 builder.Services.AddSingleton<IHealthProbe, EftiSchemaHealthProbe>();
@@ -77,11 +81,12 @@ app.UseExceptionHandler();
 
 app.MapDefaultEndpoints();
 
-app.MapGet("/", () => new { service = "Dusiburg.AI.Trasporto.Efti.Api", phase = 4 });
+app.MapGet("/", () => new { service = "Dusiburg.AI.Trasporto.Efti.Api", phase = 5 });
 
 app.MapGroup("/api")
     .MapHealthEndpoints()
     .MapShipmentEndpoints()
+    .MapProposalEndpoints()
     .MapGateEndpoints()
     .MapAuditEndpoints();
 

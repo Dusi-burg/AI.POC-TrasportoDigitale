@@ -42,6 +42,32 @@ public sealed class IdentifierRegistry(
         RegisteredAt = registeredAt
     };
 
+    /// <summary>
+    /// Pubblica o aggiorna la voce di una spedizione il cui dataset è appena diventato (o rimasto) valido dopo una decisione
+    /// umana: targhe e identificatori seguono la nuova versione, UIL e data di pubblicazione restano quelli della prima volta.
+    /// Non salva: lo fa chi sta salvando la nuova versione del dataset, nella stessa transazione.
+    /// </summary>
+    public async Task PublishAsync(Shipment shipment, string datasetJson, DateTimeOffset now, CancellationToken cancellationToken)
+    {
+        IdentifierRegistryEntry fresh = CreateEntry(shipment, datasetJson, now);
+        IdentifierRegistryEntry? existing = await db.IdentifierRegistry.SingleOrDefaultAsync(e => e.ShipmentId == shipment.Id, cancellationToken);
+
+        if (existing is null)
+        {
+            db.IdentifierRegistry.Add(fresh);
+
+            return;
+        }
+
+        existing.VehiclePlateNumber = fresh.VehiclePlateNumber;
+        existing.TrailerPlateNumber = fresh.TrailerPlateNumber;
+        existing.IdentifiersJson = fresh.IdentifiersJson;
+    }
+
+    /// <summary>La spedizione ha una voce nel registro (lettura per chiave univoca).</summary>
+    public Task<bool> IsRegisteredAsync(int shipmentId, CancellationToken cancellationToken) =>
+        db.IdentifierRegistry.AnyAsync(e => e.ShipmentId == shipmentId, cancellationToken);
+
     /// <summary>Voci non scadute con quella targa, della motrice o del rimorchio (colonne indicizzate), dalla più recente.</summary>
     public async Task<IReadOnlyList<ConsignmentIdentifiersView>> FindByPlateAsync(string normalizedPlate, CancellationToken cancellationToken)
     {

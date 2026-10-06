@@ -9,7 +9,7 @@
 - Which eFTI dataset elements are covered and which are not (Italian): [docs/copertura-dataset.md](docs/copertura-dataset.md)
 - Who can do what (Italian): [docs/ruoli.md](docs/ruoli.md)
 
-> **Status**: Phases 1-4 complete. The simulated TMS exposes 6 demo orders plus 150 synthetic orders with deliberate defects; `Efti.Api` imports them, builds the eFTI dataset with the element names of the XSD schema (v0, 0.8), validates it with 29 declarative rules and exports it as schema-conformant XML. Every operation requires a role and lands in an append-only audit trail; an authority reaches a consignment only from a licence plate, through an identifier registry, and reads the `EU03` and `EU05a` subsets derived from the schema. Next: Phase 5 — eFTI MCP server.
+> **Status**: Phases 1-5 complete. The simulated TMS exposes 6 demo orders plus 150 synthetic orders with deliberate defects; `Efti.Api` imports them, builds the eFTI dataset with the element names of the XSD schema (v0, 0.8), validates it with 29 declarative rules and exports it as schema-conformant XML. Every operation requires a role and lands in an append-only audit trail; an authority reaches a consignment only from a licence plate, through an identifier registry, and reads the `EU03` and `EU05a` subsets derived from the schema. An MCP server exposes seven tools with the same permissions as the API: an agent sees only the tools of the role of whoever runs it and can **propose** a field value, but the dataset changes only when a person accepts the proposal. Next: Phase 6 — mapping and authority agents.
 
 Identity is **simulated**: one key per role in the `X-Api-Key` header, no real authentication.
 

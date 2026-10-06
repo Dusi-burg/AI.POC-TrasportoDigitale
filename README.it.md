@@ -9,7 +9,7 @@ POC **"Trasporto digitale"**: dal punto di vista del vettore su strada, uno stra
 - Quali elementi del dataset eFTI sono coperti e quali no: [docs/copertura-dataset.md](docs/copertura-dataset.md)
 - Chi può fare che cosa: [docs/ruoli.md](docs/ruoli.md)
 
-> **Stato**: Fasi 1-4 completate. Il TMS simulato espone 6 ordini demo e 150 ordini sintetici con difetti voluti; `Efti.Api` li importa, costruisce il dataset eFTI con i nomi dello schema XSD (v0, 0.8), lo valida con 29 regole dichiarative e lo esporta in XML conforme allo schema. Ogni operazione richiede un ruolo e finisce in un audit append-only; l'autorità arriva a una spedizione solo da una targa, attraverso un registro degli identificatori, e legge i sottoinsiemi `EU03` ed `EU05a` ricavati dallo schema. Prossima: Fase 5 — server MCP eFTI.
+> **Stato**: Fasi 1-5 completate. Il TMS simulato espone 6 ordini demo e 150 ordini sintetici con difetti voluti; `Efti.Api` li importa, costruisce il dataset eFTI con i nomi dello schema XSD (v0, 0.8), lo valida con 29 regole dichiarative e lo esporta in XML conforme allo schema. Ogni operazione richiede un ruolo e finisce in un audit append-only; l'autorità arriva a una spedizione solo da una targa, attraverso un registro degli identificatori, e legge i sottoinsiemi `EU03` ed `EU05a` ricavati dallo schema. Un server MCP espone sette tool con gli stessi permessi dell'API: un agente vede solo i tool del ruolo di chi lo usa e può **proporre** il valore di un campo, ma il dataset cambia solo quando una persona accetta la proposta. Prossima: Fase 6 — agenti di mappatura e dell'autorità.
 
 L'identità è **simulata**: una chiave per ruolo nell'intestazione `X-Api-Key`, nessuna autenticazione reale.
 

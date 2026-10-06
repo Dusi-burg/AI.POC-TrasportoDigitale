@@ -40,8 +40,21 @@ internal sealed class PackageTypeConfiguration() : EnumLookupConfiguration<Packa
 
 internal sealed class FreightPaymentConfiguration() : EnumLookupConfiguration<FreightPayment>("FreightPayment");
 
-internal static class ColumnSizes
+internal sealed class ProposalStatusConfiguration() : EnumLookupConfiguration<ProposalStatus>("ProposalStatus");
+
+internal sealed class ProposalSourceConfiguration() : EnumLookupConfiguration<ProposalSource>("ProposalSource");
+
+/// <summary>Lunghezze delle colonne: le usa anche chi controlla un valore prima di scriverlo (<c>CompletableFields</c>).</summary>
+public static class ColumnSizes
 {
+    public const int FieldPath = 200;
+    public const int FieldValue = 200;
+    public const int SourceReference = 200;
+    public const int Rationale = 1000;
+    public const int CmrNumber = 35;
+    public const int ProperShippingName = 200;
+    public const int AdrClass = 10;
+
     public const int Code = 20;
     public const int Name = 200;
     public const int VatNumber = 20;
@@ -73,7 +86,7 @@ internal sealed class ShipmentConfiguration : IEntityTypeConfiguration<Shipment>
         builder.Property(s => s.VehicleTypeCode).HasMaxLength(3).IsUnicode(false);
         builder.Property(s => s.TrailerPlateNumber).HasMaxLength(ColumnSizes.PlateNumber).IsUnicode(false);
         builder.Property(s => s.TrailerCountryCode).HasMaxLength(ColumnSizes.CountryCode).IsUnicode(false);
-        builder.Property(s => s.CmrNumber).HasMaxLength(35).IsUnicode(false);
+        builder.Property(s => s.CmrNumber).HasMaxLength(ColumnSizes.CmrNumber).IsUnicode(false);
         builder.Property(s => s.FreightAmount).HasPrecision(18, 2);
         builder.Property(s => s.FreightPayment).HasColumnName("FreightPaymentId").HasConversion<byte>();
         builder.Property(s => s.CurrencyCode).HasMaxLength(3).IsUnicode(false);
@@ -197,8 +210,8 @@ internal sealed class ConsignmentItemConfiguration : IEntityTypeConfiguration<Co
         builder.Property(i => i.GrossWeightKg).HasPrecision(12, 3);
         builder.Property(i => i.VolumeM3).HasPrecision(10, 3);
         builder.Property(i => i.UnNumber).HasMaxLength(4).IsUnicode(false);
-        builder.Property(i => i.ProperShippingName).HasMaxLength(200);
-        builder.Property(i => i.AdrClass).HasMaxLength(10).IsUnicode(false);
+        builder.Property(i => i.ProperShippingName).HasMaxLength(ColumnSizes.ProperShippingName);
+        builder.Property(i => i.AdrClass).HasMaxLength(ColumnSizes.AdrClass).IsUnicode(false);
         builder.Property(i => i.PackingGroup).HasMaxLength(3).IsUnicode(false);
 
         builder.HasIndex(i => new { i.ShipmentId, i.SequenceNumber }).IsUnique();
@@ -236,6 +249,47 @@ internal sealed class EftiDatasetConfiguration : IEntityTypeConfiguration<EftiDa
         builder.HasOne<EnumLookup<DatasetStatus>>()
             .WithMany()
             .HasForeignKey(d => d.Status)
+            .OnDelete(DeleteBehavior.Restrict);
+    }
+}
+
+internal sealed class FieldProposalConfiguration : IEntityTypeConfiguration<FieldProposal>
+{
+    public void Configure(EntityTypeBuilder<FieldProposal> builder)
+    {
+        builder.ToTable("FieldProposal");
+
+        builder.HasKey(p => p.Id);
+
+        builder.Property(p => p.FieldPath).HasMaxLength(ColumnSizes.FieldPath).IsUnicode(false);
+        builder.Property(p => p.ProposedValue).HasMaxLength(ColumnSizes.FieldValue);
+        builder.Property(p => p.CurrentValue).HasMaxLength(ColumnSizes.FieldValue);
+        builder.Property(p => p.Source).HasColumnName("ProposalSourceId").HasConversion<byte>();
+        builder.Property(p => p.SourceReference).HasMaxLength(ColumnSizes.SourceReference);
+        builder.Property(p => p.Rationale).HasMaxLength(ColumnSizes.Rationale);
+        builder.Property(p => p.Status).HasColumnName("ProposalStatusId").HasConversion<byte>();
+        builder.Property(p => p.ProposedById).HasMaxLength(50).IsUnicode(false);
+        builder.Property(p => p.ProposedByName).HasMaxLength(ColumnSizes.Name);
+        builder.Property(p => p.DecidedById).HasMaxLength(50).IsUnicode(false);
+        builder.Property(p => p.DecidedByName).HasMaxLength(ColumnSizes.Name);
+        builder.Property(p => p.DecisionNote).HasMaxLength(ColumnSizes.Rationale);
+
+        // Proposte di una spedizione, e ricerca della stessa proposta ancora in attesa (idempotenza del tool).
+        builder.HasIndex(p => new { p.ShipmentId, p.Status, p.FieldPath });
+
+        builder.HasOne(p => p.Shipment)
+            .WithMany()
+            .HasForeignKey(p => p.ShipmentId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasOne<EnumLookup<ProposalSource>>()
+            .WithMany()
+            .HasForeignKey(p => p.Source)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne<EnumLookup<ProposalStatus>>()
+            .WithMany()
+            .HasForeignKey(p => p.Status)
             .OnDelete(DeleteBehavior.Restrict);
     }
 }

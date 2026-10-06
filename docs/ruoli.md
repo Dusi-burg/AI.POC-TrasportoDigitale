@@ -28,6 +28,10 @@ Ogni cella dice **su che cosa** vale il permesso; una cella vuota è un rifiuto.
 | `SubsetRead` | — | — | sottoinsieme per UIL | — |
 | `AuthorityAccessRead` | accessi dell'autorità | — | — | accessi dell'autorità |
 | `AuditRead` | — | — | — | tutto l'audit |
+| `TmsOrderRead` | tutte le spedizioni | — | — | — |
+| `FieldProposalCreate` | tutte le spedizioni | — | — | — |
+| `FieldProposalRead` | tutte le spedizioni | — | — | tutte le spedizioni |
+| `FieldProposalDecide` | tutte le spedizioni | — | — | — |
 
 ## Operazioni
 
@@ -42,6 +46,10 @@ Ogni cella dice **su che cosa** vale il permesso; una cella vuota è un rifiuto.
 | `SubsetRead` | lettura | `GET /api/gate/subset?uil=&subsetId=` | Leggere un sottoinsieme del dataset di una spedizione, dati UIL e sottoinsieme. |
 | `AuthorityAccessRead` | lettura | `GET /api/shipments/{code}/authority-access` | Vedere quando un'autorità ha consultato una spedizione. |
 | `AuditRead` | lettura | `GET /api/audit` | Leggere il registro di audit. |
+| `TmsOrderRead` | lettura | `GET /api/shipments/{code}/tms-order` | Leggere l'ordine di origine nel TMS, per motivare una proposta di completamento. |
+| `FieldProposalCreate` | scrittura | `POST /api/shipments/{code}/proposals` | Proporre il valore di un campo del dataset: la proposta non modifica il dataset. |
+| `FieldProposalRead` | lettura | `GET /api/shipments/{code}/proposals` | Leggere le proposte di completamento di una spedizione e il loro esito. |
+| `FieldProposalDecide` | scrittura | `POST /api/proposals/{id}/decision` | Accettare o rifiutare una proposta: l'accettazione crea una nuova versione del dataset. È un'azione umana, nessun tool la espone. |
 
 ## Ambiti
 

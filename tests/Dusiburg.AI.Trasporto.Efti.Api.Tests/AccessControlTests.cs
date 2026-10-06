@@ -8,6 +8,7 @@ using Dusiburg.AI.Trasporto.Efti.Api.Tms;
 using Dusiburg.AI.Trasporto.Efti.Core.Security;
 using Dusiburg.AI.Trasporto.Efti.Data;
 using Dusiburg.AI.Trasporto.Efti.Data.Entities;
+using Dusiburg.AI.Trasporto.Shared.Contracts.Efti;
 using Dusiburg.AI.Trasporto.Shared.Contracts.Views.Efti;
 using Dusiburg.AI.Trasporto.Shared.Errors;
 using Dusiburg.AI.Trasporto.Shared.Health;
@@ -361,8 +362,28 @@ public class AccessControlTests
         Operation.SubsetRead => SendAsync(apiKey, HttpMethod.Get, $"/api/gate/subset?uil={_uil}&subsetId=EU03"),
         Operation.AuthorityAccessRead => SendAsync(apiKey, HttpMethod.Get, "/api/shipments/SH-1001/authority-access"),
         Operation.AuditRead => SendAsync(apiKey, HttpMethod.Get, "/api/audit"),
+        Operation.TmsOrderRead => SendAsync(apiKey, HttpMethod.Get, "/api/shipments/SH-1002/tms-order"),
+        Operation.FieldProposalCreate => SendAsync(apiKey, HttpMethod.Post, "/api/shipments/SH-1002/proposals", PostcodeProposal),
+        Operation.FieldProposalRead => SendAsync(apiKey, HttpMethod.Get, "/api/shipments/SH-1002/proposals"),
+        Operation.FieldProposalDecide => DecideAFreshProposalAsync(apiKey),
         _ => throw new ArgumentOutOfRangeException(nameof(operation), operation, "Operazione senza richiesta di prova: aggiungerla alla matrice dei test.")
     };
+
+    private static readonly ProposeFieldRequest PostcodeProposal =
+        new("consignee/postalAddress/postcode", "69007", "TmsOrder", "TO-1002: senderInstructions", "Il CAP è nelle istruzioni del mittente.");
+
+    /// <summary>
+    /// Una decisione ha bisogno di una proposta in attesa: la lascia l'operatore, poi decide (rifiutando, così SH-1002 resta
+    /// com'è) chi ha la chiave indicata. Se la decisione viene negata la proposta resta in attesa e la volta dopo si riusa.
+    /// </summary>
+    private async Task<HttpResponseMessage> DecideAFreshProposalAsync(string? apiKey)
+    {
+        var proposal = new ProposeFieldRequest("consignee/taxRegistration/id", "FR99999000022", "TmsOrder", "TO-1002: senderInstructions", "TVA nelle istruzioni del mittente.");
+        using HttpResponseMessage proposed = await SendAsync(Role.Dispatcher, HttpMethod.Post, "/api/shipments/SH-1002/proposals", proposal);
+        ProposeFieldResponse? response = await proposed.Content.ReadFromJsonAsync<ProposeFieldResponse>(TrasportoJson.Options, CancellationToken);
+
+        return await SendAsync(apiKey, HttpMethod.Post, $"/api/proposals/{response!.Proposal.Id}/decision", new ProposalDecisionRequest(ProposalStatus.Rejected, "Prova della matrice."));
+    }
 
     private Task<HttpResponseMessage> SendAsync(Role role, HttpMethod method, string path, object? body = null) =>
         SendAsync(TestApiKeys.For(role), method, path, body);

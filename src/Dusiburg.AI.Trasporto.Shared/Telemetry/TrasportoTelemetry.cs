@@ -11,4 +11,12 @@ public static class TrasportoTelemetry
         public const string Embedding = "Dusiburg.AI.Trasporto.Ai.Embedding";
         public const string McpEfti = "Dusiburg.AI.Trasporto.Mcp.Efti";
     }
+
+    /// <summary>Attributi dello span di una chiamata a un tool MCP.</summary>
+    public static class Attributes
+    {
+        public const string ToolName = "tool.name";
+        public const string ActorRole = "actor.role";
+        public const string ToolOutcome = "tool.outcome";
+    }
 }
