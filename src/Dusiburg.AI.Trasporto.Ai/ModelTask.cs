@@ -13,7 +13,10 @@ public enum ModelTask
     Draft,
 
     /// <summary>LLM-as-judge (Release 2).</summary>
-    Judge
+    Judge,
+
+    /// <summary>Risposta dell'agente autorità a una domanda di controllo, dai soli sottoinsiemi.</summary>
+    Authority
 }
 
 public static class ModelProviders

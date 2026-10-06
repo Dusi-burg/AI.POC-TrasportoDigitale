@@ -12,4 +12,13 @@
     <ProjectReference Include="..\Dusiburg.AI.Trasporto.Ai\Dusiburg.AI.Trasporto.Ai.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Specifiche degli agenti: risorse dell'assembly, nessun file letto dal disco a runtime. -->
+    <EmbeddedResource Include="Specs\*.agent.md" LogicalName="%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Dusiburg.AI.Trasporto.Agents.Tests" />
+  </ItemGroup>
+
 </Project>

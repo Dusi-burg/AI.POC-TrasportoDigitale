@@ -50,13 +50,13 @@ public sealed record AiOptions(
         public const string EmbeddingDimensions = "EMBEDDING_DIMENSIONS";
         public const string PromptCaptureDirectory = "TRASPORTO_PROMPT_CAPTURE_DIR";
 
-        /// <summary><c>MODEL_EXTRACTION_PROVIDER</c>, <c>MODEL_MAPPING_PROVIDER</c>, <c>MODEL_DRAFT_PROVIDER</c>, <c>MODEL_JUDGE_PROVIDER</c>.</summary>
+        /// <summary><c>MODEL_EXTRACTION_PROVIDER</c>, <c>MODEL_MAPPING_PROVIDER</c>, <c>MODEL_DRAFT_PROVIDER</c>, <c>MODEL_JUDGE_PROVIDER</c>, <c>MODEL_AUTHORITY_PROVIDER</c>.</summary>
         public static string ProviderFor(ModelTask task) => $"MODEL_{task.ToString().ToUpperInvariant()}_PROVIDER";
     }
 
-    /// <summary>Estrazione e mappatura in locale, bozza e giudice sul cloud (PLAN §4).</summary>
+    /// <summary>Estrazione, mappatura e agente autorità in locale, bozza e giudice sul cloud (PLAN §4).</summary>
     public static string DefaultProviderFor(ModelTask task) =>
-        task is ModelTask.Extraction or ModelTask.Mapping ? ModelProviders.Ollama : ModelProviders.Anthropic;
+        task is ModelTask.Draft or ModelTask.Judge ? ModelProviders.Anthropic : ModelProviders.Ollama;
 
     public bool HasAnthropicApiKey => !string.IsNullOrWhiteSpace(AnthropicApiKey);
 

@@ -36,6 +36,7 @@ string[] modelSettings =
     "MODEL_MAPPING_PROVIDER",
     "MODEL_DRAFT_PROVIDER",
     "MODEL_JUDGE_PROVIDER",
+    "MODEL_AUTHORITY_PROVIDER",
     "EMBEDDING_MODEL",
     "EMBEDDING_DIMENSIONS",
     "TRASPORTO_PROMPT_CAPTURE_DIR"
@@ -43,7 +44,7 @@ string[] modelSettings =
 
 eftiApi.WithConfigurationEnvironment(builder, modelSettings);
 
-// Gate simulato: per quanti minuti dopo la consegna una spedizione resta raggiungibile da un'autorità (default del codice: 15).
+// Gate simulato: per quanti minuti dopo la consegna una spedizione resta raggiungibile da un'autorità (default del codice: 7200, cinque giorni).
 eftiApi.WithConfigurationEnvironment(builder, "Efti__GateRetentionMinutes");
 agents.WithConfigurationEnvironment(builder, modelSettings);
 

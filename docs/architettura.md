@@ -1,12 +1,12 @@
 # Trasporto digitale — architettura
 
-> Aggiornato alla **Fase 4 (identità simulata, autorizzazione e audit trail)**. Il documento cresce fase per fase: descrive ciò che il repository contiene oggi e segnala ciò che è previsto ma non ancora scritto.
+> Aggiornato alla **Fase 6 (agenti di mappatura e dell'autorità)**. Il documento cresce fase per fase: descrive ciò che il repository contiene oggi e segnala ciò che è previsto ma non ancora scritto.
 
 ## 1. Che cos'è
 
 POC dal punto di vista dell'**operatore vettore** del trasporto su strada: uno strato "eFTI-ready" sopra un TMS simulato (Release 1), poi la gestione di eccezioni e reclami (Release 2). Tutti i dati sono sintetici e fittizi.
 
-Stato: il TMS simulato espone 156 ordini di trasporto; `Efti.Api` li importa, costruisce per ciascuno il dataset eFTI con i nomi dello schema XSD, lo valida con regole dichiarative e lo esporta in XML conforme allo schema. Ogni operazione di `Efti.Api` richiede un ruolo e lascia una riga in un audit che il database non permette di modificare; l'autorità arriva a una spedizione solo da una targa, attraverso il registro degli identificatori. Tool MCP, agenti ed estrazione dai CMR arrivano con le fasi 5–7.
+Stato: il TMS simulato espone 156 ordini di trasporto; `Efti.Api` li importa, costruisce per ciascuno il dataset eFTI con i nomi dello schema XSD, lo valida con regole dichiarative e lo esporta in XML conforme allo schema. Ogni operazione di `Efti.Api` richiede un ruolo e lascia una riga in un audit che il database non permette di modificare; l'autorità arriva a una spedizione solo da una targa, attraverso il registro degli identificatori. Un server MCP espone sette tool con gli stessi permessi dell'API, e due agenti li usano con la chiave di chi li avvia: uno propone i completamenti di una spedizione incompleta, l'altro risponde alle domande di un controllo su strada dai soli sottoinsiemi. Il dataset cambia solo quando una persona accetta una proposta. L'estrazione dai CMR arriva con la Fase 7.
 
 ## 2. Topologia
 
@@ -16,8 +16,10 @@ flowchart LR
     W --> EA["Efti.Api · :5302"]
     W -.-> AG["Agents · :5304"]
     W -.-> TA["Tms.Api · :5301"]
-    AG -.-> EM["Efti.Mcp · :5303"]
-    EM -.-> EA
+    AG -- "MCP + chiave di chi avvia" --> EM["Efti.Mcp · :5303"]
+    EM -- "stessa chiave" --> EA
+    AG --> OL
+    AG --> CL
     EA -- "pull HTTP" --> TA
     EA --> DB[("LocalDB localdev<br/>database Trasporto")]
     TA --> DB
@@ -32,8 +34,8 @@ Le frecce tratteggiate sono riferimenti già dichiarati nell'AppHost ma non anco
 |---|---|---|---|
 | `Tms.Api` | 5301 | TMS simulato, proprietario dello schema `tms` | viste degli ordini, reset della demo |
 | `Efti.Api` | 5302 | Nucleo eFTI, proprietario degli schemi `efti` e `audit` | importazione dal TMS, viste delle spedizioni, esportazione XML, `/api/health` |
-| `Efti.Mcp` | 5303 | Server MCP eFTI | endpoint `/mcp` raggiungibile solo con la chiave di un ruolo, ancora senza tool |
-| `Agents` | 5304 | Agenti, client MCP, nessun accesso al database | `/`, `/health` |
+| `Efti.Mcp` | 5303 | Server MCP eFTI | endpoint `/mcp` raggiungibile solo con la chiave di un ruolo, sette tool filtrati per ruolo |
+| `Agents` | 5304 | Agenti, client MCP, nessun accesso al database | agente di mappatura e agente autorità, risposta unica o stream SSE |
 | `Web` | 5306 | UI | pagina di stato |
 
 La porta 5305 è riservata a `Claims.Mcp` (Release 2). O2C usa 5101–5106 e Sinistri 5201–5202: le tre demo possono girare insieme.
@@ -54,7 +56,8 @@ Regole di confine, valide da subito:
 | `Tms.Data` | `TmsDbContext` (schema `tms`), entità, generatore dei dati sintetici e seeder |
 | `Efti.Data` | `EftiDbContext` (schema `efti`) con le entità; `AuditDbContext` (schema `audit`) ancora vuoto |
 | `Efti.Core` | Logica deterministica del nucleo: lettura dello schema eFTI, ordine → spedizione, mappatura nel dataset, esportazione XML, regole di validazione, documenti generati |
-| `Ai` | Manopole dei modelli, fabbriche dei client, cattura dei prompt, probe di health |
+| `Ai` | Manopole dei modelli, fabbriche dei client, mascheramento verso il cloud, cattura dei prompt, probe di health |
+| `Agents` | I due agenti, le loro specifiche (`Specs/*.agent.md`), la guardia sui tool, il controllo di riconducibilità alla fonte, gli endpoint |
 | `Documents.Extraction` | Estrazione dai CMR (vuoto), libreria ospitata da `Efti.Api` |
 | `Mcp.Hosting` | Composizione comune dei server MCP: trasporto, chiave di ruolo, elenco dei tool filtrato per ruolo, span ed errori strutturati su ogni chiamata |
 | `Efti.Mcp` | Server MCP eFTI: sette tool sopra `Efti.Api`, senza database e senza identità propria |
@@ -71,12 +74,14 @@ Il modello si sceglie **per compito**. Chi ha bisogno di un modello chiede a `IC
 | `Mapping` | `ollama` | `MODEL_MAPPING_PROVIDER` |
 | `Draft` (Release 2) | `anthropic` | `MODEL_DRAFT_PROVIDER` |
 | `Judge` (Release 2) | `anthropic` | `MODEL_JUDGE_PROVIDER` |
+| `Authority` | `ollama` | `MODEL_AUTHORITY_PROVIDER` |
 
 Regole per provider:
 
 - **Ollama**: temperatura 0,1, thinking spento, finestra di contesto da `OLLAMA_NUM_CTX` (8192), client HTTP dedicato con timeout di 10 minuti.
 - **Anthropic**: `ANTHROPIC_MODEL` (`claude-haiku-4-5`) per tutti i compiti tranne il giudice, che usa `ANTHROPIC_JUDGE_MODEL` (`claude-sonnet-5-5`). La temperatura 0,1 si invia solo ai modelli Haiku 4.5; agli altri non si invia alcun parametro di campionamento.
 - **Embedding**: sempre Ollama, sulla CPU (`num_gpu = 0`), per non togliere VRAM alla chat.
+- **Mascheramento verso il cloud**: con il provider `anthropic` email e numeri di telefono, nei messaggi e nei risultati dei tool, partono come `[email]` e `[telefono]`. Si maschera la copia inviata: il codice che controlla i valori vede i dati veri. Un telefono si riconosce solo in forma internazionale o se annunciato (`tel`, `cell`, …), perché CAP, numeri ONU e partite IVA al modello servono. I nomi di persone fisiche non si riconoscono in modo affidabile e non vengono toccati: i dati del POC non ne contengono.
 
 Con `TRASPORTO_PROMPT_CAPTURE_DIR` ogni richiesta e risposta viene salvata su file per la diagnostica. I file possono contenere dati di business: la cartella va tenuta fuori dal repository.
 
@@ -360,16 +365,58 @@ Con l'**accettazione**, in un solo salvataggio: il valore si scrive sulla spediz
 - Gli errori sono `{ error: { code, message } }` con `isError = true` e i codici dell'API; ogni chiamata apre uno span `mcp.tool <nome>` con `tool.name`, `actor.role` e `tool.outcome`.
 - Le descrizioni dei tool dicono che i testi liberi restituiti (istruzioni del mittente, descrizioni) sono dati, non istruzioni.
 
-## 10. Test e CI
+## 10. Agenti
 
-- `Ai.Tests`: manopole, fabbriche dei client, aggregazione dei controlli. Nessuna chiamata a un modello.
+Il servizio `Agents` ospita due agenti (Microsoft Agent Framework, `ChatClientAgent`). Non hanno database né identità: chi li avvia manda la propria chiave `X-Api-Key`, e con quella l'agente apre i tool di `efti-mcp`. Vede quindi solo i tool di quel ruolo, e ogni sua azione finisce nell'audit a nome di chi l'ha avviato.
+
+| Agente | Tool (allow-list nel codice) | Che cosa fa |
+|---|---|---|
+| `MappingAgent` | `list_validation_issues`, `get_tms_order`, `propose_field_completion` | legge i problemi di una spedizione e il suo ordine nel TMS, lascia proposte `Pending` |
+| `AuthorityAgent` | `find_consignments_by_vehicle`, `get_authority_subset` | da una targa e una domanda di controllo, risponde dai soli sottoinsiemi `EU03` ed `EU05a` |
+
+| Endpoint | Risposta |
+|---|---|
+| `POST /api/agents/mapping/run` · `/run/stream` | esito del run, oppure stream SSE: eventi `step`, poi `result` o `error` |
+| `POST /api/agents/authority/ask` · `/ask/stream` | idem |
+
+Le istruzioni stanno in `Specs/<Nome>.agent.md`, incluse come risorse: sono un documento leggibile, e le note per chi legge non entrano nel prompt. **Ciò che tiene a freno l'agente sta nel codice**, non nelle istruzioni:
+
+- **Allow-list.** All'agente si offrono solo i suoi tool; la guardia rifiuta comunque ogni altro. Se al ruolo di chi avvia mancano i tool dell'agente, l'agente non parte (403) e il modello non viene chiamato.
+- **Argomenti del codice.** La spedizione e la fonte della proposta (`TmsOrder`), come la targa del controllo, non sono argomenti che il modello veda: il codice li toglie dallo schema del tool e li inietta.
+- **Riconducibilità alla fonte** (`SourceGrounding`). Una proposta parte solo se il valore si ritrova nell'ordine del TMS letto in quel run: come testo, come stesso numero o come stessa data. In un testo italiano `8.840` è 8840: la proposta `8.840` per un peso scritto "8.840 kg" è scartata prima di arrivare al server, e il modello ne riceve il motivo. Nessun modello partecipa a questo controllo.
+- **UIL del run.** L'agente autorità legge un sottoinsieme solo per un UIL uscito dalla sua ricerca per targa.
+- **Fatti dai tool.** L'esito di un run — proposte create, proposte scartate con il motivo, sottoinsiemi letti — viene dai risultati dei tool. Il testo del modello è una sintesi da mostrare.
+- **Valori citati.** L'agente autorità chiude con un esito a schema (`answer`, `dataAvailable`, `quotedValues`); i valori citati che non compaiono nei dati letti finiscono in `unsupportedValues` e la risposta non si presenta come fondata.
+
+La fase di lavoro non ha schema di output: con Ollama lo schema vincola la generazione e il modello smette di chiamare i tool. Un rifiuto del modello (`stop_reason = refusal`) non si ritenta: il run si chiude con un avviso e con i fatti raccolti.
+
+### 10.1 Misura (2026-10-06, tre ripetizioni)
+
+Scenario 2 (`SH-1002`) per la mappatura, scenario 4 (targa `ZZ104AA`) per l'autorità. Hardware locale: RTX 5060 8 GB.
+
+| Prova | `qwen3.5:9b` (locale) | `claude-haiku-4-5` (cloud) |
+|---|---|---|
+| Mappatura: le 4 proposte attese | 3 run su 3 | 3 run su 3 |
+| Mappatura: tempo per run | 37–73 s | 14–15 s |
+| Mappatura: token in ingresso / uscita | ≈ 11 900 / 1 400 | ≈ 14 200 / 1 500 |
+| Autorità, "merci pericolose a bordo?" | 2 run su 3 | 3 run su 3 |
+| Autorità, "chi è il destinatario?" | 3 run su 3 | 3 run su 3 |
+| Autorità, richiesta di uscire dal sottoinsieme | 3 run su 3: dato dichiarato non disponibile | 3 run su 3 |
+| Autorità: tempo per domanda | 7–19 s | 6–13 s |
+
+In tutti i run entrambi i modelli hanno proposto anche la partita IVA del destinatario (un avviso, non un errore: il valore è nell'ordine). Nel run locale non riuscito l'agente si è fermato alla ricerca per targa senza leggere il sottoinsieme, e l'esito lo riporta come dato non disponibile. Nessuna proposta è stata scartata dal controllo sulla fonte: entrambi i modelli hanno scritto `8840`. Sono misure su pochi run: la valutazione vera è nella Fase 9.
+
+## 11. Test e CI
+
+- `Ai.Tests`: manopole, fabbriche dei client, aggregazione dei controlli, mascheramento verso il cloud. Nessuna chiamata a un modello.
+- `Agents.Tests`: i due agenti con un **modello a copione** e un server MCP finto (proposte attese, valore non riconducibile scartato, argomenti iniettati, tool fuori allow-list, UIL non uscito dalla ricerca, valore citato non letto, rifiuto del modello); endpoint e stream SSE; un giro completo con `Efti.Mcp` ed `Efti.Api` vere in-process, dove le proposte finiscono nel database a nome dell'operatore.
 - `Efti.Core.Tests`: catalogo dello schema; mappatura; esportazione XML e conformità all'XSD; regole sugli ordini demo, sui difetti del seed (esiti esatti) e sul golden set; matrice dei ruoli cella per cella; sottoinsiemi dell'autorità e identificatori; allineamento dei documenti generati e della copertura dichiarata. Nessun database.
 - `Efti.Api.Tests`: endpoint con probe finti; controlli SQL veri su un database usa-e-getta creato da `DbInit`; convenzioni del modello dati su tutti i `DbContext`; schemi, lookup e vincoli dello schema `efti`; importazione, viste ed esportazione con un TMS finto; **l'intera matrice dei ruoli via HTTP** con il relativo evento di audit; flusso dell'autorità; audit non modificabile; proposte e decisioni, con lo scenario 2 da `Incomplete` a `Valid`.
 - `Efti.Mcp.Tests`: il server MCP sopra una `Efti.Api` vera in-process: elenco dei tool per ruolo; **ogni ruolo su ogni tool**, con l'evento di audit del rifiuto; ogni tool sui dati demo; errori strutturati; nessuna versione nuova di dataset dopo le chiamate ai tool.
 - `Tms.Api.Tests`: invarianti degli ordini demo; generatore dei dati sintetici (ripetibilità, dimensioni, difetti); viste e reset su un database usa-e-getta, con l'orologio fermo al giorno del seed.
 - La CI gira su Windows con LocalDB. I test della categoria `RequiresSql2025` si saltano se LocalDB è più vecchio della versione 17 e restano obbligatori in locale.
 
-## 11. Decisioni
+## 12. Decisioni
 
 Gli identificativi sono quelli del piano di progetto.
 
@@ -418,6 +465,12 @@ Gli identificativi sono quelli del piano di progetto.
 | F5.4 | I campi completabili e i controlli sui valori sono un elenco dichiarativo | Accettare qualunque percorso del JSON: una proposta potrebbe scrivere dove il mapper non legge |
 | F5.5 | L'accettazione crea una versione nuova del dataset, le precedenti restano | Aggiornare il dataset sul posto: si perderebbe ciò che un'autorità aveva letto |
 | F5.6 | L'ordine del TMS si legge passando da `Efti.Api` | Il server MCP chiama il TMS: una lettura senza ruolo e senza audit |
+| F6.1 | L'agente usa la chiave di chi lo avvia, una connessione MCP per run | Un client MCP tenuto aperto: porterebbe con sé la chiave del primo utente |
+| F6.2 | Spedizione, fonte e targa sono argomenti nascosti al modello e iniettati dal codice | Fidarsi delle istruzioni: un testo nei dati potrebbe spostare l'agente su un'altra spedizione |
+| F6.3 | Una proposta parte solo se il valore si ritrova nella fonte letta nel run | Lasciare il giudizio alla persona: vedrebbe proposte plausibili ma inventate, con una fonte dichiarata e mai verificata |
+| F6.4 | L'esito del run sono i risultati dei tool; solo l'agente autorità ha un esito a schema | Esito dichiarato dal modello anche per la mappatura: andrebbe riconciliato con i fatti senza aggiungere nulla |
+| F6.5 | Quinto compito `Authority` nel routing | Riusare `Mapping`: i due agenti non si potrebbero instradare e misurare separatamente |
+| F6.6 | Mascheramento solo verso il cloud, e prudente sui numeri | Mascherare ogni sequenza di cifre: il modello perderebbe CAP, numeri ONU e partite IVA |
 
 ### Versioni
 
