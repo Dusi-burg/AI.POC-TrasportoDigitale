@@ -1,3 +1,4 @@
+using System.Globalization;
 using Dusiburg.AI.Trasporto.Efti.Core.Proposals;
 using Dusiburg.AI.Trasporto.Efti.Core.Schema;
 using Dusiburg.AI.Trasporto.Efti.Data.Entities;
@@ -10,7 +11,7 @@ namespace Dusiburg.AI.Trasporto.Efti.Core.Extraction;
 
 /// <summary>
 /// Pesi dei segnali, soglia di revisione e regole dell'estrazione: sezione <c>Extraction</c> della configurazione. I valori di
-/// default sono una proposta, da confermare guardando le estrazioni vere (CHECKPOINT 7) e da misurare nella Fase 9.
+/// default sono quelli confermati al CHECKPOINT 7 guardando le estrazioni vere; la calibrazione si misura nella Fase 9.
 /// </summary>
 public sealed class ExtractionOptions
 {
@@ -35,7 +36,7 @@ public sealed class ExtractionOptions
 
     public bool IsValid() =>
         ReviewThreshold is >= 0 and <= 1 && Passes is >= 1 and <= 3
-        && Weights.Literal >= 0 && Weights.Format >= 0 && Weights.Tms >= 0 && Weights.Agreement >= 0
+        && Weights.Literal >= 0 && Weights.Format >= 0 && Weights.Tms >= 0 && Weights.Agreement >= 0 && Weights.Annotation >= 0
         && Weights.Literal + Weights.Format + Weights.Tms + Weights.Agreement > 0;
 }
 
@@ -48,10 +49,16 @@ public sealed class ConfidenceWeights
     public decimal Format { get; set; } = 0.15m;
 
     /// <summary>Il valore coincide con quello che la spedizione ha già.</summary>
-    public decimal Tms { get; set; } = 0.25m;
+    public decimal Tms { get; set; } = 0.30m;
 
     /// <summary>Le due letture del documento concordano.</summary>
-    public decimal Agreement { get; set; } = 0.25m;
+    public decimal Agreement { get; set; } = 0.20m;
+
+    /// <summary>
+    /// Un'annotazione a mano riporta lo stesso numero del campo. Conta solo nei documenti che hanno numeri annotati: lì un
+    /// campo numerico che le annotazioni non confermano scende sotto la soglia, anche se lo stampato è chiaro.
+    /// </summary>
+    public decimal Annotation { get; set; } = 0.30m;
 }
 
 /// <summary>Un campo estratto con il giudizio del codice: segnali, confidenza ed esito.</summary>
@@ -69,20 +76,22 @@ public sealed record FieldAssessment(
     string? Note);
 
 /// <summary>
-/// La confidenza per campo (P5): la calcola il codice da quattro segnali verificabili, non la dichiara il modello. Da qui
-/// dipende dove va ogni campo: nulla da fare, proposta, coda di revisione. Nessun modello è coinvolto.
+/// La confidenza per campo (P5): la calcola il codice da segnali verificabili, non la dichiara il modello. Da qui dipende
+/// dove va ogni campo: nulla da fare, proposta, coda di revisione. Nessun modello è coinvolto.
 /// </summary>
 public sealed class ExtractionAssessor(EftiSchemaCatalog catalog)
 {
+    /// <param name="annotations">Le annotazioni aggiunte sopra lo stampato (le note "a mano"), come le isola il lettore del PDF.</param>
     /// <param name="second">La seconda lettura del documento; <c>null</c> se non c'è stata o non è riuscita.</param>
     public IReadOnlyList<FieldAssessment> Assess(
-        Shipment shipment, string documentText, CmrExtraction primary, CmrExtraction? second, ExtractionOptions options)
+        Shipment shipment, string documentText, IReadOnlyList<string> annotations, CmrExtraction primary, CmrExtraction? second, ExtractionOptions options)
     {
         Dictionary<string, string>? secondValues = second is null
             ? null
             : CmrFieldMap.ToFields(second).ToDictionary(f => f.FieldPath, f => f.Value, StringComparer.Ordinal);
+        IReadOnlySet<decimal> annotatedNumbers = SourceGrounding.NumbersIn(annotations);
 
-        return [.. CmrFieldMap.ToFields(primary).Select(field => Assess(shipment, documentText, field, secondValues, options))];
+        return [.. CmrFieldMap.ToFields(primary).Select(field => Assess(shipment, documentText, annotatedNumbers, field, secondValues, options))];
     }
 
     /// <summary>Somma dei pesi dei segnali veri diviso la somma dei pesi dei segnali applicabili, fra 0 e 1.</summary>
@@ -93,7 +102,8 @@ public sealed class ExtractionAssessor(EftiSchemaCatalog catalog)
             (signals.Literal, weights.Literal),
             (signals.Format, weights.Format),
             (signals.Tms, weights.Tms),
-            (signals.Agreement, weights.Agreement)
+            (signals.Agreement, weights.Agreement),
+            (signals.Annotation, weights.Annotation)
         ];
 
         decimal applicable = parts.Where(p => p.Signal is not null).Sum(p => p.Weight);
@@ -102,7 +112,8 @@ public sealed class ExtractionAssessor(EftiSchemaCatalog catalog)
     }
 
     private FieldAssessment Assess(
-        Shipment shipment, string documentText, ExtractedValue field, Dictionary<string, string>? secondValues, ExtractionOptions options)
+        Shipment shipment, string documentText, IReadOnlySet<decimal> annotatedNumbers, ExtractedValue field,
+        Dictionary<string, string>? secondValues, ExtractionOptions options)
     {
         bool literal = SourceGrounding.IsGroundedInText(field.Value, [documentText], out _);
         FieldTarget? target = CompletableFields.Resolve(shipment, field.FieldPath, out string? fieldError);
@@ -123,7 +134,9 @@ public sealed class ExtractionAssessor(EftiSchemaCatalog catalog)
             ? null
             : secondValues.TryGetValue(field.FieldPath, out string? other) && Same(comparable, CompletableFields.Normalize(target.Field, other, catalog, out _) ?? other);
 
-        var signals = new ConfidenceSignals(literal, Format: normalized is not null, Tms: current is null ? null : Same(comparable, current), agreement);
+        var signals = new ConfidenceSignals(
+            literal, Format: normalized is not null, Tms: current is null ? null : Same(comparable, current), agreement,
+            Annotation: AnnotationSignal(target.Field, normalized, annotatedNumbers));
         decimal confidence = Score(signals, options.Weights);
 
         ExtractionFieldOutcome outcome =
@@ -132,6 +145,21 @@ public sealed class ExtractionAssessor(EftiSchemaCatalog catalog)
             : ExtractionFieldOutcome.InReview;
 
         return new FieldAssessment(field, target.CanonicalPath, normalized, current, signals, confidence, outcome, valueError);
+    }
+
+    /// <summary>
+    /// Chi annota un numero a mano su un documento sta dicendo qualcosa sui numeri stampati. Il codice non sa a quale casella
+    /// si riferisca la nota: sa solo se il valore del campo è fra i numeri annotati. Se non lo è, il campo non si propone con
+    /// la confidenza dello stampato: lo guarda una persona, che la nota la sa leggere.
+    /// </summary>
+    private static bool? AnnotationSignal(CompletableField field, string? normalized, IReadOnlySet<decimal> annotatedNumbers)
+    {
+        if (annotatedNumbers.Count == 0 || normalized is null || field.Kind is not (FieldValueKind.PositiveInteger or FieldValueKind.PositiveDecimal))
+        {
+            return null;
+        }
+
+        return annotatedNumbers.Contains(decimal.Parse(normalized, CultureInfo.InvariantCulture));
     }
 
     private static bool Same(string left, string right) => string.Equals(left.Trim(), right.Trim(), StringComparison.OrdinalIgnoreCase);

@@ -99,7 +99,7 @@ public class DocumentExtractionTests
             "includedConsignmentItem[0]/transportDangerousGoods[0]/uNDGID", "includedConsignmentItem[0]/transportDangerousGoods[0]/properShippingName"
         }));
         Assert.That((weight.Value, weight.NormalizedValue, weight.CurrentValue, weight.Signals, weight.Confidence, weight.Outcome),
-            Is.EqualTo(("8840", "8840", "8480", new ConfidenceSignals(true, true, false, true), 0.75m, ExtractionFieldOutcome.InReview)),
+            Is.EqualTo(("8840", "8840", "8480", new ConfidenceSignals(true, true, false, true), 0.70m, ExtractionFieldOutcome.InReview)),
             "il peso del CMR contraddice quello del TMS: non diventa una proposta, lo vede una persona");
         Assert.That(queue.Select(t => (t.Field.FieldPath, t.Status)), Is.EqualTo(new[] { ("grossWeight", ReviewStatus.Pending) }));
         Assert.That(weight.ReviewTaskId, Is.EqualTo(queue.Single().Id));
@@ -116,21 +116,30 @@ public class DocumentExtractionTests
 
         //SUT
         DocumentDetailView document = await UploadAsync("SH-1003", "CMR-1003");
-        ReviewTaskView weightTask = (await QueueAsync("SH-1003")).Single();
+        List<ReviewTaskView> queue = await QueueAsync("SH-1003");
+        List<FieldProposalView> proposalsAfterUpload = await ProposalsAsync("SH-1003");
+        ReviewTaskView weightTask = queue.Single(t => t.Field.FieldPath == "grossWeight");
         ReviewDecisionResponse confirmed = await _api.PostAsync<ReviewDecisionResponse>(
             Role.Dispatcher, $"/api/review-tasks/{weightTask.Id}/decision", new ReviewDecisionRequest(ReviewStatus.Confirmed, "2360", "Vale il lordo."), CancellationToken);
         AuditEvent audited = await _api.LastAuditEventAsync(CancellationToken);
 
-        foreach (FieldProposalView proposal in (await ProposalsAsync("SH-1003")).Where(p => p.Status == ProposalStatus.Pending))
+        // I colli: la persona legge la nota dell'autista, decide che vale lo stampato e conferma il valore estratto.
+        foreach (ReviewTaskView packages in queue.Where(t => t.Id != weightTask.Id))
         {
-            await _api.PostAsync<ProposalDecisionResponse>(
-                Role.Dispatcher, $"/api/proposals/{proposal.Id}/decision", new ProposalDecisionRequest(ProposalStatus.Accepted, null), CancellationToken);
+            await _api.PostAsync<ReviewDecisionResponse>(
+                Role.Dispatcher, $"/api/review-tasks/{packages.Id}/decision", new ReviewDecisionRequest(ReviewStatus.Confirmed, null, null), CancellationToken);
         }
 
         ShipmentDetailView after = await _api.GetAsync<ShipmentDetailView>(Role.Dispatcher, "/api/views/shipments/SH-1003", CancellationToken);
         Dictionary<string, ExtractionFieldView> fields = document.Extraction.Fields.ToDictionary(f => f.FieldPath);
         Assert.That((before.Dataset.Status, before.TotalPackages, before.TotalGrossWeightKg), Is.EqualTo((DatasetStatus.Incomplete, (int?)0, (decimal?)0m)), "il TMS non ha colli né pesi");
-        Assert.That((fields["numberOfPackages"].Outcome, fields["transportPackage[0]/itemQuantity"].Outcome), Is.EqualTo((ExtractionFieldOutcome.Proposed, ExtractionFieldOutcome.Proposed)));
+        Assert.That(document.Annotations, Is.EqualTo(new[] { "Al carico contati 13 colli: manca 1 cassa. Firma autista." }), "la nota a mano è riconosciuta nel PDF");
+        Assert.That((fields["numberOfPackages"].Value, fields["numberOfPackages"].Signals, fields["numberOfPackages"].Confidence, fields["numberOfPackages"].Outcome),
+            Is.EqualTo(("14", new ConfidenceSignals(true, true, null, true, false), 0.7m, ExtractionFieldOutcome.InReview)),
+            "lo stampato dice 14, la nota a mano 13: il campo non diventa una proposta, lo decide una persona");
+        Assert.That(fields["transportPackage[0]/itemQuantity"].Outcome, Is.EqualTo(ExtractionFieldOutcome.InReview));
+        Assert.That(queue.Select(t => t.Field.FieldPath), Is.EquivalentTo(new[] { "numberOfPackages", "transportPackage[0]/itemQuantity", "grossWeight" }));
+        Assert.That(proposalsAfterUpload, Is.Empty, "nessun campo di questo documento è diventato una proposta da solo");
         Assert.That((fields["grossWeight"].Signals.Format, fields["grossWeight"].NormalizedValue, fields["grossWeight"].Outcome),
             Is.EqualTo((false, (string?)null, ExtractionFieldOutcome.InReview)));
         Assert.That(fields["grossWeight"].Note, Does.Contain("numero"));
@@ -233,9 +242,9 @@ public class DocumentExtractionTests
         Assert.That((document.Extraction.Passes, document.Extraction.Threshold, _model.Requests.Count), Is.EqualTo((1, 0.60m, 1)));
         Assert.That((weight.Value, weight.CurrentValue, weight.Signals, weight.Outcome),
             Is.EqualTo(("2640", "2460", new ConfidenceSignals(true, true, false, null), ExtractionFieldOutcome.Proposed)), "con una sola lettura il segnale di accordo non si applica");
-        Assert.That(weight.Confidence, Is.EqualTo(0.667m));
+        Assert.That(weight.Confidence, Is.EqualTo(0.625m));
         Assert.That((proposal.Id, proposal.Status, proposal.ResultingDatasetVersion), Is.EqualTo((weight.ProposalId, ProposalStatus.Accepted, (int?)2)));
-        Assert.That(proposal.DecisionNote, Does.StartWith("Accettazione automatica: confidenza 0.67, soglia 0.60"), "la regola che ha deciso resta scritta");
+        Assert.That(proposal.DecisionNote, Does.StartWith("Accettazione automatica: confidenza 0.6"), "la regola che ha deciso resta scritta");
         Assert.That(versions.Select(v => (v.Version, v.Status)), Is.EqualTo(new[] { (1, DatasetStatus.Valid), (2, DatasetStatus.Incomplete) }),
             "accettare il peso del documento rende incoerente il dataset: è il motivo per cui la regola è spenta di default");
     }

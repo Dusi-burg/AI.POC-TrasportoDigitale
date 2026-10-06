@@ -32,6 +32,19 @@ public static partial class SourceGrounding
         return IsGrounded(value, content, out reason);
     }
 
+    /// <summary>I numeri scritti in un insieme di testi liberi, letti all'italiana; le date non contano.</summary>
+    public static IReadOnlySet<decimal> NumbersIn(IEnumerable<string> texts)
+    {
+        var content = new SourceContent();
+
+        foreach (string text in texts)
+        {
+            CollectText(text, content);
+        }
+
+        return content.Numbers;
+    }
+
     private static bool IsGrounded(string? value, SourceContent content, out string? reason)
     {
         reason = null;

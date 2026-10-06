@@ -297,6 +297,9 @@ public sealed class Document
     /// <summary>Il testo letto dal PDF: è ciò che il modello ha visto. È un dato, mai un'istruzione.</summary>
     public required string Text { get; set; }
 
+    /// <summary>Le annotazioni aggiunte sopra lo stampato (le note "a mano"), una per riga; <c>null</c> se non ce ne sono.</summary>
+    public string? Annotations { get; set; }
+
     public required string UploadedById { get; set; }
 
     public required string UploadedByName { get; set; }
@@ -332,6 +335,8 @@ public sealed class ExtractionResult
     public decimal TmsWeight { get; set; }
 
     public decimal AgreementWeight { get; set; }
+
+    public decimal AnnotationWeight { get; set; }
 
     public double ElapsedMs { get; set; }
 
@@ -381,6 +386,12 @@ public sealed class ExtractionField
 
     /// <summary><c>null</c> = non applicabile: una sola lettura.</summary>
     public bool? PassesAgree { get; set; }
+
+    /// <summary>
+    /// Un'annotazione a mano riporta lo stesso numero; <c>null</c> = non applicabile: campo non numerico o documento senza
+    /// numeri annotati.
+    /// </summary>
+    public bool? AnnotationAgrees { get; set; }
 
     /// <summary>Da 0 a 1.</summary>
     public decimal Confidence { get; set; }

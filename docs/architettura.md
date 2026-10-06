@@ -155,7 +155,7 @@ Il TMS è **permissivo per scelta**: mittente e destinatario sono testo dell'ord
 | `FieldProposal` | — | proposta di completamento di un campo: valore proposto e valore di allora, fonte, motivazione, chi l'ha fatta, chi l'ha decisa, versione del dataset che ne è nata |
 | `Document` | — | documento caricato su una spedizione: file, impronta SHA-256, testo letto, chi e quando |
 | `ExtractionResult` | una per documento | modello, letture, tempi, token, soglia e pesi in vigore, risposta grezza |
-| `ExtractionField` | — | campo estratto: valore, valore normalizzato, valore della spedizione, quattro segnali, confidenza, esito, proposta collegata |
+| `ExtractionField` | — | campo estratto: valore, valore normalizzato, valore della spedizione, cinque segnali, confidenza, esito, proposta collegata |
 | `ReviewTask` | una per campo | voce della coda di revisione: stato, chi ha deciso, valore corretto, nota |
 | Lookup | — | `PartyRole`, `DatasetStatus`, `IssueSeverity`, `PackageType`, `FreightPayment`, `ProposalStatus`, `ProposalSource`, `ExtractionFieldOutcome`, `ReviewStatus` |
 
@@ -421,7 +421,7 @@ flowchart LR
     P([PDF]) --> T["PdfTextReader<br/>testo, casella per casella"]
     T --> M{{"modello (compito Extraction)<br/>due letture, schema JSON"}}
     M --> F["CmrFieldMap<br/>casella → campo del dataset"]
-    F --> A["ExtractionAssessor<br/>4 segnali → confidenza → esito"]
+    F --> A["ExtractionAssessor<br/>5 segnali → confidenza → esito"]
     A -- "coincide" --> N([nulla da fare])
     A -- "≥ soglia" --> PR["FieldProposal<br/>fonte Document"]
     A -- "< soglia o formato non valido" --> R["ReviewTask"]
@@ -436,14 +436,15 @@ flowchart LR
 
 ### 11.1 Confidenza: la calcola il codice
 
-Il modello non dichiara quanto è sicuro. Per ogni campo il codice verifica quattro fatti, ciascuno vero, falso o non applicabile:
+Il modello non dichiara quanto è sicuro. Per ogni campo il codice verifica cinque fatti, ciascuno vero, falso o non applicabile:
 
 | Segnale | Vero quando | Peso |
 |---|---|---|
 | `Literal` | il valore compare alla lettera nel testo del PDF (lo stesso controllo di riconducibilità degli agenti) | 0,35 |
 | `Format` | il valore supera il controllo del campo (paese, partita IVA, targa, numero ONU, numero) | 0,15 |
-| `Tms` | coincide con il valore che la spedizione ha già; non applicabile se la spedizione non ha quel dato | 0,25 |
-| `Agreement` | le due letture danno lo stesso valore; non applicabile con una sola lettura | 0,25 |
+| `Tms` | coincide con il valore che la spedizione ha già; non applicabile se la spedizione non ha quel dato | 0,30 |
+| `Agreement` | le due letture danno lo stesso valore; non applicabile con una sola lettura | 0,20 |
+| `Annotation` | un'annotazione a mano riporta lo stesso numero; si applica solo ai campi numerici di un documento che ha numeri annotati | 0,30 |
 
 Confidenza = pesi dei segnali veri ÷ pesi dei segnali applicabili. Soglia di revisione: **0,80**. Pesi (`Extraction:Weights:*`), soglia (`EXTRACTION_REVIEW_THRESHOLD`) e numero di letture (`Extraction:Passes`) sono configurazione; quelli in vigore si salvano con ogni estrazione, così un esito di ieri resta spiegabile.
 
@@ -454,9 +455,11 @@ Confidenza = pesi dei segnali veri ÷ pesi dei segnali applicabili. Soglia di re
 | `InReview` | sotto soglia, oppure formato non valido | una voce nella coda di revisione |
 | `NotApplicable` | il campo non esiste sulla spedizione (riga in più, riga non ADR) | nulla |
 
-Conseguenza voluta dei pesi: **un valore che contraddice il TMS non supera mai la soglia** (al massimo 0,75), quindi passa sempre da una persona. È anche ciò che ferma un'iniezione riuscita: se il modello obbedisse a un testo scritto nel documento, il valore alterato contraddirebbe la spedizione.
+Conseguenza voluta dei pesi: **un valore che contraddice il TMS non supera mai la soglia** (al massimo 0,70), quindi passa sempre da una persona. Contraddire un dato già noto pesa più del disaccordo fra le due letture (0,71): pesi e soglia sono stati confermati guardando le estrazioni vere. È anche ciò che ferma un'iniezione riuscita: se il modello obbedisse a un testo scritto nel documento, il valore alterato contraddirebbe la spedizione.
 
-Limite dichiarato: la confidenza misura la **coerenza** di un valore, non l'**ambiguità** del documento. Un numero stampato chiaramente e contraddetto da un'annotazione a mano ha confidenza piena: la contraddizione la vede la persona che decide la proposta.
+**Le note a mano contano.** `PdfTextReader` isola le annotazioni aggiunte sopra lo stampato (nei CMR sintetici il testo colorato; lo stampato è nero o grigio). Se un'annotazione contiene numeri, ogni campo numerico del documento che quei numeri non confermano perde il segnale `Annotation` e scende a 0,70: non diventa una proposta, lo decide una persona. Il codice non sa a quale casella si riferisca la nota né chi abbia ragione: sa che qualcuno ha scritto a mano un numero diverso. Nello scenario 3 lo stampato dice 14 colli e l'autista ha annotato di averne contati 13: colli e peso vanno in revisione. Una nota senza numeri non cambia nulla.
+
+Limiti dichiarati: il riconoscimento vale per annotazioni che sono testo del PDF, non per una nota scritta a penna su una scansione (niente OCR); e una casella ambigua senza annotazioni — due numeri stampati, lordo e netto — resta affidata alla lettura del modello e alla persona che decide la proposta.
 
 ### 11.2 Revisione
 
@@ -470,13 +473,14 @@ Prima misura con `qwen3.5:9b` in locale (2026-10-06, un passaggio sugli otto doc
 
 | Misura | Valore |
 |---|---|
-| Campi estratti | 221 |
-| Esatti rispetto alla verità di riferimento | 219 (99,1%) |
-| Coincidono con la spedizione / proposte / in revisione | 207 / 10 / 4 |
-| Proposte esatte | 10 su 10 |
-| Campi errati passati sopra soglia | 0 (i 2 errati sono finiti in revisione) |
-| Iniezione (`CMR-1004-INJ`) | peso e destinatario non alterati |
-| Tempo per documento, due letture | 22–32 s |
+| Campi estratti | 220 |
+| Esatti rispetto alla verità di riferimento | 219 (99,5%) |
+| Coincidono con la spedizione / proposte / in revisione | 208 / 6 / 6 |
+| Proposte esatte | 6 su 6 |
+| Campi errati passati sopra soglia | 0 (l'unico errato è finito in revisione: le due letture non concordavano) |
+| Scenario 3 (`CMR-1003`) | colli e peso in revisione a 0,70, per la nota a mano |
+| Iniezione (`CMR-1004-INJ`) | peso e destinatario non alterati; tre campi ADR non estratti |
+| Tempo per documento, due letture | 22–30 s |
 
 Sono otto documenti e un passaggio: la valutazione su 30 documenti, con la calibrazione della confidenza per fascia, è nella Fase 9.
 
@@ -547,11 +551,12 @@ Gli identificativi sono quelli del piano di progetto.
 | F6.4 | L'esito del run sono i risultati dei tool; solo l'agente autorità ha un esito a schema | Esito dichiarato dal modello anche per la mappatura: andrebbe riconciliato con i fatti senza aggiungere nulla |
 | F6.5 | Quinto compito `Authority` nel routing | Riusare `Mapping`: i due agenti non si potrebbero instradare e misurare separatamente |
 | F6.6 | Mascheramento solo verso il cloud, e prudente sui numeri | Mascherare ogni sequenza di cifre: il modello perderebbe CAP, numeri ONU e partite IVA |
-| P5 | La confidenza per campo la calcola il codice da quattro segnali verificabili | Confidenza dichiarata dal modello: non calibrata, e un modello ingannato sarebbe anche sicuro di sé |
+| P5 | La confidenza per campo la calcola il codice da segnali verificabili | Confidenza dichiarata dal modello: non calibrata, e un modello ingannato sarebbe anche sicuro di sé |
 | D4 | PDFsharp-MigraDoc genera i CMR sintetici (solo nel tool `Eval`), PdfPig ne legge il testo | QuestPDF: licenza comunitaria con soglia di fatturato, meno adatta a un repository pubblico |
 | F7.1 | I pesi restano testo nell'estrazione; il numero lo legge il codice | Peso come numero nello schema: alla prima prova il modello ha restituito 2,46 per "2.460" |
 | F7.2 | Il testo del PDF si legge nell'ordine di scrittura, non per posizione | Righe ricostruite per posizione: due caselle affiancate si mescolano riga per riga |
 | F7.3 | Un valore che contraddice il TMS non supera la soglia | Soglia raggiungibile con i soli segnali interni al documento: un'iniezione riuscita passerebbe |
+| F7.8 | Un numero annotato a mano che non conferma il campo lo manda in revisione (CHECKPOINT 7) | Confidenza piena allo stampato: la contraddizione la vedrebbe solo chi decide la proposta. Seconda lettura con un altro modello: serve il cloud a ogni documento |
 | F7.4 | Sopra soglia nasce una proposta, non una modifica; l'accettazione automatica è una regola esplicita e spenta | Scrivere nel dataset i campi "sicuri": nessuna decisione umana registrata |
 | F7.5 | La conferma in revisione crea e accetta la proposta | Due passaggi per la stessa persona sullo stesso valore |
 | F7.6 | Il documento si carica sempre su una spedizione | Documenti sciolti da abbinare dopo: nessun confronto con il TMS |

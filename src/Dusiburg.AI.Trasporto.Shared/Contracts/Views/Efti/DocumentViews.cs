@@ -4,12 +4,16 @@ namespace Dusiburg.AI.Trasporto.Shared.Contracts.Views.Efti;
 
 // Contratti di Efti.Api per i documenti caricati, i campi estratti e la coda di revisione.
 
-/// <summary>I quattro segnali da cui il codice calcola la confidenza di un campo; <c>null</c> = non applicabile.</summary>
+/// <summary>I segnali da cui il codice calcola la confidenza di un campo; <c>null</c> = non applicabile.</summary>
 /// <param name="Literal">Il valore compare alla lettera nel testo del documento.</param>
 /// <param name="Format">Il valore supera il controllo di formato del campo.</param>
 /// <param name="Tms">Coincide con il valore che la spedizione ha già; <c>null</c> se la spedizione non ha quel dato.</param>
 /// <param name="Agreement">Le due passate di estrazione danno lo stesso valore; <c>null</c> con una sola passata.</param>
-public sealed record ConfidenceSignals(bool Literal, bool Format, bool? Tms, bool? Agreement);
+/// <param name="Annotation">
+/// Solo per i campi numerici di un documento con numeri annotati a mano: <c>true</c> se un'annotazione riporta lo stesso
+/// numero, <c>false</c> se le annotazioni ne riportano altri. <c>null</c> se il documento non ha numeri annotati.
+/// </param>
+public sealed record ConfidenceSignals(bool Literal, bool Format, bool? Tms, bool? Agreement, bool? Annotation = null);
 
 /// <param name="FieldPath">Percorso del campo nel dataset eFTI.</param>
 /// <param name="CmrBox">Casella del CMR da cui viene; <c>null</c> se non è una casella numerata.</param>
@@ -58,7 +62,8 @@ public sealed record DocumentSummaryView(
     int InReview);
 
 /// <param name="Text">Il testo letto dal PDF: è ciò che il modello ha visto.</param>
-public sealed record DocumentDetailView(DocumentSummaryView Document, string Text, ExtractionResultView Extraction);
+/// <param name="Annotations">Le annotazioni aggiunte sopra lo stampato (le note "a mano"), isolate dal testo.</param>
+public sealed record DocumentDetailView(DocumentSummaryView Document, string Text, IReadOnlyList<string> Annotations, ExtractionResultView Extraction);
 
 /// <summary>Una voce della coda di revisione: un campo estratto che una persona deve confermare, correggere o rifiutare.</summary>
 public sealed record ReviewTaskView(

@@ -339,6 +339,7 @@ internal sealed class ExtractionResultConfiguration : IEntityTypeConfiguration<E
         builder.Property(r => r.FormatWeight).HasPrecision(4, 3);
         builder.Property(r => r.TmsWeight).HasPrecision(4, 3);
         builder.Property(r => r.AgreementWeight).HasPrecision(4, 3);
+        builder.Property(r => r.AnnotationWeight).HasPrecision(4, 3);
 
         builder.HasIndex(r => r.DocumentId).IsUnique();
 

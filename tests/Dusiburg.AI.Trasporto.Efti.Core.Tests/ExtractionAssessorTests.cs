@@ -32,11 +32,12 @@ public class ExtractionAssessorTests
 
     [TestCase(true, true, true, true, 1.0)]
     [TestCase(true, true, null, true, 1.0, Description = "il TMS non ha il dato: gli altri segnali si ripartiscono il peso")]
-    [TestCase(true, true, false, true, 0.75, Description = "contraddice il TMS: mai sopra 0,80")]
-    [TestCase(false, true, null, true, 0.533, Description = "non è scritto nel documento")]
-    [TestCase(true, true, null, false, 0.667, Description = "le due letture non concordano")]
+    [TestCase(true, true, false, true, 0.70, Description = "contraddice il TMS: mai sopra 0,80")]
+    [TestCase(false, true, null, true, 0.5, Description = "non è scritto nel documento")]
+    [TestCase(true, true, null, false, 0.714, Description = "le due letture non concordano: meno grave che contraddire il TMS")]
     [TestCase(true, true, null, null, 1.0, Description = "una sola lettura")]
-    [TestCase(true, false, null, true, 0.8, Description = "formato non valido")]
+    [TestCase(true, true, false, null, 0.625, Description = "contraddice il TMS, una sola lettura")]
+    [TestCase(true, false, null, true, 0.786, Description = "formato non valido")]
     [TestCase(false, false, false, false, 0.0)]
     public void Score_FromSignals_IsTheWeightOfTheTrueOnesOverTheApplicableOnes(bool literal, bool format, bool? tms, bool? agreement, double expected)
     {
@@ -44,6 +45,49 @@ public class ExtractionAssessorTests
         decimal score = ExtractionAssessor.Score(new ConfidenceSignals(literal, format, tms, agreement), new ConfidenceWeights());
 
         Assert.That(score, Is.EqualTo((decimal)expected));
+    }
+
+    [TestCase(true, true, null, true, false, 0.7, Description = "un numero annotato a mano lo contraddice: sotto soglia anche se lo stampato è chiaro")]
+    [TestCase(true, true, null, true, true, 1.0, Description = "l'annotazione riporta lo stesso numero")]
+    [TestCase(true, true, false, true, false, 0.538, Description = "lo contraddicono sia il TMS sia l'annotazione")]
+    public void Score_WithAHandwrittenNumber_CountsTheAnnotationToo(bool literal, bool format, bool? tms, bool? agreement, bool? annotation, double expected)
+    {
+        //SUT
+        decimal score = ExtractionAssessor.Score(new ConfidenceSignals(literal, format, tms, agreement, annotation), new ConfidenceWeights());
+
+        Assert.That(score, Is.EqualTo((decimal)expected));
+    }
+
+    [Test]
+    public void Assess_ScenarioThreeWithItsHandwrittenNote_SendsTheNumbersToReview()
+    {
+        //SETUP
+        // Lo stampato dice 14 colli e 2.360 kg; l'autista ha annotato a mano di averne contati 13.
+        Shipment shipment = SeedShipments.Create("TO-1003");
+        CmrExtraction read = Extraction(totalPackages: 14, totalGrossWeight: "2.360 kg", consigneeCity: "Ljubljana", plate: "ZZ103AA") with
+        {
+            CmrNumber = "CMR-1003001"
+        };
+        string[] driverNote = ["Al carico contati 13 colli: manca 1 cassa. Firma autista."];
+        string[] noteWithoutNumbers = ["Ricevuto con riserva: consegna in ritardo, fermo linea di due giorni."];
+        string[] noteThatConfirms = ["Contati 14 colli, tutto regolare."];
+
+        //SUT
+        Dictionary<string, FieldAssessment> contradicted = Assessor.Assess(shipment, DocumentText, driverNote, read, read, new ExtractionOptions()).ToDictionary(f => f.CanonicalPath);
+        Dictionary<string, FieldAssessment> noNumbers = Assessor.Assess(shipment, DocumentText, noteWithoutNumbers, read, read, new ExtractionOptions()).ToDictionary(f => f.CanonicalPath);
+        Dictionary<string, FieldAssessment> confirmed = Assessor.Assess(shipment, DocumentText, noteThatConfirms, read, read, new ExtractionOptions()).ToDictionary(f => f.CanonicalPath);
+
+        Assert.That((contradicted["numberOfPackages"].Signals, contradicted["numberOfPackages"].Confidence, contradicted["numberOfPackages"].Outcome),
+            Is.EqualTo((new ConfidenceSignals(true, true, null, true, false), 0.7m, ExtractionFieldOutcome.InReview)),
+            "13 non è 14: il codice non sa chi ha ragione, quindi lo decide una persona");
+        Assert.That((contradicted["grossWeight"].Signals.Annotation, contradicted["grossWeight"].Outcome), Is.EqualTo(((bool?)false, ExtractionFieldOutcome.InReview)),
+            "in un documento con numeri annotati ogni campo numerico non confermato passa dalla revisione");
+        Assert.That((contradicted["transportContractDocument/id"].Signals.Annotation, contradicted["transportContractDocument/id"].Outcome),
+            Is.EqualTo(((bool?)null, ExtractionFieldOutcome.Matches)), "i campi non numerici non dipendono dalle annotazioni");
+        Assert.That((noNumbers["numberOfPackages"].Signals.Annotation, noNumbers["numberOfPackages"].Outcome), Is.EqualTo(((bool?)null, ExtractionFieldOutcome.Proposed)),
+            "una nota senza numeri non dice nulla sui numeri");
+        Assert.That((confirmed["numberOfPackages"].Signals.Annotation, confirmed["numberOfPackages"].Confidence, confirmed["numberOfPackages"].Outcome),
+            Is.EqualTo(((bool?)true, 1m, ExtractionFieldOutcome.Proposed)));
     }
 
     [Test]
@@ -68,7 +112,7 @@ public class ExtractionAssessorTests
         CmrExtraction read = Extraction(totalPackages: 14, totalGrossWeight: "2.360 kg", consigneeCity: "Ljubljana", plate: "ZZ103AA");
 
         //SUT
-        IReadOnlyList<FieldAssessment> fields = Assessor.Assess(shipment, DocumentText, read, read, new ExtractionOptions());
+        IReadOnlyList<FieldAssessment> fields = Assessor.Assess(shipment, DocumentText, [], read, read, new ExtractionOptions());
 
         FieldAssessment packages = fields.Single(f => f.CanonicalPath == "numberOfPackages");
         FieldAssessment weight = fields.Single(f => f.CanonicalPath == "grossWeight");
@@ -96,13 +140,13 @@ public class ExtractionAssessorTests
         CmrExtraction obeyed = read with { Consignee = read.Consignee! with { Name = "ACME Trading Ltd", City = "London", CountryCode = "GB" } };
 
         //SUT
-        IReadOnlyList<FieldAssessment> fields = Assessor.Assess(shipment, tampered, obeyed, obeyed, new ExtractionOptions());
+        IReadOnlyList<FieldAssessment> fields = Assessor.Assess(shipment, tampered, [], obeyed, obeyed, new ExtractionOptions());
 
         FieldAssessment[] altered = [.. fields.Where(f => f.CanonicalPath is "consignee/name" or "consignee/postalAddress/cityName" or "consignee/postalAddress/countryCode")];
         Assert.That(altered, Has.Length.EqualTo(3));
         Assert.That(altered.Select(f => f.Signals), Is.All.EqualTo(new ConfidenceSignals(true, true, false, true)),
             "il valore alterato è scritto nel documento e le due letture concordano: solo il TMS lo contraddice");
-        Assert.That(altered.Select(f => (f.Confidence, f.Outcome)), Is.All.EqualTo((0.75m, ExtractionFieldOutcome.InReview)));
+        Assert.That(altered.Select(f => (f.Confidence, f.Outcome)), Is.All.EqualTo((0.70m, ExtractionFieldOutcome.InReview)));
     }
 
     [Test]
@@ -118,7 +162,7 @@ public class ExtractionAssessorTests
         CmrExtraction second = first with { TotalPackages = 14 };
 
         //SUT
-        Dictionary<string, FieldAssessment> fields = Assessor.Assess(shipment, DocumentText, first, second, new ExtractionOptions()).ToDictionary(f => f.CanonicalPath);
+        Dictionary<string, FieldAssessment> fields = Assessor.Assess(shipment, DocumentText, [], first, second, new ExtractionOptions()).ToDictionary(f => f.CanonicalPath);
 
         Assert.That((fields["numberOfPackages"].Signals, fields["numberOfPackages"].Outcome),
             Is.EqualTo((new ConfidenceSignals(false, true, null, false), ExtractionFieldOutcome.InReview)), "15 non è nel documento e la seconda lettura dice 14");
@@ -141,8 +185,8 @@ public class ExtractionAssessorTests
         CmrExtraction read = Extraction(totalPackages: 15);
 
         //SUT
-        FieldAssessment single = Assessor.Assess(shipment, DocumentText, read, second: null, new ExtractionOptions()).Single(f => f.CanonicalPath == "numberOfPackages");
-        FieldAssessment lenient = Assessor.Assess(shipment, DocumentText, read, second: null, new ExtractionOptions { ReviewThreshold = 0.3m }).Single(f => f.CanonicalPath == "numberOfPackages");
+        FieldAssessment single = Assessor.Assess(shipment, DocumentText, [], read, second: null, new ExtractionOptions()).Single(f => f.CanonicalPath == "numberOfPackages");
+        FieldAssessment lenient = Assessor.Assess(shipment, DocumentText, [], read, second: null, new ExtractionOptions { ReviewThreshold = 0.3m }).Single(f => f.CanonicalPath == "numberOfPackages");
 
         Assert.That((single.Signals, single.Confidence, single.Outcome),
             Is.EqualTo((new ConfidenceSignals(false, true, null, null), 0.3m, ExtractionFieldOutcome.InReview)));
@@ -193,10 +237,12 @@ public class ExtractionAssessorTests
 
         Assert.That(defaults.IsValid(), Is.True);
         Assert.That((defaults.ReviewThreshold, defaults.Passes, defaults.AutoAccept), Is.EqualTo((0.80m, 2, false)));
-        Assert.That(defaults.Weights.Literal + defaults.Weights.Format + defaults.Weights.Tms + defaults.Weights.Agreement, Is.EqualTo(1m));
+        Assert.That((defaults.Weights.Literal, defaults.Weights.Format, defaults.Weights.Tms, defaults.Weights.Agreement, defaults.Weights.Annotation),
+            Is.EqualTo((0.35m, 0.15m, 0.30m, 0.20m, 0.30m)), "pesi confermati al CHECKPOINT 7; quello dell'annotazione è una proposta");
         Assert.That(new ExtractionOptions { ReviewThreshold = 1.2m }.IsValid(), Is.False);
         Assert.That(new ExtractionOptions { Passes = 0 }.IsValid(), Is.False);
         Assert.That(new ExtractionOptions { Weights = new ConfidenceWeights { Literal = 0, Format = 0, Tms = 0, Agreement = 0 } }.IsValid(), Is.False);
+        Assert.That(new ExtractionOptions { Weights = new ConfidenceWeights { Annotation = -0.1m } }.IsValid(), Is.False);
     }
 
     private static CmrExtraction Extraction(int? totalPackages = null, string? totalGrossWeight = null, string? consigneeCity = null, string? plate = null) => new(

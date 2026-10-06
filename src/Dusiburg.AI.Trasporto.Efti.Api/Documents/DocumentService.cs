@@ -49,7 +49,8 @@ public sealed class DocumentService(
             .SingleOrDefaultAsync(s => s.Code == shipmentCode, cancellationToken)
             ?? throw new ProposalException(ProposalFailure.NotFound, $"Spedizione {shipmentCode} non trovata.");
 
-        string text = ReadText(content);
+        PdfText pdf = ReadText(content);
+        string text = pdf.Text;
         ExtractionOptions options = extractionOptions.Value;
         CmrExtractionRun run = await extractor.ExtractAsync(text, options.Passes, cancellationToken);
 
@@ -61,7 +62,7 @@ public sealed class DocumentService(
         }
 
         CmrExtractionPass? second = run.Passes.Count > 1 ? run.Passes[1] : null;
-        IReadOnlyList<FieldAssessment> assessments = assessor.Assess(shipment, text, primary, second?.Extraction, options);
+        IReadOnlyList<FieldAssessment> assessments = assessor.Assess(shipment, text, pdf.Annotations, primary, second?.Extraction, options);
         DateTimeOffset now = timeProvider.GetUtcNow();
 
         var document = new Document
@@ -72,6 +73,7 @@ public sealed class DocumentService(
             Sha256 = Convert.ToHexStringLower(SHA256.HashData(content)),
             Content = content,
             Text = text,
+            Annotations = pdf.Annotations.Count == 0 ? null : string.Join('\n', pdf.Annotations),
             UploadedById = actor.Id,
             UploadedByName = actor.Name,
             UploadedAt = now,
@@ -85,6 +87,7 @@ public sealed class DocumentService(
                 FormatWeight = options.Weights.Format,
                 TmsWeight = options.Weights.Tms,
                 AgreementWeight = options.Weights.Agreement,
+                AnnotationWeight = options.Weights.Annotation,
                 ElapsedMs = run.ElapsedMs,
                 InputTokens = run.InputTokens,
                 OutputTokens = run.OutputTokens,
@@ -227,7 +230,7 @@ public sealed class DocumentService(
         return new ReviewDecisionResponse(ToView(task), dataset);
     }
 
-    private static string ReadText(byte[] content)
+    private static PdfText ReadText(byte[] content)
     {
         if (content.Length == 0 || content.Length > MaxFileBytes)
         {
@@ -241,7 +244,7 @@ public sealed class DocumentService(
 
         try
         {
-            return PdfTextReader.Read(content).Text;
+            return PdfTextReader.Read(content);
         }
         catch (PdfNotReadableException exception)
         {
@@ -295,6 +298,7 @@ public sealed class DocumentService(
         FormatValid = assessment.Signals.Format,
         TmsMatch = assessment.Signals.Tms,
         PassesAgree = assessment.Signals.Agreement,
+        AnnotationAgrees = assessment.Signals.Annotation,
         Confidence = assessment.Confidence,
         Outcome = assessment.Outcome,
         Note = assessment.Note is null ? null : Shorten(assessment.Note, 500),
@@ -315,6 +319,7 @@ public sealed class DocumentService(
             Summary(document.Id, shipmentCode, document.FileName, document.SizeBytes, document.UploadedByName, document.UploadedAt,
                 [.. extraction.Fields.Select(f => f.Outcome)]),
             document.Text,
+            document.Annotations?.Split('\n') ?? [],
             new ExtractionResultView(
                 extraction.ModelProvider, extraction.ModelId, extraction.Passes, extraction.Threshold, extraction.ElapsedMs,
                 extraction.InputTokens, extraction.OutputTokens, extraction.CreatedAt,
@@ -330,7 +335,7 @@ public sealed class DocumentService(
 
     private static ExtractionFieldView ToView(ExtractionField field) => new(
         field.Id, field.FieldPath, field.CmrBox, field.Label, field.Value, field.NormalizedValue, field.CurrentValue,
-        new ConfidenceSignals(field.LiteralMatch, field.FormatValid, field.TmsMatch, field.PassesAgree),
+        new ConfidenceSignals(field.LiteralMatch, field.FormatValid, field.TmsMatch, field.PassesAgree, field.AnnotationAgrees),
         field.Confidence, field.Outcome, field.FieldProposalId, field.ReviewTask?.Id, field.Note);
 
     private static ReviewTaskView ToView(ReviewTask task)

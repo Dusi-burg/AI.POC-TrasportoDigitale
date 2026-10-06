@@ -88,6 +88,27 @@ public class SyntheticCmrTests
         Assert.That(text, Does.Contain("14 (12 pallet + 2"));
     }
 
+    [TestCase("CMR-1003", "Al carico contati 13 colli: manca 1 cassa. Firma autista.")]
+    [TestCase("CMR-1006", "Ricevuto con riserva: consegna in ritardo, fermo linea di due giorni.")]
+    [TestCase("CMR-1001", null)]
+    [TestCase("CMR-1004-INJ", null)]
+    public void Read_HandwrittenNotes_AreIsolatedFromThePrintedText(string code, string? expectedNote)
+    {
+        //SETUP
+        byte[] pdf = File.ReadAllBytes(Path.Combine(DataDirectory, code + CmrGenerator.PdfExtension));
+
+        //SUT
+        PdfText text = PdfTextReader.Read(pdf);
+
+        // Una nota è ciò che non è scritto nel nero o nel grigio dello stampato: le etichette grigie delle caselle non lo sono.
+        Assert.That(text.Annotations, Is.EqualTo(expectedNote is null ? [] : new[] { expectedNote }));
+
+        if (expectedNote is not null)
+        {
+            Assert.That(OnOneLine(text.Text), Does.Contain(expectedNote), "la nota resta anche nel testo che il modello legge");
+        }
+    }
+
     [Test]
     public void Read_FileThatIsNotAPdf_OrHasNoText_IsRefused()
     {
