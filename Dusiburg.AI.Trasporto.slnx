@@ -23,6 +23,7 @@
     <Project Path="tests/Dusiburg.AI.Trasporto.Efti.Core.Tests/Dusiburg.AI.Trasporto.Efti.Core.Tests.csproj" />
     <Project Path="tests/Dusiburg.AI.Trasporto.Efti.Mcp.Tests/Dusiburg.AI.Trasporto.Efti.Mcp.Tests.csproj" />
     <Project Path="tests/Dusiburg.AI.Trasporto.Tms.Api.Tests/Dusiburg.AI.Trasporto.Tms.Api.Tests.csproj" />
+    <Project Path="tests/Dusiburg.AI.Trasporto.Web.Tests/Dusiburg.AI.Trasporto.Web.Tests.csproj" />
   </Folder>
   <Folder Name="/tools/">
     <Project Path="tools/Dusiburg.AI.Trasporto.DbInit/Dusiburg.AI.Trasporto.DbInit.csproj" />

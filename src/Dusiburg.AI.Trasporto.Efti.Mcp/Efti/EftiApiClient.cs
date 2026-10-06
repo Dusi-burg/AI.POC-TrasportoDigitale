@@ -61,9 +61,11 @@ public sealed class EftiApiClient(HttpClient http, IHttpContextAccessor caller) 
         return await SendAsync<ProposeFieldResponse>(request, cancellationToken);
     }
 
-    public Task<List<ConsignmentIdentifiersView>> FindIdentifiersAsync(string plate, CancellationToken cancellationToken) =>
+    /// <param name="at">Momento del controllo; <c>null</c> = adesso. È l'API a decidere se un altro momento è ammesso.</param>
+    public Task<List<ConsignmentIdentifiersView>> FindIdentifiersAsync(string plate, string? at, CancellationToken cancellationToken) =>
         GetAsync<List<ConsignmentIdentifiersView>>(
-            QueryHelpers.AddQueryString("api/gate/identifiers", new Dictionary<string, string?> { ["plate"] = plate }), cancellationToken);
+            QueryHelpers.AddQueryString("api/gate/identifiers", new Dictionary<string, string?> { ["plate"] = plate, ["at"] = string.IsNullOrWhiteSpace(at) ? null : at }),
+            cancellationToken);
 
     public Task<AuthoritySubsetView> GetSubsetAsync(string uil, string subsetId, CancellationToken cancellationToken) =>
         GetAsync<AuthoritySubsetView>(

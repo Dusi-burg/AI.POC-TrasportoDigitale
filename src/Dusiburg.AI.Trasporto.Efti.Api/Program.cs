@@ -9,6 +9,7 @@ using Dusiburg.AI.Trasporto.Efti.Api.Gate;
 using Dusiburg.AI.Trasporto.Efti.Api.Health;
 using Dusiburg.AI.Trasporto.Efti.Api.Proposals;
 using Dusiburg.AI.Trasporto.Efti.Api.Security;
+using Dusiburg.AI.Trasporto.Efti.Api.Settings;
 using Dusiburg.AI.Trasporto.Efti.Api.Shipments;
 using Dusiburg.AI.Trasporto.Efti.Api.Tms;
 using Dusiburg.AI.Trasporto.Efti.Core.Dataset;
@@ -111,13 +112,14 @@ app.UseExceptionHandler();
 
 app.MapDefaultEndpoints();
 
-app.MapGet("/", () => new { service = "Dusiburg.AI.Trasporto.Efti.Api", phase = 7 });
+app.MapGet("/", () => new { service = "Dusiburg.AI.Trasporto.Efti.Api", phase = 8 });
 
 app.MapGroup("/api")
     .MapHealthEndpoints()
     .MapShipmentEndpoints()
     .MapProposalEndpoints()
     .MapDocumentEndpoints()
+    .MapSettingsEndpoints()
     .MapGateEndpoints()
     .MapAuditEndpoints();
 

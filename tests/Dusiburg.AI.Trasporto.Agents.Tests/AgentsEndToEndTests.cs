@@ -112,6 +112,8 @@ public class AgentsEndToEndTests
             Call(EftiToolNames.FindConsignmentsByVehicle, new()),
             Call(EftiToolNames.GetAuthoritySubset, new() { ["uil"] = uil, ["subsetId"] = "EU05a" }),
             Text("A bordo UN 1263 PITTURE."),
+            // Il modello ha letto un solo sottoinsieme: l'altro lo legge il codice dal server vero, e la domanda si ripropone.
+            Text("A bordo UN 1263 PITTURE."),
             Text("""{"answer":"Sì: UN 1263 PITTURE, classe 3. La partita IVA del mittente è IT01000040004.","dataAvailable":true,"quotedValues":["1263","PITTURE","IT01000040004"]}"""));
         using HttpClient client = agents.CreateClient().ActingAs(Role.Authority);
 
@@ -123,7 +125,7 @@ public class AgentsEndToEndTests
         List<AuditEventView> accesses = await _api.GetAsync<List<AuditEventView>>(Role.Dispatcher, "/api/shipments/SH-1004/authority-access", CancellationToken);
         Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
         Assert.That(result!.Uils, Is.EqualTo(new[] { uil }));
-        Assert.That(result.SubsetsRead, Is.EqualTo(new[] { new SubsetReading(uil, "EU05a") }));
+        Assert.That(result.SubsetsRead, Is.EqualTo(new[] { new SubsetReading(uil, "EU05a"), new SubsetReading(uil, "EU03") }), "il secondo l'ha letto il codice");
         Assert.That(result.UnsupportedValues, Is.EqualTo(new[] { "IT01000040004" }), "la partita IVA non è nel sottoinsieme: il modello l'ha inventata, e il codice lo dice");
         Assert.That(result.DataAvailable, Is.False);
         Assert.That(accesses.Select(a => (a.Operation, a.Role)), Does.Contain((Operation.SubsetRead, (Role?)Role.Authority)), "l'operatore vede che l'autorità ha consultato la spedizione");

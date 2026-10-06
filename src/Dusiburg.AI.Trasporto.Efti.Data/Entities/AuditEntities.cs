@@ -38,6 +38,12 @@ public sealed class AuditEvent
     /// <summary>Informazione in più sull'operazione riuscita (sottoinsieme richiesto, numero di risultati).</summary>
     public string? Detail { get; set; }
 
+    /// <summary>
+    /// Per una ricerca per targa fatta con un momento del controllo simulato: quel momento. <c>null</c> = la ricerca valeva per
+    /// l'istante in cui è avvenuta (<see cref="OccurredAt"/>). Serve a sapere quali spedizioni quella ricerca ha mostrato.
+    /// </summary>
+    public DateTimeOffset? ControlMoment { get; set; }
+
     /// <summary>Trace id W3C della richiesta: apre la traccia nel dashboard.</summary>
     public string? TraceId { get; set; }
 }

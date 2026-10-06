@@ -88,7 +88,7 @@ internal static class AgentEndpoints
 
         try
         {
-            return TypedResults.Ok(await agent.AskAsync(plate, question, apiKey, progress: null, cancellationToken));
+            return TypedResults.Ok(await agent.AskAsync(plate, request.At, question, apiKey, progress: null, cancellationToken));
         }
         catch (Exception exception) when (ToProblem(exception, Logger(loggerFactory), AuthorityAgent.AgentName) is { } problem)
         {
@@ -110,7 +110,7 @@ internal static class AgentEndpoints
         }
 
         return TypedResults.ServerSentEvents(Events(
-            AuthorityAgent.AgentName, Logger(loggerFactory), async progress => await agent.AskAsync(plate, question, apiKey, progress, cancellationToken), cancellationToken));
+            AuthorityAgent.AgentName, Logger(loggerFactory), async progress => await agent.AskAsync(plate, request.At, question, apiKey, progress, cancellationToken), cancellationToken));
     }
 
     /// <summary>

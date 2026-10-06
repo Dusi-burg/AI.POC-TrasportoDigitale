@@ -37,6 +37,8 @@ Ogni cella dice **su che cosa** vale il permesso; una cella vuota è un rifiuto.
 | `DocumentRead` | tutte le spedizioni | — | — | tutte le spedizioni |
 | `ReviewQueueRead` | tutte le spedizioni | — | — | tutte le spedizioni |
 | `ReviewDecide` | tutte le spedizioni | — | — | — |
+| `SettingsRead` | configurazione | — | — | configurazione |
+| `ControlMomentSuggest` | — | — | registro degli identificatori | — |
 
 ## Operazioni
 
@@ -47,7 +49,7 @@ Ogni cella dice **su che cosa** vale il permesso; una cella vuota è un rifiuto.
 | `ShipmentRead` | lettura | `GET /api/views/shipments/{code}` | Leggere una spedizione con dataset completo e problemi di validazione. |
 | `ShipmentImport` | scrittura | `POST /api/shipments/import` | Importare ordini dal TMS e creare le spedizioni. |
 | `DatasetExport` | lettura | `GET /api/shipments/{code}/dataset.xml` | Scaricare il dataset completo in XML eFTI. |
-| `IdentifierSearch` | lettura | `GET /api/gate/identifiers?plate=` | Cercare una targa nel registro degli identificatori: restituisce UIL e identificatori, nessun altro dato. |
+| `IdentifierSearch` | lettura | `GET /api/gate/identifiers?plate=` | Cercare una targa nel registro degli identificatori: restituisce UIL e identificatori delle spedizioni a bordo in quel momento, nessun altro dato. |
 | `SubsetRead` | lettura | `GET /api/gate/subset?uil=&subsetId=` | Leggere un sottoinsieme del dataset di una spedizione, dati UIL e sottoinsieme. |
 | `AuthorityAccessRead` | lettura | `GET /api/shipments/{code}/authority-access` | Vedere quando un'autorità ha consultato una spedizione. |
 | `AuditRead` | lettura | `GET /api/audit` | Leggere il registro di audit. |
@@ -60,6 +62,8 @@ Ogni cella dice **su che cosa** vale il permesso; una cella vuota è un rifiuto.
 | `DocumentRead` | lettura | `GET /api/documents/{id}` | Leggere un documento: testo letto, campi estratti, segnali e confidenza. |
 | `ReviewQueueRead` | lettura | `GET /api/review-tasks` | Leggere la coda di revisione dei campi estratti sotto soglia. |
 | `ReviewDecide` | scrittura | `POST /api/review-tasks/{id}/decision` | Confermare, correggere o rifiutare un campo in revisione: la conferma crea una nuova versione del dataset. È un'azione umana. |
+| `SettingsRead` | lettura | `GET /api/settings` | Vedere la configurazione in vigore: modello per compito, pesi e soglia dell'estrazione, permanenza sul gate. Le manopole si cambiano sull'AppHost. |
+| `ControlMomentSuggest` | lettura | `GET /api/gate/control-moments?plate=` | Aiuto per la demo: i momenti recenti in cui simulare un controllo su strada per quella targa. Restituisce solo date e numero di spedizioni a bordo. |
 
 ## Ambiti
 
@@ -69,3 +73,4 @@ Ogni cella dice **su che cosa** vale il permesso; una cella vuota è un rifiuto.
 - **sottoinsieme per UIL**: solo i sottoinsiemi `EU03` ed `EU05a` di una spedizione di cui si conosce l'UIL. Nessun elenco, nessun dato contrattuale.
 - **accessi dell'autorità**: solo gli eventi di audit in cui un'autorità ha consultato una spedizione.
 - **tutto l'audit**: tutto il registro di audit, in sola lettura: il database rifiuta modifiche e cancellazioni.
+- **configurazione**: la configurazione in vigore, in sola lettura e senza segreti: modelli per compito, pesi e soglia dell'estrazione, permanenza sul gate.

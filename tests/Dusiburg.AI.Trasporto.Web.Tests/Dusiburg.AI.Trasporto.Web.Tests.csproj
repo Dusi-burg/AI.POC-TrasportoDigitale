@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <!-- Runner NUnit su Microsoft.Testing.Platform, come impostato in global.json -->
+    <EnableNUnitRunner>true</EnableNUnitRunner>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Using Include="NUnit.Framework" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NUnit" />
+    <PackageReference Include="NUnit3TestAdapter" />
+    <PackageReference Include="NUnit.Analyzers" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- La Web in-process: Efti.Api e Agents sono sostituite da risposte preparate, quindi non servono i loro progetti -->
+    <ProjectReference Include="..\..\src\Dusiburg.AI.Trasporto.Web\Dusiburg.AI.Trasporto.Web.csproj" />
+  </ItemGroup>
+
+</Project>

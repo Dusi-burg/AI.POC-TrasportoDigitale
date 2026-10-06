@@ -14,6 +14,9 @@ public sealed class AuditNote
     public string? ShipmentCode { get; set; }
 
     public string? Detail { get; set; }
+
+    /// <summary>Momento del controllo simulato di una ricerca per targa; <c>null</c> se la ricerca valeva per adesso.</summary>
+    public DateTimeOffset? ControlMoment { get; set; }
 }
 
 /// <summary>Scrittura del registro di audit. L'unico chiamante è <see cref="AccessFilter"/>: un evento per ogni operazione tentata.</summary>
@@ -37,6 +40,7 @@ public sealed class AuditTrail(AuditDbContext db, AuditNote note, TimeProvider t
             Outcome = outcome,
             Reason = Truncate(reason, MaxReasonLength),
             Detail = note.Detail,
+            ControlMoment = note.ControlMoment,
             // Lo stesso identificativo che il dashboard di Aspire mostra per la richiesta.
             TraceId = Activity.Current?.TraceId.ToHexString()
         });

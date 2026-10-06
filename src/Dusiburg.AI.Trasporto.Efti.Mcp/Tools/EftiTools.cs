@@ -106,15 +106,18 @@ public sealed class EftiTools(EftiApiClient efti)
     [McpServerTool(Name = EftiToolNames.FindConsignmentsByVehicle, Title = "Cerca spedizioni per targa",
         ReadOnly = true, Destructive = false, Idempotent = true, OpenWorld = false, UseStructuredContent = true)]
     [ToolOperation(Operation.IdentifierSearch)]
-    [Description("Cerca nel registro degli identificatori le spedizioni in corso su un mezzo, per targa della motrice o del "
-        + "rimorchio. Restituisce per ciascuna l'UIL e gli identificatori (targhe, date, modo di trasporto, indicatore di merci "
+    [Description("Cerca nel registro degli identificatori le spedizioni a bordo di un mezzo al momento del controllo — già prese "
+        + "in carico e non ancora consegnate — per targa della motrice o del rimorchio. Un mezzo può portarne più d'una. "
+        + "Restituisce per ciascuna l'UIL e gli identificatori (targhe, date, modo di trasporto, indicatore di merci "
         + "pericolose): nessun soggetto e nessuna merce. Con l'UIL si chiede un sottoinsieme a get_authority_subset. "
         + "Nessun risultato non è un errore: consignments è vuoto.")]
     public async Task<ConsignmentsByVehicleResult> FindConsignmentsByVehicleAsync(
         [Description("Targa della motrice o del rimorchio; spazi, trattini e maiuscole non contano.")] string plate,
+        [Description("Momento del controllo, data e ora ISO 8601. Di norma si omette: vale adesso. Un altro momento è ammesso "
+            + "solo se la piattaforma lo consente (demo), e non oltre il periodo in cui il gate conserva le spedizioni.")] string? at = null,
         CancellationToken cancellationToken = default)
     {
-        return new ConsignmentsByVehicleResult(await efti.FindIdentifiersAsync(plate, cancellationToken));
+        return new ConsignmentsByVehicleResult(await efti.FindIdentifiersAsync(plate, at, cancellationToken));
     }
 
     [McpServerTool(Name = EftiToolNames.GetAuthoritySubset, Title = "Leggi un sottoinsieme per l'autorità",

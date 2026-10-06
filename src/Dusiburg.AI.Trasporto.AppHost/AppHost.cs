@@ -47,10 +47,30 @@ eftiApi.WithConfigurationEnvironment(builder, modelSettings);
 // Gate simulato: per quanti minuti dopo la consegna una spedizione resta raggiungibile da un'autorità (default del codice: 7200, cinque giorni).
 eftiApi.WithConfigurationEnvironment(builder, "Efti__GateRetentionMinutes");
 
+// Controllo su strada: nella realtà la ricerca per targa vale per ciò che è a bordo adesso. I dati della demo hanno date fisse,
+// quindi qui si può indicare un altro momento recente (default dell'AppHost: acceso; default del codice: spento).
+eftiApi.WithEnvironment("Efti__SimulatedControlTime", builder.Configuration["Efti:SimulatedControlTime"] is { Length: > 0 } simulated ? simulated : "true");
+
 // Estrazione dai CMR: soglia sotto cui un campo va in revisione (default del codice: 0,80) e accettazione automatica delle
 // proposte sopra soglia (default: spenta).
 eftiApi.WithConfigurationEnvironment(builder, "EXTRACTION_REVIEW_THRESHOLD", "EXTRACTION_AUTO_ACCEPT");
 agents.WithConfigurationEnvironment(builder, modelSettings);
+
+// Ollama (G9) non è un container: è quello installato sul PC. Se all'avvio non risponde, l'AppHost lo avvia come propria
+// risorsa ("ollama serve") e lo ferma quando si chiude; se è già in esecuzione non lo tocca. Vale solo per un Ollama su questo
+// PC: un OLLAMA_ENDPOINT remoto non si può avviare da qui. Il default è quello di AiOptions.
+var ollamaEndpoint = new Uri(builder.Configuration["OLLAMA_ENDPOINT"] is { Length: > 0 } configured ? configured : "http://127.0.0.1:11434");
+
+if (builder.ExecutionContext.IsRunMode && ollamaEndpoint.IsLoopback && !AppHostExtensions.IsListening(ollamaEndpoint))
+{
+    string ollamaHost = $"{ollamaEndpoint.Host}:{ollamaEndpoint.Port}";
+
+    var ollama = builder.AddExecutable("ollama", "ollama", ".", "serve")
+        .WithEnvironment("OLLAMA_HOST", ollamaHost);
+
+    eftiApi.WaitFor(ollama);
+    agents.WaitFor(ollama);
+}
 
 // Chiave del modello Claude: Parameters:anthropic-api-key. Il parametro si dichiara solo se valorizzato, così l'AppHost parte
 // anche senza chiave: nella Release 1 i compiti girano in locale di default e /api/health segnala la mancanza.
@@ -68,6 +88,12 @@ var web = builder.AddProject<Projects.Dusiburg_AI_Trasporto_Web>("web")
     .WithReference(tmsApi)
     .WithReference(agents)
     .WithHttpHealthCheck("/health");
+
+// Link "apri la traccia" di audit e accessi dell'autorità: primo indirizzo del dashboard dai launchSettings dell'AppHost.
+if (builder.Configuration["ASPNETCORE_URLS"]?.Split(';', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() is { } dashboard)
+{
+    web.WithEnvironment("TRASPORTO_DASHBOARD_URL", dashboard);
+}
 
 // Identità simulata (G12): una chiave per ruolo, Parameters:api-key-<ruolo> negli user-secrets. Efti.Api ed Efti.Mcp le
 // usano per riconoscere chi chiama; Agents e Web per chiamare con il ruolo dell'utente. Un ruolo senza chiave non si dichiara:
@@ -91,6 +117,21 @@ builder.Build().Run();
 
 internal static class AppHostExtensions
 {
+    /// <summary>Qualcuno ascolta già a quell'indirizzo? Una prova di connessione breve, fatta una volta all'avvio.</summary>
+    public static bool IsListening(Uri endpoint)
+    {
+        try
+        {
+            using var client = new System.Net.Sockets.TcpClient();
+
+            return client.ConnectAsync(endpoint.Host, endpoint.Port).Wait(TimeSpan.FromSeconds(1)) && client.Connected;
+        }
+        catch (Exception exception) when (exception is AggregateException or System.Net.Sockets.SocketException)
+        {
+            return false;
+        }
+    }
+
     /// <summary>
     /// Inoltra al servizio le impostazioni presenti nella configurazione dell'AppHost, saltando quelle non valorizzate:
     /// così una variabile della demo si imposta in un solo posto e non va replicata in ogni progetto.

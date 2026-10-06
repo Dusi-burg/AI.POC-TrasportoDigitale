@@ -1,4 +1,5 @@
 using System.Collections.Frozen;
+using System.Globalization;
 using System.Text.Json;
 using Dusiburg.AI.Trasporto.Shared.Grounding;
 using Dusiburg.AI.Trasporto.Agents.Specs;
@@ -7,6 +8,7 @@ using Dusiburg.AI.Trasporto.Ai;
 using Dusiburg.AI.Trasporto.Shared.Contracts.Agents;
 using Dusiburg.AI.Trasporto.Shared.Contracts.Tools;
 using Dusiburg.AI.Trasporto.Shared.Errors;
+using Dusiburg.AI.Trasporto.Shared.Formatting;
 using Dusiburg.AI.Trasporto.Shared.Serialization;
 using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
@@ -31,6 +33,14 @@ public sealed class AuthorityAgent(IChatClientFactory models, IAgentToolCatalog 
 
     public const string OutcomeRetrySection = "Outcome retry";
 
+    public const string MissingSubsetsSection = "Missing subsets";
+
+    /// <summary>Per quante spedizioni della stessa targa il codice completa le letture: oltre, resta ciò che ha letto il modello.</summary>
+    public const int MaxConsignmentsCompleted = 3;
+
+    /// <summary>I sottoinsiemi che un'autorità può leggere: una risposta si dà dopo averli letti tutti.</summary>
+    public static IReadOnlyList<string> Subsets { get; } = ["EU03", "EU05a"];
+
     /// <summary>Un tentativo più una richiesta di riformulare l'esito, senza rifare i tool.</summary>
     public const int MaxOutcomeAttempts = 2;
 
@@ -42,11 +52,12 @@ public sealed class AuthorityAgent(IChatClientFactory models, IAgentToolCatalog 
         EftiToolNames.GetAuthoritySubset
     }.ToFrozenSet();
 
+    /// <param name="at">Momento del controllo, se simulato (demo); <c>null</c> = adesso. Lo fissa chi avvia l'agente, non il modello.</param>
     public async Task<AuthorityAnswerResult> AskAsync(
-        string plate, string question, string apiKey, IProgress<AgentStep>? progress, CancellationToken cancellationToken)
+        string plate, DateTimeOffset? at, string question, string apiKey, IProgress<AgentStep>? progress, CancellationToken cancellationToken)
     {
         var run = new AgentRun(AgentName, AllowedTools, progress);
-        var facts = new AuthorityFacts(plate);
+        var facts = new AuthorityFacts(plate, at);
 
         await using IAgentToolSession session = await catalog.OpenAsync(apiKey, cancellationToken);
         List<AITool> tools = session.Guarded(run, Rules(facts));
@@ -64,9 +75,53 @@ public sealed class AuthorityAgent(IChatClientFactory models, IAgentToolCatalog 
 
         // Fase di lavoro senza schema di output: con Ollama lo schema vincola la generazione al JSON e il modello non chiama i tool.
         AgentResponse work = await agent.RunAsync(task, conversation, cancellationToken: cancellationToken);
+
+        // Il modello sceglie quale sottoinsieme leggere, e a volte si ferma al primo: dichiarerebbe "non disponibile" un dato che
+        // sta nell'altro. Quelli che non ha letto li legge il codice, con gli stessi tool, e la domanda si ripropone.
+        if (!model.Refused(work) && await ReadMissingSubsetsAsync(tools, facts, run, cancellationToken) is { } supplement)
+        {
+            work = await agent.RunAsync(supplement, conversation, cancellationToken: cancellationToken);
+        }
+
         AuthorityOutcome? outcome = model.Refused(work) ? null : await AskOutcomeAsync(agent, conversation, model, cancellationToken);
 
-        return Reconcile(plate, question, work, outcome, facts, run, model);
+        return Reconcile(plate, question, work, outcome, facts, run, model) with { ControlMoment = at };
+    }
+
+    /// <summary>
+    /// Legge i sottoinsiemi che il modello ha saltato, per ogni spedizione trovata, e prepara il messaggio che glieli consegna.
+    /// Le letture passano dalla stessa guardia dei tool: stesso ruolo, stesso audit, stessi passi nel run. <c>null</c> se non
+    /// mancava nulla.
+    /// </summary>
+    private static async Task<string?> ReadMissingSubsetsAsync(List<AITool> tools, AuthorityFacts facts, AgentRun run, CancellationToken cancellationToken)
+    {
+        AIFunction? reader = tools.OfType<AIFunction>().FirstOrDefault(tool => tool.Name == EftiToolNames.GetAuthoritySubset);
+        var data = new List<string>();
+
+        if (reader is null)
+        {
+            return null;
+        }
+
+        foreach (string uil in facts.Uils.Take(MaxConsignmentsCompleted))
+        {
+            foreach (string subsetId in Subsets.Where(subsetId => !facts.SubsetsRead.Contains(new SubsetReading(uil, subsetId))))
+            {
+                object? value = await reader.InvokeAsync(new AIFunctionArguments { ["uil"] = uil, ["subsetId"] = subsetId }, cancellationToken);
+                ToolResult result = ToolResultReader.Read(value);
+
+                if (result.Succeeded)
+                {
+                    data.Add($"Subset {subsetId} of UIL {uil}:\n{result.Data.GetRawText()}");
+                }
+                else
+                {
+                    run.Warn($"Il sottoinsieme {subsetId} non è stato letto ({result.ErrorCode}): un dato dichiarato non disponibile potrebbe trovarsi lì.");
+                }
+            }
+        }
+
+        return data.Count == 0 ? null : Spec.Section(MissingSubsetsSection).Replace("{data}", string.Join("\n\n", data), StringComparison.Ordinal);
     }
 
     private async Task<AuthorityOutcome?> AskOutcomeAsync(
@@ -110,7 +165,7 @@ public sealed class AuthorityAgent(IChatClientFactory models, IAgentToolCatalog 
         string plate, string question, AgentResponse work, AuthorityOutcome? outcome, AuthorityFacts facts, AgentRun run, AgentModel model)
     {
         string[] quoted = [.. (outcome?.QuotedValues ?? []).Where(v => !string.IsNullOrWhiteSpace(v)).Select(v => v.Trim()).Distinct()];
-        string[] unsupported = [.. quoted.Where(value => !SourceGrounding.IsGrounded(value, facts.ReadData, out _))];
+        string[] unsupported = [.. quoted.Where(value => !SourceGrounding.IsQuotedFrom(value, facts.ReadData))];
         // Anche i soli identificatori del registro bastano a rispondere (es. "merci pericolose a bordo?"): conta aver trovato qualcosa.
         bool dataAvailable = outcome?.DataAvailable == true && facts.Uils.Count > 0 && unsupported.Length == 0;
 
@@ -138,19 +193,23 @@ public sealed class AuthorityAgent(IChatClientFactory models, IAgentToolCatalog 
     {
         [EftiToolNames.FindConsignmentsByVehicle] = new ToolRule
         {
-            HiddenArguments = ["plate"],
-            Before = arguments => facts.InjectPlate(arguments),
-            OnSuccess = (_, data) => facts.RecordConsignments(data)
+            HiddenArguments = ["plate", "at"],
+            Before = arguments => facts.InjectCheck(arguments),
+            OnSuccess = (_, data) => facts.RecordConsignments(data),
+            Present = ReadableValues.Humanize
         },
         [EftiToolNames.GetAuthoritySubset] = new ToolRule
         {
             Before = arguments => facts.CheckUil(arguments),
-            OnSuccess = (arguments, data) => facts.RecordSubset(arguments, data)
+            OnSuccess = (arguments, data) => facts.RecordSubset(arguments, data),
+            // La risposta è per una persona: pesi, volumi e date arrivano al modello già scritti all'italiana ("5.300 kg"),
+            // così non deve convertire "5300.000 KGM" — né può copiarlo in una frase, dove si leggerebbe cinque milioni.
+            Present = ReadableValues.Humanize
         }
     };
 
     /// <summary>I fatti del run: gli UIL usciti dalla ricerca e i dati che l'agente ha davvero letto.</summary>
-    private sealed class AuthorityFacts(string plate)
+    private sealed class AuthorityFacts(string plate, DateTimeOffset? at)
     {
         private readonly List<string> _uils = [];
         private readonly List<SubsetReading> _subsetsRead = [];
@@ -163,10 +222,22 @@ public sealed class AuthorityAgent(IChatClientFactory models, IAgentToolCatalog 
         /// <summary>Tutto ciò che i tool hanno restituito: è la sola fonte ammessa per i valori citati nella risposta.</summary>
         public IReadOnlyList<JsonElement> ReadData => _readData;
 
-        /// <summary>La targa è quella della richiesta, qualunque cosa il modello abbia scritto.</summary>
-        public ToolRejection? InjectPlate(AIFunctionArguments arguments)
+        /// <summary>
+        /// Targa e momento del controllo sono quelli della richiesta, qualunque cosa il modello abbia scritto: l'agente guarda
+        /// lo stesso carico che vede chi l'ha avviato.
+        /// </summary>
+        public ToolRejection? InjectCheck(AIFunctionArguments arguments)
         {
             arguments["plate"] = plate;
+
+            if (at is { } moment)
+            {
+                arguments["at"] = moment.ToString("O", CultureInfo.InvariantCulture);
+            }
+            else
+            {
+                arguments.Remove("at");
+            }
 
             return null;
         }
@@ -183,6 +254,7 @@ public sealed class AuthorityAgent(IChatClientFactory models, IAgentToolCatalog 
         public void RecordConsignments(JsonElement data)
         {
             _readData.Add(data.Clone());
+            _readData.Add(ReadableValues.Humanize(data));
 
             if (!data.TryGetProperty("consignments", out JsonElement consignments) || consignments.ValueKind != JsonValueKind.Array)
             {
@@ -200,7 +272,9 @@ public sealed class AuthorityAgent(IChatClientFactory models, IAgentToolCatalog 
 
         public void RecordSubset(AIFunctionArguments arguments, JsonElement data)
         {
+            // Fonte dei valori citati: i dati del tool e la forma in cui il modello li ha letti (ReadableValues.Humanize).
             _readData.Add(data.Clone());
+            _readData.Add(ReadableValues.Humanize(data));
 
             var reading = new SubsetReading(
                 GuardedTool.ArgumentText(arguments, "uil")?.Trim() ?? string.Empty, GuardedTool.ArgumentText(arguments, "subsetId")?.Trim() ?? string.Empty);

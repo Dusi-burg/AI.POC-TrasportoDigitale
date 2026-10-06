@@ -26,6 +26,12 @@ public sealed class ToolRule
 
     public Action<AIFunctionArguments, JsonElement>? OnSuccess { get; init; }
 
+    /// <summary>
+    /// Che cosa il modello legge al posto del risultato del tool, quando riesce: gli stessi dati in una forma che non gli
+    /// chiede conversioni. Senza, legge il risultato così com'è.
+    /// </summary>
+    public Func<JsonElement, JsonElement>? Present { get; init; }
+
     public Action<AIFunctionArguments, string, string>? OnError { get; init; }
 }
 
@@ -113,6 +119,11 @@ public sealed class GuardedTool : DelegatingAIFunction
         if (result.Succeeded)
         {
             _rule.OnSuccess?.Invoke(arguments, result.Data);
+
+            if (_rule.Present is { } present)
+            {
+                value = present(result.Data);
+            }
         }
         else
         {

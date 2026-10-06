@@ -4,7 +4,6 @@ using Dusiburg.AI.Trasporto.Efti.Data.Entities;
 using Dusiburg.AI.Trasporto.Shared.Contracts.Views.Efti;
 using Dusiburg.AI.Trasporto.Shared.Security;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 
 namespace Dusiburg.AI.Trasporto.Efti.Api.Audit;
 
@@ -12,7 +11,7 @@ namespace Dusiburg.AI.Trasporto.Efti.Api.Audit;
 public sealed record AuditFilter(Role? Role, Operation? Operation, AuditOutcome? Outcome, string? ShipmentCode, string? Resource);
 
 /// <summary>Letture del registro di audit: sola lettura, dal più recente, con un limite fisso di righe.</summary>
-public sealed class AuditQueries(AuditDbContext audit, EftiDbContext efti, IOptions<EftiPlatformOptions> platform)
+public sealed class AuditQueries(AuditDbContext audit, EftiDbContext efti)
 {
     public const int MaxRows = 200;
 
@@ -62,6 +61,7 @@ public sealed class AuditQueries(AuditDbContext audit, EftiDbContext efti, IOpti
             {
                 s.VehiclePlateNumber,
                 s.TrailerPlateNumber,
+                s.PickedUpAt,
                 s.DeliveredAt,
                 RegisteredAt = efti.IdentifierRegistry.Where(e => e.ShipmentId == s.Id).Select(e => (DateTimeOffset?)e.RegisteredAt).FirstOrDefault()
             })
@@ -72,19 +72,22 @@ public sealed class AuditQueries(AuditDbContext audit, EftiDbContext efti, IOpti
             return null;
         }
 
-        // Una ricerca per targa ha mostrato la spedizione solo se in quel momento era raggiungibile dal gate: una spedizione mai
-        // pubblicata, pubblicata dopo, o già scaduta dopo la consegna non è stata vista da chi ha cercato la sua targa.
+        // Una ricerca per targa ha mostrato la spedizione solo se era già pubblicata sul gate e, al momento del controllo, a
+        // bordo del mezzo: una spedizione mai pubblicata, non ancora presa in carico o già consegnata non è stata vista da chi
+        // ha cercato la sua targa. Il momento del controllo è quello della ricerca, salvo che fosse simulato.
         string?[] plates = [PlateNumbers.Normalize(shipment.VehiclePlateNumber), PlateNumbers.Normalize(shipment.TrailerPlateNumber)];
         string[] searchedPlates = shipment.RegisteredAt is null ? [] : [.. plates.OfType<string>()];
         DateTimeOffset onGateSince = shipment.RegisteredAt ?? DateTimeOffset.MaxValue;
-        DateTimeOffset onGateUntil = shipment.DeliveredAt is { } deliveredAt ? platform.Value.ExpiresAt(deliveredAt) : DateTimeOffset.MaxValue;
+        DateTimeOffset onBoardSince = shipment.PickedUpAt ?? DateTimeOffset.MaxValue;
+        DateTimeOffset onBoardUntil = shipment.DeliveredAt ?? DateTimeOffset.MaxValue;
 
         IQueryable<AuditEvent> query = audit.Events
             .AsNoTracking()
             .Where(e => e.Role == Role.Authority && e.Outcome == AuditOutcome.Success)
             .Where(e => e.ShipmentCode == shipmentCode
                 || (e.Operation == Operation.IdentifierSearch && e.Resource != null && searchedPlates.Contains(e.Resource)
-                    && e.OccurredAt >= onGateSince && e.OccurredAt < onGateUntil));
+                    && e.OccurredAt >= onGateSince
+                    && (e.ControlMoment ?? e.OccurredAt) >= onBoardSince && (e.ControlMoment ?? e.OccurredAt) < onBoardUntil));
 
         return await ToViewsAsync(query, cancellationToken);
     }

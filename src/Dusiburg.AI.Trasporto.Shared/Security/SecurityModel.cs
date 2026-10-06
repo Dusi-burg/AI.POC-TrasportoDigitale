@@ -38,7 +38,9 @@ public enum Operation : byte
     DocumentList = 15,
     DocumentRead = 16,
     ReviewQueueRead = 17,
-    ReviewDecide = 18
+    ReviewDecide = 18,
+    SettingsRead = 19,
+    ControlMomentSuggest = 20
 }
 
 /// <summary>Su che cosa vale un permesso. Non è una tabella: descrive la cella della matrice dei ruoli.</summary>
@@ -62,7 +64,10 @@ public enum AccessScope
     AuthorityAccesses = 5,
 
     /// <summary>Tutto il registro di audit.</summary>
-    AuditTrail = 6
+    AuditTrail = 6,
+
+    /// <summary>La configurazione in vigore, in sola lettura.</summary>
+    Settings = 7
 }
 
 public enum AuditOutcome : byte

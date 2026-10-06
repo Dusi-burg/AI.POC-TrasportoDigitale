@@ -1,6 +1,6 @@
 # Trasporto digitale — architettura
 
-> Aggiornato alla **Fase 7 (estrazione dai CMR in PDF)**. Il documento cresce fase per fase: descrive ciò che il repository contiene oggi e segnala ciò che è previsto ma non ancora scritto.
+> Aggiornato alla **Fase 8 (UI Web)**. Il documento cresce fase per fase: descrive ciò che il repository contiene oggi e segnala ciò che è previsto ma non ancora scritto.
 
 ## 1. Che cos'è
 
@@ -61,6 +61,7 @@ Regole di confine, valide da subito:
 | `Documents.Extraction` | Testo dal PDF (PdfPig) ed estrazione tipizzata del CMR con il modello; libreria ospitata da `Efti.Api`, senza logica di dominio |
 | `Mcp.Hosting` | Composizione comune dei server MCP: trasporto, chiave di ruolo, elenco dei tool filtrato per ruolo, span ed errori strutturati su ogni chiamata |
 | `Efti.Mcp` | Server MCP eFTI: sette tool sopra `Efti.Api`, senza database e senza identità propria |
+| `Web` | UI Razor Pages: selettore di ruolo, pagine degli scenari, inoltro degli stream degli agenti; solo HTTP verso `Efti.Api` e `Agents` |
 | `tools/DbInit` | Ricrea il database dal modello, senza migration, e inserisce i dati del TMS |
 | `tools/Eval` | CLI: `docs` rigenera i documenti nati dal codice, `cmr` i CMR sintetici di `data/cmr` (PDFsharp-MigraDoc sta solo qui); i comandi di valutazione arrivano con la Fase 9 |
 
@@ -78,7 +79,7 @@ Il modello si sceglie **per compito**. Chi ha bisogno di un modello chiede a `IC
 
 Regole per provider:
 
-- **Ollama**: temperatura 0,1, thinking spento, finestra di contesto da `OLLAMA_NUM_CTX` (8192), client HTTP dedicato con timeout di 10 minuti.
+- **Ollama**: temperatura 0,1, thinking spento, finestra di contesto da `OLLAMA_NUM_CTX` (8192), client HTTP dedicato con timeout di 10 minuti. È quello installato sul PC: se all'avvio non risponde, l'AppHost lo avvia come propria risorsa (`ollama serve`) e lo ferma quando si chiude; se è già in esecuzione non lo tocca. Vale solo per un `OLLAMA_ENDPOINT` locale.
 - **Anthropic**: `ANTHROPIC_MODEL` (`claude-haiku-4-5`) per tutti i compiti tranne il giudice, che usa `ANTHROPIC_JUDGE_MODEL` (`claude-sonnet-5-5`). La temperatura 0,1 si invia solo ai modelli Haiku 4.5; agli altri non si invia alcun parametro di campionamento.
 - **Embedding**: sempre Ollama, sulla CPU (`num_gpu = 0`), per non togliere VRAM alla chat.
 - **Mascheramento verso il cloud**: con il provider `anthropic` email e numeri di telefono, nei messaggi e nei risultati dei tool, partono come `[email]` e `[telefono]`. Si maschera la copia inviata: il codice che controlla i valori vede i dati veri. Un telefono si riconosce solo in forma internazionale o se annunciato (`tel`, `cell`, …), perché CAP, numeri ONU e partite IVA al modello servono. I nomi di persone fisiche non si riconoscono in modo affidabile e non vengono toccati: i dati del POC non ne contengono.
@@ -171,12 +172,16 @@ Lo schema nasce vuoto: lo riempie l'importazione dal TMS (Fase 3). `TmsOrderCode
 | `TO-1002` | 2 | Vigonza (IT) → Lyon (FR) | CAP e partita IVA del destinatario mancanti, riga ADR senza numero ONU, peso di testata incoerente; i dati giusti sono nelle istruzioni del mittente |
 | `TO-1003` | 3 | Treviso (IT) → Ljubljana (SI) | righe senza colli né peso: il dettaglio è sul CMR |
 | `TO-1004` | 4 | Livorno (IT) → València (ES) | ADR completa (UN 1263), in viaggio |
-| `TO-1005` | 5 e 7 | Albino (IT) → Wien (AT) | consegnata da due giorni, con valore dichiarato; ancora raggiungibile dal gate |
+| `TO-1005` | 5 e 7 | Albino (IT) → Wien (AT) | consegnata da due giorni, con valore dichiarato; non più a bordo, ma ancora leggibile con il suo UIL |
 | `TO-1006` | 6 | Torino (IT) → Grenoble (FR) | consegnata da nove giorni, tre dopo la data pattuita; sul gate è scaduta |
 
 I sei committenti demo sono clienti del POC Order-to-Cash, con la stessa ragione sociale e la stessa partita IVA: è il filo "ordine → spedizione" del portfolio. Le partite IVA sono fittizie ma formalmente corrette (ufficio `000`, cifra di controllo valida), perché la validazione eFTI le controlla; il catalogo di Order-to-Cash è stato allineato agli stessi valori.
 
-Dati sintetici: 30 clienti, 26 mezzi, 12 autisti, 150 ordini (`TO-2001`…`TO-2150`) per metà circa internazionali. Circa un terzo degli ordini generati porta uno o due **difetti voluti**:
+Dati sintetici: 30 clienti, 50 mezzi (26 fra trattori e motrici, 24 rimorchi), 12 autisti, 150 ordini (`TO-2001`…`TO-2150`) per metà circa internazionali.
+
+I **viaggi sono coerenti nel tempo**: un mezzo fa un viaggio alla volta e riparte solo dal giorno dopo l'ultima consegna del precedente; ogni trattore ha il suo rimorchio. Un viaggio porta da uno a tre ordini caricati a non più di un giorno l'uno dall'altro (collettame). Così, a una certa ora, ciò che un mezzo ha a bordo è il carico di un solo viaggio: è quello che deve trovare un controllo su strada. Un test lo verifica per ogni mezzo, a ogni presa in carico.
+
+Circa un terzo degli ordini generati porta uno o due **difetti voluti**:
 
 | Difetto | Effetto sul dato |
 |---|---|
@@ -188,7 +193,7 @@ Dati sintetici: 30 clienti, 26 mezzi, 12 autisti, 150 ordini (`TO-2001`…`TO-21
 | `InvalidCountryCode` | paese del destinatario non ISO a due lettere |
 | `DeliveryBeforePickup` | data di consegna pattuita precedente alla presa |
 
-Con il seed di default: 42 ordini difettosi su 150, 53 difetti. I mezzi dei viaggi demo sono riservati a quei viaggi, così una targa demo porta a una sola spedizione. I difetti assegnati non sono una tabella: `DbInit` ne stampa la distribuzione e un test verifica, ordine per ordine, che ogni difetto assegnato si veda nel dato e che non ce ne siano altri.
+I mezzi dei viaggi demo sono riservati a quei viaggi, così una targa demo porta a una sola spedizione. I difetti assegnati non sono una tabella: `DbInit` ne stampa la distribuzione e un test verifica, ordine per ordine, che ogni difetto assegnato si veda nel dato e che non ce ne siano altri.
 
 Identificativi fittizi: targhe con prefisso `ZZ` e `XZ` (serie non assegnate), partite IVA italiane generate con codice ufficio `000` (inesistente) e cifra di controllo corretta, partite IVA estere con il blocco `999`, email sul dominio riservato `.example`.
 
@@ -252,9 +257,10 @@ Nessun modello partecipa alla validazione. Il golden set `data/golden_validation
 | `GET /api/shipments/{code}/tms-order` | l'ordine di origine, letto ora dal TMS |
 | `GET /api/views/shipments/{code}` | dettaglio con soggetti, righe, dataset JSON e problemi |
 | `GET /api/shipments/{code}/dataset.xml` | XML del dataset; l'intestazione `X-Efti-Dataset-Status` ne dice lo stato |
+| `GET /api/settings` | la configurazione in vigore, in sola lettura: modello per compito, pesi e soglia dell'estrazione, permanenza sul gate. Nessun segreto |
 | `POST /dev/reset` | solo in Development: svuota lo schema `efti` |
 
-L'importazione è **idempotente sul codice dell'ordine**: una spedizione già importata non viene riletta né toccata, perché da quel momento il dataset cambia solo con una decisione umana registrata. Gli ordini annullati non diventano spedizioni. Con il seed di default: 147 spedizioni, 105 `Valid` e 42 `Incomplete`.
+L'importazione è **idempotente sul codice dell'ordine**: una spedizione già importata non viene riletta né toccata, perché da quel momento il dataset cambia solo con una decisione umana registrata. Gli ordini annullati non diventano spedizioni. Con il seed di default: 149 spedizioni, 100 `Valid` e 49 `Incomplete`.
 
 ### 7.5 Documenti generati
 
@@ -277,7 +283,7 @@ La matrice ruolo × operazione × ambito è un elenco dichiarativo (`Authorizati
 | `IdentityRead` | sé | sé | sé | sé |
 | `ShipmentList`, `ShipmentRead`, `DatasetExport` | tutte | tutte | — | tutte |
 | `ShipmentImport` | tutte | — | — | — |
-| `IdentifierSearch` | — | — | registro | — |
+| `IdentifierSearch`, `ControlMomentSuggest` | — | — | registro | — |
 | `SubsetRead` | — | — | sottoinsieme | — |
 | `AuthorityAccessRead` | accessi | — | — | accessi |
 | `AuditRead` | — | — | — | audit |
@@ -285,6 +291,7 @@ La matrice ruolo × operazione × ambito è un elenco dichiarativo (`Authorizati
 | `FieldProposalRead` | tutte | — | — | tutte |
 | `DocumentUpload`, `ReviewDecide` | tutte | — | — | — |
 | `DocumentList`, `DocumentRead`, `ReviewQueueRead` | tutte | — | — | tutte |
+| `SettingsRead` | configurazione | — | — | configurazione |
 
 `/api/health` è il solo endpoint pubblico. Un test elenca gli endpoint sotto `/api` e fallisce se uno non dichiara la propria operazione, o se l'endpoint scritto nella matrice non è quello vero.
 
@@ -315,7 +322,7 @@ Nell'eFTI reale l'autorità non interroga la piattaforma: passa da un gate nazio
 ```mermaid
 flowchart LR
     A([Autorità]) -- "targa" --> R["Registro degli identificatori<br/>GET /api/gate/identifiers"]
-    R -- "UIL + identificatori" --> A
+    R -- "UIL + identificatori<br/>di ciò che è a bordo" --> A
     A -- "UIL + EU03 | EU05a" --> S["Sottoinsieme<br/>GET /api/gate/subset"]
     S -- "solo gli elementi del sottoinsieme" --> A
     S --> AU[("audit.AuditEvent")]
@@ -324,8 +331,10 @@ flowchart LR
 ```
 
 - **UIL** = `gateId:platformId:datasetId`, dove `datasetId` è l'identificativo pubblico della spedizione.
-- Sul registro vanno **solo le spedizioni con dataset `Valid`**: è ciò che le rende raggiungibili. Con il seed di default, 105 su 147.
-- Una spedizione **consegnata scade**: resta raggiungibile per `Efti__GateRetentionMinutes` minuti dopo la consegna (default 7200, cioè cinque giorni), poi ricerca e lettura non la restituiscono più. Una spedizione non ancora consegnata non scade. La voce resta nel registro: la scadenza è un'impostazione e si valuta a ogni richiesta. Con il seed di default le voci sono 105 e quelle raggiungibili 49; fra gli ordini demo `SH-1005` (consegnata da due giorni) è ancora sul gate, `SH-1006` (da nove) no.
+- Sul registro vanno **solo le spedizioni con dataset `Valid`**: è ciò che le rende raggiungibili. Con il seed di default, 100 su 149.
+- **La ricerca per targa trova ciò che il mezzo ha a bordo al momento del controllo**: spedizioni già prese in carico e non ancora consegnate. Una pianificata non c'è ancora, una consegnata non c'è più. Un mezzo può portarne più d'una (collettame): escono tutte, ciascuna con il suo UIL.
+- Una spedizione **consegnata resta leggibile con il suo UIL** per `Efti__GateRetentionMinutes` minuti (default 7200, cioè cinque giorni): serve ai controlli successivi di un'autorità che l'UIL lo ha già, non al controllo su strada. Poi scade, e la lettura risponde come per un UIL sconosciuto. La voce resta nel registro: la scadenza è un'impostazione e si valuta a ogni richiesta. Fra gli ordini demo `SH-1005` (consegnata da due giorni) si legge ancora, `SH-1006` (da nove) no.
+- **Momento simulato (solo demo).** Nella realtà il controllo è adesso. I dati della demo hanno date fisse, quindi con `Efti__SimulatedControlTime` (acceso dall'AppHost, spento di default nel codice) la ricerca accetta `at`: un momento fra l'inizio della finestra del gate e adesso. `GET /api/gate/control-moments` propone i momenti recenti in cui il mezzo aveva un carico diverso da quello di adesso (un'ora prima di ogni consegna). Il momento simulato finisce nell'audit (`ControlMoment`).
 - La voce del registro contiene il **sottoinsieme degli identificatori**: la proiezione del dataset sugli elementi di `consignment-identifier.xsd`. Targhe, paesi, date, modo di trasporto, indicatore di merci pericolose. Nessun soggetto, nessuna merce.
 - Con l'UIL l'autorità chiede `EU03` (dati generali) o `EU05a` (merci pericolose). `EftiSubsetProjector` tiene del dataset solo gli elementi che lo schema annota con quel sottoinsieme, a ogni livello: **nessun elenco di campi è scritto nel codice**. Un test confronta la proiezione, per ogni spedizione del seed, con un calcolo indipendente fatto sullo schema.
 
@@ -333,7 +342,7 @@ L'autorità non ha altra strada: non può elencare le spedizioni né leggerle pe
 
 ### 8.6 Accessi visibili all'operatore
 
-`GET /api/shipments/{code}/authority-access` (`Dispatcher`, `Admin`) mostra quando un'autorità ha consultato una spedizione: le letture di sottoinsieme fatte con il suo UIL e le ricerche per una delle sue targhe, se in quel momento la spedizione era raggiungibile dal gate (già pubblicata e non ancora scaduta). È il requisito del Reg. di esecuzione (UE) 2025/2243 sulla notifica degli accessi, letto dall'audit senza una struttura dedicata.
+`GET /api/shipments/{code}/authority-access` (`Dispatcher`, `Admin`) mostra quando un'autorità ha consultato una spedizione: le letture di sottoinsieme fatte con il suo UIL e le ricerche per una delle sue targhe che l'hanno davvero mostrata — cioè se la spedizione era già pubblicata e, al momento del controllo, a bordo del mezzo. È il requisito del Reg. di esecuzione (UE) 2025/2243 sulla notifica degli accessi, letto dall'audit senza una struttura dedicata.
 
 ## 9. Proposte di completamento e server MCP
 
@@ -388,11 +397,13 @@ Il servizio `Agents` ospita due agenti (Microsoft Agent Framework, `ChatClientAg
 Le istruzioni stanno in `Specs/<Nome>.agent.md`, incluse come risorse: sono un documento leggibile, e le note per chi legge non entrano nel prompt. **Ciò che tiene a freno l'agente sta nel codice**, non nelle istruzioni:
 
 - **Allow-list.** All'agente si offrono solo i suoi tool; la guardia rifiuta comunque ogni altro. Se al ruolo di chi avvia mancano i tool dell'agente, l'agente non parte (403) e il modello non viene chiamato.
-- **Argomenti del codice.** La spedizione e la fonte della proposta (`TmsOrder`), come la targa del controllo, non sono argomenti che il modello veda: il codice li toglie dallo schema del tool e li inietta.
+- **Argomenti del codice.** La spedizione e la fonte della proposta (`TmsOrder`), come la targa e il momento del controllo, non sono argomenti che il modello veda: il codice li toglie dallo schema del tool e li inietta. L'agente autorità guarda quindi lo stesso carico che vede chi l'ha avviato, e se a bordo ci sono più spedizioni risponde per ciascuna.
 - **Riconducibilità alla fonte** (`SourceGrounding`). Una proposta parte solo se il valore si ritrova nell'ordine del TMS letto in quel run: come testo, come stesso numero o come stessa data. In un testo italiano `8.840` è 8840: la proposta `8.840` per un peso scritto "8.840 kg" è scartata prima di arrivare al server, e il modello ne riceve il motivo. Nessun modello partecipa a questo controllo.
 - **UIL del run.** L'agente autorità legge un sottoinsieme solo per un UIL uscito dalla sua ricerca per targa.
+- **Tutti e due i sottoinsiemi.** Lo stesso dato può stare in uno solo dei due (il peso della merce pericolosa è in `EU05a`, non in `EU03`). Le istruzioni chiedono di leggerli entrambi; se il modello si ferma al primo, quello saltato lo legge il codice — stesso tool, stesso ruolo, stesso audit — e la domanda si ripropone. "Non disponibile" vuol dire quindi che il dato non è in nessuno dei due.
 - **Fatti dai tool.** L'esito di un run — proposte create, proposte scartate con il motivo, sottoinsiemi letti — viene dai risultati dei tool. Il testo del modello è una sintesi da mostrare.
 - **Valori citati.** L'agente autorità chiude con un esito a schema (`answer`, `dataAvailable`, `quotedValues`); i valori citati che non compaiono nei dati letti finiscono in `unsupportedValues` e la risposta non si presenta come fondata.
+- **Numeri per una persona.** Nel dataset un peso è `{ "value": 5300.000, "unitId": "KGM" }`: copiato in una frase, "5300.000 KGM" si legge cinque milioni. L'agente autorità non lo vede in quella forma: il codice (`ReadableValues`) sostituisce misure e date con il testo all'italiana — "5.300 kg", "18,2 m³", "05/10/2026 08:30 (UTC+01:00)" — e il modello copia, non converte. Nei valori citati "5.300" vale 5300.
 
 La fase di lavoro non ha schema di output: con Ollama lo schema vincola la generazione e il modello smette di chiamare i tool. Un rifiuto del modello (`stop_reason = refusal`) non si ritenta: il run si chiude con un avviso e con i fatti raccolti.
 
@@ -484,7 +495,34 @@ Prima misura con `qwen3.5:9b` in locale (2026-10-06, un passaggio sugli otto doc
 
 Sono otto documenti e un passaggio: la valutazione su 30 documenti, con la calibrazione della confidenza per fascia, è nella Fase 9.
 
-## 12. Test e CI
+## 12. UI Web
+
+La Web (Razor Pages, `:5306`) rende eseguibili dal browser gli scenari 1–4. **Non legge il database e non chiama modelli**: parla con `Efti.Api` e con `Agents`, e non aggiunge permessi.
+
+**Identità simulata.** Un selettore nella barra sceglie uno dei quattro utenti dimostrativi; la scelta sta in un cookie (default `Dispatcher`). `RoleKeyHandler` mette su ogni chiamata a valle la chiave di quel ruolo (`ApiKeys__<Ruolo>`). Il menu cambia con il ruolo, ma è una comodità: chi apre a mano una pagina non sua riceve il rifiuto dell'API, che la pagina mostra come messaggio e che resta nell'audit.
+
+| Pagina | Contenuto | Menu di |
+|---|---|---|
+| `/Shipments` | elenco con stato del dataset, filtri, "Importa dal TMS" | `Dispatcher`, `ClaimsManager`, `Admin` |
+| `/Shipments/Details/{code}` | soggetti, righe, problemi, dataset JSON, download dell'XML; agente di mappatura; proposte da decidere; documenti e caricamento del CMR; accessi dell'autorità | — |
+| `/Documents/Details/{id}` | campi estratti con i cinque segnali, confidenza rispetto alla soglia, note a mano, testo letto | — |
+| `/Documents/Review` | coda di revisione: conferma (con valore corretto facoltativo) o rifiuto | `Dispatcher`, `Admin` |
+| `/Authority` | targa → UIL e identificatori → sottoinsieme `EU03`/`EU05a`, con un riepilogo in parole (etichette in italiano, numeri all'italiana) e il JSON eFTI sotto come dettaglio; domanda all'agente autorità | `Authority` |
+| `/Audit` | eventi filtrabili, link alla traccia nel dashboard | `Admin` |
+| `/Demo` | i sei ordini demo, gli scenari, la spedizione che ne è nata, i CMR sintetici | `Dispatcher`, `ClaimsManager`, `Admin` |
+| `/` | controlli di salute e configurazione in vigore (`GET /api/settings`) | tutti |
+
+**Tre client verso valle.** Letture e decisioni brevi usano la resilienza standard di `ServiceDefaults`. Importazione e caricamento di un documento (l'estrazione gira nella richiesta: decine di secondi in locale) e gli stream degli agenti hanno client senza resilienza e con timeout lungo: quella standard taglierebbe il tentativo a 10 s e lo ripeterebbe.
+
+**Stream degli agenti.** Il browser non vede `Agents`. La Web espone `POST /agents/mapping/stream` e `/agents/authority/stream`: verifica il token antiforgery, aggiunge la chiave del ruolo e inoltra lo stream **così com'è** (`step`, poi `result` oppure `error`). Uno script mostra i passi mentre arrivano; alla fine la mappatura ricarica la pagina (le proposte le disegna Razor), l'autorità mostra la risposta con i valori non riscontrati in evidenza. Ciò che viene dal modello si scrive come testo, mai come HTML.
+
+**Errori.** Un `ProblemDetails` di un servizio diventa un messaggio nella pagina; un servizio fermo anche. Nessuno dei due rompe la pagina: fanno parte di ciò che la demo mostra.
+
+I CMR sintetici di `data/cmr` sono copiati accanto alla Web: si scaricano da `/demo/cmr/{codice}.pdf` e si caricano con un clic sulla spedizione a cui appartengono. Il link alla traccia compare se l'AppHost ha passato l'indirizzo del dashboard (`TRASPORTO_DASHBOARD_URL`).
+
+## 13. Test e CI
+
+- `Web.Tests`: la Web in-process con `Efti.Api` e `Agents` sostituite da risposte preparate: selettore, cookie e menu per ruolo; **chiave del ruolo scelto su ogni chiamata a valle**; ogni pagina; azioni inoltrate con verbo, percorso e corpo giusti; rifiuto dell'API e servizio fermo mostrati come messaggi; inoltro degli stream (eventi inalterati, token antiforgery richiesto, errori a monte con il loro codice).
 
 - `Ai.Tests`: manopole, fabbriche dei client, aggregazione dei controlli, mascheramento verso il cloud. Nessuna chiamata a un modello.
 - `Agents.Tests`: i due agenti con un **modello a copione** e un server MCP finto (proposte attese, valore non riconducibile scartato, argomenti iniettati, tool fuori allow-list, UIL non uscito dalla ricerca, valore citato non letto, rifiuto del modello); endpoint e stream SSE; un giro completo con `Efti.Mcp` ed `Efti.Api` vere in-process, dove le proposte finiscono nel database a nome dell'operatore.
@@ -496,7 +534,7 @@ Sono otto documenti e un passaggio: la valutazione su 30 documenti, con la calib
 - `Tms.Api.Tests`: invarianti degli ordini demo; generatore dei dati sintetici (ripetibilità, dimensioni, difetti); viste e reset su un database usa-e-getta, con l'orologio fermo al giorno del seed.
 - La CI gira su Windows con LocalDB. I test della categoria `RequiresSql2025` si saltano se LocalDB è più vecchio della versione 17 e restano obbligatori in locale.
 
-## 13. Decisioni
+## 14. Decisioni
 
 Gli identificativi sono quelli del piano di progetto.
 
@@ -561,6 +599,16 @@ Gli identificativi sono quelli del piano di progetto.
 | F7.5 | La conferma in revisione crea e accetta la proposta | Due passaggi per la stessa persona sullo stesso valore |
 | F7.6 | Il documento si carica sempre su una spedizione | Documenti sciolti da abbinare dopo: nessun confronto con il TMS |
 | F7.7 | I CMR sintetici e la loro verità di riferimento sono file del repository | Generarli a ogni esecuzione: la demo e la misura non avrebbero documenti stabili |
+| F8.1 | La Web chiama i servizi con la chiave del ruolo scelto e non ha permessi propri | Una chiave "di servizio" della Web con controlli nelle pagine: i permessi starebbero in due posti e l'audit non direbbe chi ha agito |
+| F8.2 | Il menu per ruolo è una comodità; il rifiuto lo decide l'API e la pagina lo mostra | Nascondere o bloccare le pagine nella Web: il rifiuto fuori ruolo non si vedrebbe, e non finirebbe nell'audit |
+| F8.3 | La Web inoltra lo stream degli agenti senza interpretarlo | Chiamata dal browser ad `Agents`: la chiave di ruolo finirebbe nel browser |
+| F8.4 | La configurazione si legge (`GET /api/settings`), non si cambia dalla UI | Pagina che modifica soglie e modelli a caldo: una seconda fonte di configurazione oltre all'AppHost |
+| F8.5 | Caricamento dei documenti e agenti su client senza resilienza standard | Un solo client: l'estrazione verrebbe tagliata a 10 s e ripetuta |
+| F8.8 | La ricerca per targa trova ciò che è a bordo al momento del controllo; i cinque giorni dopo la consegna valgono solo per la lettura con l'UIL | Tutte le spedizioni non scadute del mezzo: un controllo su strada vedrebbe anche quelle pianificate e quelle già consegnate |
+| F8.9 | Viaggi sintetici coerenti nel tempo: un mezzo, un viaggio alla volta | Ordini raggruppati senza guardare le date: lo stesso mezzo risultava carico di viaggi diversi nello stesso momento |
+| F8.10 | Il momento simulato del controllo è un'impostazione di demo, limitata alla finestra del gate e registrata nell'audit | Data libera nella ricerca: l'autorità potrebbe sfogliare i trasporti passati di un mezzo |
+| F8.7 | L'agente autorità risponde dopo aver letto tutti e due i sottoinsiemi; quello che il modello salta lo legge il codice | Lasciare al modello la scelta del sottoinsieme: si fermava al primo e dichiarava "non disponibile" un dato presente nell'altro |
+| F8.6 | Misure e date arrivano all'agente autorità già scritte per una persona; le converte il codice | Chiedere al modello di convertire "5300.000 KGM": in Fase 7 lo stesso modello ha letto "2.460" come 2,46 |
 
 ### Versioni
 

@@ -68,21 +68,50 @@ public sealed class IdentifierRegistry(
     public Task<bool> IsRegisteredAsync(int shipmentId, CancellationToken cancellationToken) =>
         db.IdentifierRegistry.AnyAsync(e => e.ShipmentId == shipmentId, cancellationToken);
 
-    /// <summary>Voci non scadute con quella targa, della motrice o del rimorchio (colonne indicizzate), dalla più recente.</summary>
-    public async Task<IReadOnlyList<ConsignmentIdentifiersView>> FindByPlateAsync(string normalizedPlate, CancellationToken cancellationToken)
-    {
-        DateTimeOffset deliveredNoEarlierThan = DeliveredNoEarlierThan;
+    /// <summary>Il momento più lontano che un controllo simulato può indicare: oltre, le spedizioni di allora sono scadute.</summary>
+    public DateTimeOffset EarliestControlMoment => DeliveredNoEarlierThan;
 
+    /// <summary>
+    /// Le spedizioni <b>a bordo</b> di quel mezzo al momento del controllo: già prese in carico e non ancora consegnate. La targa
+    /// è quella della motrice o del rimorchio (colonne indicizzate). Un mezzo può portarne più d'una (groupage): escono tutte.
+    /// Quelle consegnate non si trovano più per targa; chi ne conosce l'UIL le legge ancora finché non scadono.
+    /// </summary>
+    public async Task<IReadOnlyList<ConsignmentIdentifiersView>> FindOnBoardAsync(string normalizedPlate, DateTimeOffset moment, CancellationToken cancellationToken)
+    {
         var entries = await db.IdentifierRegistry
             .AsNoTracking()
             .Where(e => e.VehiclePlateNumber == normalizedPlate || e.TrailerPlateNumber == normalizedPlate)
-            .Where(e => e.Shipment.DeliveredAt == null || e.Shipment.DeliveredAt > deliveredNoEarlierThan)
-            .OrderByDescending(e => e.Id)
+            .Where(e => e.Shipment.PickedUpAt != null && e.Shipment.PickedUpAt <= moment)
+            .Where(e => e.Shipment.DeliveredAt == null || e.Shipment.DeliveredAt > moment)
+            .OrderBy(e => e.Shipment.PickedUpAt)
+            .ThenBy(e => e.Id)
             .Take(MaxRows)
             .Select(e => new { e.Uil, e.IdentifiersJson })
             .ToListAsync(cancellationToken);
 
         return [.. entries.Select(e => new ConsignmentIdentifiersView(e.Uil, ParseJson(e.IdentifiersJson)))];
+    }
+
+    /// <summary>
+    /// Aiuto per la demo: i momenti recenti in cui quel mezzo aveva a bordo un carico diverso da quello di adesso, per simulare
+    /// un controllo fatto allora. Solo dentro la finestra in cui il gate conserva le spedizioni, dal più recente.
+    /// </summary>
+    public async Task<IReadOnlyList<ControlMomentView>> SuggestControlMomentsAsync(string normalizedPlate, CancellationToken cancellationToken)
+    {
+        DateTimeOffset now = timeProvider.GetUtcNow();
+        DateTimeOffset earliest = EarliestControlMoment;
+
+        var carried = await db.IdentifierRegistry
+            .AsNoTracking()
+            .Where(e => e.VehiclePlateNumber == normalizedPlate || e.TrailerPlateNumber == normalizedPlate)
+            .Where(e => e.Shipment.PickedUpAt != null && e.Shipment.PickedUpAt <= now)
+            .Where(e => e.Shipment.DeliveredAt == null || e.Shipment.DeliveredAt > earliest)
+            .OrderByDescending(e => e.Shipment.PickedUpAt)
+            .Take(MaxRows)
+            .Select(e => new CarriedConsignment(e.Uil, e.Shipment.PickedUpAt!.Value, e.Shipment.DeliveredAt))
+            .ToListAsync(cancellationToken);
+
+        return ControlMoments.Suggest(carried, earliest, now);
     }
 
     /// <summary>

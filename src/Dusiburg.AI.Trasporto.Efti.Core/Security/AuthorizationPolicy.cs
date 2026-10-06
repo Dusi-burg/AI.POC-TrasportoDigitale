@@ -23,7 +23,7 @@ public static class AuthorizationPolicy
         new(Operation.ShipmentRead, false, "GET /api/views/shipments/{code}", "Leggere una spedizione con dataset completo e problemi di validazione."),
         new(Operation.ShipmentImport, true, "POST /api/shipments/import", "Importare ordini dal TMS e creare le spedizioni."),
         new(Operation.DatasetExport, false, "GET /api/shipments/{code}/dataset.xml", "Scaricare il dataset completo in XML eFTI."),
-        new(Operation.IdentifierSearch, false, "GET /api/gate/identifiers?plate=", "Cercare una targa nel registro degli identificatori: restituisce UIL e identificatori, nessun altro dato."),
+        new(Operation.IdentifierSearch, false, "GET /api/gate/identifiers?plate=", "Cercare una targa nel registro degli identificatori: restituisce UIL e identificatori delle spedizioni a bordo in quel momento, nessun altro dato."),
         new(Operation.SubsetRead, false, "GET /api/gate/subset?uil=&subsetId=", "Leggere un sottoinsieme del dataset di una spedizione, dati UIL e sottoinsieme."),
         new(Operation.AuthorityAccessRead, false, "GET /api/shipments/{code}/authority-access", "Vedere quando un'autorità ha consultato una spedizione."),
         new(Operation.AuditRead, false, "GET /api/audit", "Leggere il registro di audit."),
@@ -35,7 +35,9 @@ public static class AuthorizationPolicy
         new(Operation.DocumentList, false, "GET /api/shipments/{code}/documents", "Elencare i documenti caricati su una spedizione."),
         new(Operation.DocumentRead, false, "GET /api/documents/{id}", "Leggere un documento: testo letto, campi estratti, segnali e confidenza."),
         new(Operation.ReviewQueueRead, false, "GET /api/review-tasks", "Leggere la coda di revisione dei campi estratti sotto soglia."),
-        new(Operation.ReviewDecide, true, "POST /api/review-tasks/{id}/decision", "Confermare, correggere o rifiutare un campo in revisione: la conferma crea una nuova versione del dataset. È un'azione umana.")
+        new(Operation.ReviewDecide, true, "POST /api/review-tasks/{id}/decision", "Confermare, correggere o rifiutare un campo in revisione: la conferma crea una nuova versione del dataset. È un'azione umana."),
+        new(Operation.SettingsRead, false, "GET /api/settings", "Vedere la configurazione in vigore: modello per compito, pesi e soglia dell'estrazione, permanenza sul gate. Le manopole si cambiano sull'AppHost."),
+        new(Operation.ControlMomentSuggest, false, "GET /api/gate/control-moments?plate=", "Aiuto per la demo: i momenti recenti in cui simulare un controllo su strada per quella targa. Restituisce solo date e numero di spedizioni a bordo.")
     ];
 
     public static IReadOnlyList<Permission> Permissions { get; } =
@@ -57,10 +59,14 @@ public static class AuthorizationPolicy
         // L'autorità non elenca e non legge spedizioni: passa solo dal registro degli identificatori e dall'UIL (D7).
         new(Role.Authority, Operation.IdentifierSearch, AccessScope.IdentifierRegistry),
         new(Role.Authority, Operation.SubsetRead, AccessScope.AuthoritySubset),
+        new(Role.Authority, Operation.ControlMomentSuggest, AccessScope.IdentifierRegistry),
 
         new(Role.Dispatcher, Operation.AuthorityAccessRead, AccessScope.AuthorityAccesses),
         new(Role.Admin, Operation.AuthorityAccessRead, AccessScope.AuthorityAccesses),
-        new(Role.Admin, Operation.AuditRead, AccessScope.AuditTrail)
+        new(Role.Admin, Operation.AuditRead, AccessScope.AuditTrail),
+
+        new(Role.Dispatcher, Operation.SettingsRead, AccessScope.Settings),
+        new(Role.Admin, Operation.SettingsRead, AccessScope.Settings)
     ];
 
     /// <summary>Ambito in cui il ruolo può eseguire l'operazione; <see cref="AccessScope.Denied"/> se la cella non è elencata.</summary>

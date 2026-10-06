@@ -233,6 +233,7 @@ public static class GeneratedDocuments
         AccessScope.AuthoritySubset => "sottoinsieme per UIL",
         AccessScope.AuthorityAccesses => "accessi dell'autorità",
         AccessScope.AuditTrail => "tutto l'audit",
+        AccessScope.Settings => "configurazione",
         _ => scope.ToString()
     };
 
@@ -244,6 +245,7 @@ public static class GeneratedDocuments
         AccessScope.AuthoritySubset => $"solo i sottoinsiemi {string.Join(" ed ", AuthoritySubsets.Select(s => $"`{s}`"))} di una spedizione di cui si conosce l'UIL. Nessun elenco, nessun dato contrattuale.",
         AccessScope.AuthorityAccesses => "solo gli eventi di audit in cui un'autorità ha consultato una spedizione.",
         AccessScope.AuditTrail => "tutto il registro di audit, in sola lettura: il database rifiuta modifiche e cancellazioni.",
+        AccessScope.Settings => "la configurazione in vigore, in sola lettura e senza segreti: modelli per compito, pesi e soglia dell'estrazione, permanenza sul gate.",
         _ => string.Empty
     };
 

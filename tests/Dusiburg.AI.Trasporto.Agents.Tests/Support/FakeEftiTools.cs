@@ -45,6 +45,9 @@ internal sealed class FakeEftiTools : IAgentToolCatalog
 
     public List<string> SearchedPlates { get; } = [];
 
+    /// <summary>Il momento del controllo arrivato al tool a ogni ricerca; <c>null</c> = adesso.</summary>
+    public List<string?> SearchedMoments { get; } = [];
+
     public List<string?> OpenedWithKeys { get; } = [];
 
     public static string KeyFor(Role role) => $"chiave-di-test-{role.ToString().ToLowerInvariant()}";
@@ -131,9 +134,10 @@ internal sealed class FakeEftiTools : IAgentToolCatalog
                 });
             }),
 
-        Tool(EftiToolNames.FindConsignmentsByVehicle, (string plate) =>
+        Tool(EftiToolNames.FindConsignmentsByVehicle, (string plate, string? at = null) =>
         {
             SearchedPlates.Add(plate);
+            SearchedMoments.Add(at);
 
             return VehicleHasConsignment
                 ? Json(new

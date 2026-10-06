@@ -20,6 +20,13 @@ public sealed class EftiPlatformOptions
     /// </summary>
     public int GateRetentionMinutes { get; set; } = DefaultGateRetentionMinutes;
 
+    /// <summary>
+    /// Ammette un momento del controllo diverso da "adesso" nella ricerca per targa (<c>Efti__SimulatedControlTime</c>). È un
+    /// aiuto per la demo, i cui dati hanno date fisse rispetto al giorno del seed: nella realtà un'autorità chiede sempre che
+    /// cosa c'è a bordo adesso. Spento di default; lo accende l'AppHost.
+    /// </summary>
+    public bool SimulatedControlTime { get; set; }
+
     /// <summary>Cinque giorni.</summary>
     public const int DefaultGateRetentionMinutes = 5 * 24 * 60;
 

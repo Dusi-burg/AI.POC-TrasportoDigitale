@@ -182,7 +182,7 @@ public class AccessControlTests
         ActorView? actor = await response.Content.ReadFromJsonAsync<ActorView>(TrasportoJson.Options, CancellationToken);
 
         Assert.That((actor!.Id, actor.Name, actor.Role), Is.EqualTo((DemoActors.For(Role.Authority).Id, DemoActors.For(Role.Authority).Name, Role.Authority)));
-        Assert.That(actor.AllowedOperations, Is.EqualTo(new[] { Operation.IdentityRead, Operation.IdentifierSearch, Operation.SubsetRead }));
+        Assert.That(actor.AllowedOperations, Is.EqualTo(new[] { Operation.IdentityRead, Operation.IdentifierSearch, Operation.SubsetRead, Operation.ControlMomentSuggest }));
     }
 
     [Test]
@@ -242,17 +242,63 @@ public class AccessControlTests
     }
 
     [Test]
-    public async Task Authority_DeliveredShipments_StayOnTheGateForFiveDays()
+    public async Task Authority_PlateSearch_FindsOnlyWhatIsOnBoardNow()
     {
         //SUT
+        IReadOnlyList<ConsignmentIdentifiersView> inTransit = await FindIdentifiersAsync("ZZ104AA");
         IReadOnlyList<ConsignmentIdentifiersView> deliveredTwoDaysAgo = await FindIdentifiersAsync("ZZ105AA");
         IReadOnlyList<ConsignmentIdentifiersView> deliveredNineDaysAgo = await FindIdentifiersAsync("ZZ106AA");
-        AuthoritySubsetView subset = await GetSubsetAsync(deliveredTwoDaysAgo.Single().Uil, "EU03");
+        using HttpResponseMessage anotherMoment = await SendAsync(Role.Authority, HttpMethod.Get, $"/api/gate/identifiers?plate=ZZ105AA&at={At(-2, 9)}");
+        ControlMomentsView moments = await GetAsync<ControlMomentsView>(Role.Authority, "/api/gate/control-moments?plate=ZZ105AA");
 
-        JsonElement delivery = deliveredTwoDaysAgo.Single().Identifiers.GetProperty("deliveryEvent").GetProperty("actualOccurrenceDateTime");
+        Assert.That(inTransit, Has.Count.EqualTo(1), "SH-1004 è stata presa in carico ieri e non è consegnata: è a bordo");
+        Assert.That(deliveredTwoDaysAgo, Is.Empty, "SH-1005 è stata consegnata: il mezzo non l'ha più a bordo");
+        Assert.That(deliveredNineDaysAgo, Is.Empty);
+        Assert.That((anotherMoment.StatusCode, await ReadProblemCodeAsync(anotherMoment)), Is.EqualTo((HttpStatusCode.BadRequest, ErrorCodes.ValidationError)),
+            "senza l'impostazione della demo il controllo è solo adesso");
+        Assert.That((moments.Enabled, moments.Moments), Is.EqualTo((false, Array.Empty<ControlMomentView>())));
+    }
+
+    [Test]
+    public async Task Authority_SimulatedControlMoment_ShowsWhatWasOnBoardThen_WithinTheRetentionWindow()
+    {
+        //SETUP
+        // Stesso database e stesso orologio: cambia solo l'impostazione della demo.
+        await using WebApplicationFactory<EftiApiEntryPoint> demo = _factory.WithWebHostBuilder(builder => builder.UseSetting("Efti:SimulatedControlTime", "true"));
+        using HttpClient authority = demo.CreateClient().ActingAs(Role.Authority);
+
+        //SUT
+        ControlMomentsView suggested = (await authority.GetFromJsonAsync<ControlMomentsView>("/api/gate/control-moments?plate=ZZ105AA", TrasportoJson.Options, CancellationToken))!;
+        ControlMomentsView nothingElse = (await authority.GetFromJsonAsync<ControlMomentsView>("/api/gate/control-moments?plate=ZZ104AA", TrasportoJson.Options, CancellationToken))!;
+        ControlMomentsView expired = (await authority.GetFromJsonAsync<ControlMomentsView>("/api/gate/control-moments?plate=ZZ106AA", TrasportoJson.Options, CancellationToken))!;
+        List<ConsignmentIdentifiersView> onBoardThen = await FindAsync(authority, $"ZZ105AA&at={Uri.EscapeDataString(suggested.Moments.Single().At.ToString("O", System.Globalization.CultureInfo.InvariantCulture))}");
+        List<ConsignmentIdentifiersView> beforePickup = await FindAsync(authority, $"ZZ105AA&at={At(-4, 7)}");
+        using HttpResponseMessage tooOld = await authority.GetAsync($"/api/gate/identifiers?plate=ZZ106AA&at={At(-10, 9)}", CancellationToken);
+        using HttpResponseMessage future = await authority.GetAsync($"/api/gate/identifiers?plate=ZZ105AA&at={At(1, 9)}", CancellationToken);
+        using HttpResponseMessage notADate = await authority.GetAsync("/api/gate/identifiers?plate=ZZ105AA&at=ieri", CancellationToken);
+        AuthoritySubsetView subset = await GetSubsetAsync(onBoardThen.Single().Uil, "EU03");
+        await FindIdentifiersAsync("ZZ105AA");
+        List<AuditEventView> searchesSeenByTheOperator =
+            [.. (await GetAsync<List<AuditEventView>>(Role.Dispatcher, "/api/shipments/SH-1005/authority-access")).Where(a => a.Operation == Operation.IdentifierSearch)];
+
+        Assert.That(searchesSeenByTheOperator, Is.Not.Empty);
+        Assert.That(searchesSeenByTheOperator.Select(a => a.Detail), Is.All.StartsWith("1 risultato, controllo simulato al 2026-10-03 08:15 UTC"),
+            "fra gli accessi a SH-1005 c'è solo la ricerca che l'ha mostrata: non quelle di adesso, né quella di prima della presa in carico");
+
+        // SH-1005: presa in carico quattro giorni fa alle 08:30, consegnata due giorni fa alle 10:15 (+01:00).
+        Assert.That(suggested.Enabled, Is.True);
+        Assert.That(suggested.Moments, Is.EqualTo(new[] { new ControlMomentView(new DateTimeOffset(2026, 10, 3, 9, 15, 0, TimeSpan.FromHours(1)), 1) }),
+            "un'ora prima della consegna il mezzo aveva a bordo SH-1005");
+        Assert.That(nothingElse.Moments, Is.Empty, "ZZ104AA ha avuto a bordo solo il carico di adesso");
+        Assert.That(expired.Moments, Is.Empty, "SH-1006 è fuori dalla finestra in cui il gate conserva le spedizioni");
+
+        JsonElement delivery = onBoardThen.Single().Identifiers.GetProperty("deliveryEvent").GetProperty("actualOccurrenceDateTime");
         Assert.That((delivery.GetProperty("value").GetString(), delivery.GetProperty("formatId").GetString()), Is.EqualTo(("202610031015+0100", "205")));
-        Assert.That(subset.Dataset.GetProperty("consignee").GetProperty("name")[0].GetString(), Is.EqualTo("Textilhaus Donau GmbH"));
-        Assert.That(deliveredNineDaysAgo, Is.Empty, "SH-1006 è consegnata da più di cinque giorni: non è più sul gate");
+        Assert.That(beforePickup, Is.Empty, "prima della presa in carico il mezzo non l'aveva a bordo");
+        Assert.That(subset.Dataset.GetProperty("consignee").GetProperty("name")[0].GetString(), Is.EqualTo("Textilhaus Donau GmbH"),
+            "consegnata da due giorni: con l'UIL si legge ancora, per i controlli successivi");
+        Assert.That(new[] { tooOld.StatusCode, future.StatusCode, notADate.StatusCode }, Is.All.EqualTo(HttpStatusCode.BadRequest),
+            "né prima della finestra del gate, né nel futuro, né una data scritta male");
     }
 
     [Test]
@@ -260,29 +306,35 @@ public class AccessControlTests
     {
         //SETUP
         // Stesso database e stesso orologio, cambia solo l'impostazione: con 15 giorni torna raggiungibile anche SH-1006, con
-        // 15 minuti non lo è più nemmeno SH-1005.
-        await using WebApplicationFactory<EftiApiEntryPoint> fifteenDays = _factory.WithWebHostBuilder(
-            builder => builder.UseSetting("Efti:GateRetentionMinutes", (15 * 24 * 60).ToString(System.Globalization.CultureInfo.InvariantCulture)));
-        await using WebApplicationFactory<EftiApiEntryPoint> fifteenMinutes = _factory.WithWebHostBuilder(
-            builder => builder.UseSetting("Efti:GateRetentionMinutes", "15"));
+        // 15 minuti non lo è più nemmeno SH-1005. L'UIL di una spedizione consegnata si ottiene da un controllo simulato allora.
+        await using WebApplicationFactory<EftiApiEntryPoint> fifteenDays = _factory.WithWebHostBuilder(builder => builder
+            .UseSetting("Efti:SimulatedControlTime", "true")
+            .UseSetting("Efti:GateRetentionMinutes", (15 * 24 * 60).ToString(System.Globalization.CultureInfo.InvariantCulture)));
+        await using WebApplicationFactory<EftiApiEntryPoint> fifteenMinutes = _factory.WithWebHostBuilder(builder => builder
+            .UseSetting("Efti:SimulatedControlTime", "true")
+            .UseSetting("Efti:GateRetentionMinutes", "15"));
         using HttpClient fifteenDaysClient = fifteenDays.CreateClient().ActingAs(Role.Authority);
         using HttpClient fifteenMinutesClient = fifteenMinutes.CreateClient().ActingAs(Role.Authority);
 
         //SUT
-        List<ConsignmentIdentifiersView> expiredByDefault = await FindAsync(fifteenDaysClient, "ZZ106AA");
-        List<ConsignmentIdentifiersView> reachableByDefault = await FindAsync(fifteenMinutesClient, "ZZ105AA");
+        List<ConsignmentIdentifiersView> expiredByDefault = await FindAsync(fifteenDaysClient, $"ZZ106AA&at={At(-10, 9)}");
+        using HttpResponseMessage outsideTheWindow = await fifteenMinutesClient.GetAsync($"/api/gate/identifiers?plate=ZZ105AA&at={At(-3, 9)}", CancellationToken);
         List<ConsignmentIdentifiersView> notDelivered = await FindAsync(fifteenMinutesClient, "ZZ101AA");
         string uil = expiredByDefault.Single().Uil;
         using HttpResponseMessage subsetWithFifteenDays = await fifteenDaysClient.GetAsync($"/api/gate/subset?uil={uil}&subsetId=EU03", CancellationToken);
         using HttpResponseMessage subsetWithDefault = await SendAsync(Role.Authority, HttpMethod.Get, $"/api/gate/subset?uil={uil}&subsetId=EU03");
 
         Assert.That(expiredByDefault, Has.Count.EqualTo(1), "con 15 giorni SH-1006 è ancora sul gate");
-        Assert.That(reachableByDefault, Is.Empty, "con 15 minuti SH-1005 è già scaduta");
-        Assert.That(notDelivered, Has.Count.EqualTo(1), "una spedizione non consegnata non scade, qualunque sia l'impostazione");
+        Assert.That(outsideTheWindow.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest), "con 15 minuti tre giorni fa è fuori dalla finestra");
+        Assert.That(notDelivered, Has.Count.EqualTo(1), "una spedizione a bordo non scade, qualunque sia l'impostazione");
         Assert.That(subsetWithFifteenDays.StatusCode, Is.EqualTo(HttpStatusCode.OK));
         Assert.That((subsetWithDefault.StatusCode, await ReadProblemCodeAsync(subsetWithDefault)), Is.EqualTo((HttpStatusCode.NotFound, ErrorCodes.NotFound)),
             "un UIL scaduto risponde come uno sconosciuto");
     }
+
+    /// <summary>Un momento rispetto al giorno del seed, nel fuso dei dati sintetici (+01:00), pronto per la query.</summary>
+    private static string At(int days, int hour) =>
+        Uri.EscapeDataString(new DateTimeOffset(SeedDate.AddDays(days), new TimeOnly(hour, 0), TimeSpan.FromHours(1)).ToString("O", System.Globalization.CultureInfo.InvariantCulture));
 
     [Test]
     public async Task AuthorityAccess_AfterAnAuthorityLookedAtAShipment_ShowsItToTheOperator()
@@ -385,6 +437,8 @@ public class AccessControlTests
         Operation.DocumentRead => SendAsync(apiKey, HttpMethod.Get, $"/api/documents/{_documentId}"),
         Operation.ReviewQueueRead => SendAsync(apiKey, HttpMethod.Get, "/api/review-tasks"),
         Operation.ReviewDecide => DecideAFreshReviewTaskAsync(apiKey),
+        Operation.SettingsRead => SendAsync(apiKey, HttpMethod.Get, "/api/settings"),
+        Operation.ControlMomentSuggest => SendAsync(apiKey, HttpMethod.Get, "/api/gate/control-moments?plate=ZZ101AA"),
         _ => throw new ArgumentOutOfRangeException(nameof(operation), operation, "Operazione senza richiesta di prova: aggiungerla alla matrice dei test.")
     };
 

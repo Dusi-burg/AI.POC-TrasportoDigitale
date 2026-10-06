@@ -1,0 +1,79 @@
+@page
+@model Dusiburg.AI.Trasporto.Web.Pages.Documents.ReviewModel
+@{
+    ViewData["Title"] = "Revisione";
+}
+
+<h1 class="h3">Coda di revisione</h1>
+<p class="text-muted">Campi estratti dai documenti che il codice non ha lasciato diventare proposte: confidenza sotto soglia, oppure formato non valido.
+    Confermare un valore — quello estratto o quello che scrivi tu — crea una nuova versione del dataset.</p>
+<partial name="_Messages" model="Model" />
+
+<form method="get" class="row g-2 align-items-end mb-3" id="filters">
+    <div class="col-auto">
+        <label for="Status" class="form-label small mb-0">Stato</label>
+        <select name="Status" id="Status" class="form-select form-select-sm" onchange="this.form.submit()">
+            @foreach (ReviewStatus status in Enum.GetValues<ReviewStatus>())
+            {
+                <option value="@status" selected="@(Model.Status == status.ToString())">@Presentation.Label(status)</option>
+            }
+            <option value="all" selected="@(Model.Status == "all")">tutte</option>
+        </select>
+    </div>
+    <div class="col-auto">
+        <label for="ShipmentCode" class="form-label small mb-0">Spedizione</label>
+        <input name="ShipmentCode" id="ShipmentCode" value="@Model.ShipmentCode" class="form-control form-control-sm" placeholder="SH-1003" />
+    </div>
+    <div class="col-auto"><button type="submit" class="btn btn-sm btn-outline-secondary">Filtra</button></div>
+</form>
+
+@if (Model.Tasks.Count == 0 && Model.Errors.Count == 0)
+{
+    <p class="text-muted" id="empty">Nessuna voce.</p>
+}
+else if (Model.Tasks.Count > 0)
+{
+    <div class="table-responsive">
+        <table class="table table-sm align-middle" id="review-tasks">
+            <thead><tr><th>Spedizione</th><th>Documento</th><th>Campo</th><th>Valore estratto</th><th>Nella spedizione</th><th>Segnali</th><th>Confidenza</th><th>Decisione</th></tr></thead>
+            <tbody>
+                @foreach (ReviewTaskView task in Model.Tasks)
+                {
+                    ExtractionFieldView field = task.Field;
+
+                    <tr data-task="@task.Id">
+                        <td><a asp-page="/Shipments/Details" asp-route-code="@task.ShipmentCode">@task.ShipmentCode</a></td>
+                        <td><a asp-page="/Documents/Details" asp-route-id="@task.DocumentId">@task.FileName</a>@(field.CmrBox is null ? "" : $" · casella {field.CmrBox}")</td>
+                        <td>@field.Label<br /><code class="small">@field.FieldPath</code></td>
+                        <td class="fw-semibold">@field.Value@if (field.Note is { } fieldNote) {<div class="small text-danger fw-normal">@fieldNote</div>}</td>
+                        <td class="text-muted">@(field.CurrentValue ?? "—")</td>
+                        <td class="small text-nowrap">
+                            D<span class="@Presentation.SignalClass(field.Signals.Literal)">@Presentation.Signal(field.Signals.Literal)</span>
+                            F<span class="@Presentation.SignalClass(field.Signals.Format)">@Presentation.Signal(field.Signals.Format)</span>
+                            T<span class="@Presentation.SignalClass(field.Signals.Tms)">@Presentation.Signal(field.Signals.Tms)</span>
+                            L<span class="@Presentation.SignalClass(field.Signals.Agreement)">@Presentation.Signal(field.Signals.Agreement)</span>
+                            N<span class="@Presentation.SignalClass(field.Signals.Annotation)">@Presentation.Signal(field.Signals.Annotation)</span>
+                        </td>
+                        <td><span class="badge text-bg-warning">@Presentation.Number(field.Confidence)</span></td>
+                        <td>
+                            @if (task.Status == ReviewStatus.Pending && Model.CanDecide)
+                            {
+                                <form method="post" asp-page-handler="Decide" asp-route-Status="@Model.Status" asp-route-ShipmentCode="@Model.ShipmentCode" class="d-flex gap-1 align-items-center">
+                                    <input type="hidden" name="reviewTaskId" value="@task.Id" />
+                                    <input name="value" class="form-control form-control-sm" style="width: 9rem" placeholder="valore corretto" aria-label="Valore corretto (facoltativo)" />
+                                    <button type="submit" name="decision" value="Confirmed" class="btn btn-sm btn-success">Conferma</button>
+                                    <button type="submit" name="decision" value="Rejected" class="btn btn-sm btn-outline-secondary">Rifiuta</button>
+                                </form>
+                            }
+                            else
+                            {
+                                <span class="badge text-bg-secondary">@Presentation.Label(task.Status)</span>
+                                <span class="small text-muted">@task.DecidedByName @(task.CorrectedValue is { } corrected ? $"· corretto in {corrected}" : "") @task.Note</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

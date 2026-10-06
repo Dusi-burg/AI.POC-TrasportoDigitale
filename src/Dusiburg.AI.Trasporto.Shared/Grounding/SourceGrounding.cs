@@ -19,6 +19,21 @@ public static partial class SourceGrounding
     public static bool IsGrounded(string? value, IEnumerable<JsonElement> sources, out string? reason) =>
         IsGrounded(value, Read(sources), out reason);
 
+    /// <summary>
+    /// Il controllo per un valore citato in una risposta scritta per una persona: lì un numero è scritto all'italiana, quindi
+    /// "5.300" è 5300 e si riconduce a un peso di 5300 kg. Per un valore che diventerebbe un dato vale invece
+    /// <see cref="IsGrounded(string?, IEnumerable{JsonElement}, out string?)"/>, che "5.300" non lo accetta.
+    /// </summary>
+    public static bool IsQuotedFrom(string? value, IEnumerable<JsonElement> sources)
+    {
+        SourceContent content = Read(sources);
+        string text = value?.Trim() ?? string.Empty;
+
+        return ThousandsPattern().IsMatch(text) && ReadNumberInText(text) is { } number
+            ? content.Numbers.Contains(number)
+            : IsGrounded(text, content, out _);
+    }
+
     /// <summary>Lo stesso controllo su testi liberi, per esempio il testo estratto da un documento.</summary>
     public static bool IsGroundedInText(string? value, IEnumerable<string> texts, out string? reason)
     {

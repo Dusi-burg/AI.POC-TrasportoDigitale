@@ -123,7 +123,8 @@ public class FieldProposalTests
     {
         //SETUP
         ShipmentDetailView before = await _api.GetAsync<ShipmentDetailView>(Role.Dispatcher, "/api/views/shipments/SH-1002", CancellationToken);
-        List<ConsignmentIdentifiersView> onGateBefore = await FindOnGateAsync("ZZ102AA");
+        string uil = UilOf(before);
+        using HttpResponseMessage subsetBefore = await _api.SendAsync(Role.Authority, HttpMethod.Get, $"/api/gate/subset?uil={uil}&subsetId=EU05a", body: null, CancellationToken);
         (string FieldPath, string Value)[] completions =
         [
             ("consignee/postalAddress/postcode", "69007"),
@@ -144,13 +145,12 @@ public class FieldProposalTests
         }
 
         ShipmentDetailView after = await _api.GetAsync<ShipmentDetailView>(Role.Dispatcher, "/api/views/shipments/SH-1002", CancellationToken);
-        List<ConsignmentIdentifiersView> onGateAfter = await FindOnGateAsync("ZZ102AA");
-        AuthoritySubsetView dangerousGoods = await _api.GetAsync<AuthoritySubsetView>(
-            Role.Authority, $"/api/gate/subset?uil={onGateAfter.Single().Uil}&subsetId=EU05a", CancellationToken);
+        List<ConsignmentIdentifiersView> onBoardAfter = await FindOnGateAsync("ZZ102AA");
+        AuthoritySubsetView dangerousGoods = await _api.GetAsync<AuthoritySubsetView>(Role.Authority, $"/api/gate/subset?uil={uil}&subsetId=EU05a", CancellationToken);
         List<EftiDataset> versions = await _api.DatasetsAsync("SH-1002", CancellationToken);
 
         Assert.That((before.Dataset.Version, before.Dataset.Status, before.Shipment.Errors), Is.EqualTo((1, DatasetStatus.Incomplete, 4)));
-        Assert.That(onGateBefore, Is.Empty, "un dataset incompleto non è sul gate");
+        Assert.That(subsetBefore.StatusCode, Is.EqualTo(HttpStatusCode.NotFound), "un dataset incompleto non è sul gate");
         Assert.That(decisions.Select(d => (d.DatasetVersion, d.DatasetStatus, d.Errors, d.PublishedOnGate)), Is.EqualTo(new[]
         {
             (2, DatasetStatus.Incomplete, 3, false),
@@ -170,7 +170,8 @@ public class FieldProposalTests
         }), "le versioni precedenti restano com'erano");
         Assert.That(versions[0].Json, Does.Not.Contain("uNDGID"));
         Assert.That(versions[4].Json, Does.Contain("uNDGID"));
-        Assert.That(onGateAfter, Has.Count.EqualTo(1), "il dataset valido è pubblicato: l'autorità trova la targa");
+        Assert.That(onBoardAfter, Is.Empty, "pubblicata, ma TO-1002 parte domani: per targa si trova solo ciò che è già a bordo");
+        // Il dataset valido è pubblicato: con il suo UIL si legge.
         Assert.That(dangerousGoods.Dataset.GetProperty("includedConsignmentItem")[0].GetProperty("transportDangerousGoods")[0].GetProperty("uNDGID").GetString(), Is.EqualTo("2014"));
     }
 
@@ -178,7 +179,8 @@ public class FieldProposalTests
     public async Task Decide_AcceptedValueThatBreaksAValidDataset_MakesItIncompleteAndUnreadableByUil()
     {
         //SETUP
-        string uil = (await FindOnGateAsync("ZZ105AA")).Single().Uil;
+        // SH-1005 è consegnata da due giorni: non è più a bordo, ma con il suo UIL si legge ancora.
+        string uil = UilOf(await _api.GetAsync<ShipmentDetailView>(Role.Dispatcher, "/api/views/shipments/SH-1005", CancellationToken));
         ProposeFieldResponse proposed = await ProposeAsync("SH-1005",
             new ProposeFieldRequest("grossWeight", "36", "Inference", null, "Peso riportato male: prova di una decisione sbagliata."));
 
@@ -192,6 +194,9 @@ public class FieldProposalTests
         Assert.That((subset.StatusCode, await EftiApiTestHost.ReadProblemCodeAsync(subset, CancellationToken)), Is.EqualTo((HttpStatusCode.Conflict, ErrorCodes.Conflict)),
             "la voce resta nel registro, ma un dataset non più valido non si consulta");
     }
+
+    /// <summary>L'UIL di una spedizione, per le letture che non passano dalla ricerca per targa.</summary>
+    private static string UilOf(ShipmentDetailView shipment) => $"it-gate-sim:dusiburg-trasporto:{shipment.PublicId}";
 
     [Test]
     public async Task List_ByCustomerAndPeriod_FiltersTheShipments()

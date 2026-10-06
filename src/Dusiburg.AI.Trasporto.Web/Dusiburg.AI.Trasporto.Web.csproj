@@ -5,4 +5,9 @@
     <ProjectReference Include="..\Dusiburg.AI.Trasporto.ServiceDefaults\Dusiburg.AI.Trasporto.ServiceDefaults.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- CMR sintetici della demo, copiati accanto alla Web: si scaricano e si caricano dalle pagine -->
+    <Content Include="..\..\data\cmr\*.pdf" Link="demo-cmr\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

@@ -122,6 +122,30 @@ public class TmsSeedGeneratorTests
     }
 
     [Test]
+    public void Generate_Default_AVehicleCarriesOneTripAtATime()
+    {
+        //SETUP
+        TransportOrder[] carried = [.. Data.Orders.Where(o => o.Trip is not null && o.PickedUpAt is not null)];
+        string[] plates = [.. Data.Trips.SelectMany(t => new[] { t.Vehicle.PlateNumber, t.Trailer?.PlateNumber }).OfType<string>().Distinct()];
+
+        //SUT
+        // In ogni momento in cui un mezzo carica qualcosa, ciò che ha a bordo è di un solo viaggio: è quello che trova un controllo su strada.
+        var overlaps =
+            from plate in plates
+            let ofPlate = carried.Where(o => o.Trip!.Vehicle.PlateNumber == plate || o.Trip.Trailer?.PlateNumber == plate).ToArray()
+            from moment in ofPlate.Select(o => o.PickedUpAt!.Value)
+            let onBoard = ofPlate.Where(o => o.PickedUpAt <= moment && (o.DeliveredAt is null || o.DeliveredAt > moment)).ToArray()
+            where onBoard.Select(o => o.Trip!.Code).Distinct().Count() > 1
+            select $"{plate} il {moment:yyyy-MM-dd HH:mm}: {string.Join(", ", onBoard.Select(o => $"{o.Code} ({o.Trip!.Code})"))}";
+
+        Assert.That(overlaps, Is.Empty);
+        Assert.That(Data.Trips.Select(t => Data.Orders.Count(o => o.Trip == t)), Is.All.InRange(1, TmsSeedGenerator.MaxOrdersPerTrip), "da uno a tre ordini per viaggio");
+        Assert.That(Data.Trips.Select(t => Data.Orders.Where(o => o.Trip == t).Select(o => o.PickupDate!.Value.DayNumber).ToArray()).Select(days => days.Max() - days.Min()),
+            Is.All.LessThanOrEqualTo(TmsSeedGenerator.MaxLoadingSpreadDays), "gli ordini di un viaggio si caricano negli stessi giorni");
+        Assert.That(Data.Trips.Count(t => Data.Orders.Count(o => o.Trip == t) > 1), Is.GreaterThan(5), "ci sono carichi a collettame");
+    }
+
+    [Test]
     public void Generate_Default_AboutOneThirdOfTheOrdersHasDefects_AndEveryDefectOccurs()
     {
         //SUT

@@ -1,0 +1,14 @@
+@model ApiPageModel
+@* Esito dell'ultima azione e problemi nel caricare i dati: un rifiuto per ruolo è un messaggio, non un errore della pagina. *@
+@if (Model.Notice is { } notice)
+{
+    <div class="alert alert-success" role="status">@notice</div>
+}
+@if (Model.ActionError is { } actionError)
+{
+    <div class="alert alert-danger" role="alert">@actionError</div>
+}
+@foreach (string error in Model.Errors)
+{
+    <div class="alert alert-warning" role="alert">@error</div>
+}

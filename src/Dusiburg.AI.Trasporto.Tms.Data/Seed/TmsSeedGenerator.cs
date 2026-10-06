@@ -23,9 +23,16 @@ public sealed class TmsSeedGenerator
     public const int GeneratedOrders = 150;
 
     /// <summary>Motrici e trattori, compresi quelli dei viaggi demo.</summary>
-    public const int TractiveUnits = 12;
+    public const int TractiveUnits = 26;
 
-    public const int Trailers = 14;
+    /// <summary>Uno per trattore: quelli dei viaggi demo più quelli del resto della flotta, che ha anche due motrici senza rimorchio.</summary>
+    public const int Trailers = TractiveUnits - TrucksWithoutTrailer;
+
+    /// <summary>Ordini caricati sullo stesso viaggio (groupage).</summary>
+    public const int MaxOrdersPerTrip = 3;
+
+    /// <summary>Giorni entro cui si caricano gli ordini di uno stesso viaggio.</summary>
+    public const int MaxLoadingSpreadDays = 1;
 
     public const int Drivers = 12;
 
@@ -38,6 +45,7 @@ public sealed class TmsSeedGenerator
     private const float DefectShare = 0.35f;
     private const float SecondDefectShare = 0.25f;
     private const float SubcontractorShare = 0.05f;
+    private const float JoinShare = 0.60f;
     private const int TrucksWithoutTrailer = 2;
 
     /// <summary>Fuso fisso dei timestamp sintetici: niente ora legale, basta che siano ripetibili.</summary>
@@ -374,7 +382,11 @@ public sealed class TmsSeedGenerator
     }
 
     /// <summary>
-    /// Un viaggio ogni uno-tre ordini che ne hanno bisogno: tutti quelli partiti e metà dei pianificati. Gli annullati non ne hanno.
+    /// Viaggi coerenti nel tempo per gli ordini che ne hanno bisogno: tutti quelli partiti e metà dei pianificati (gli annullati
+    /// non ne hanno). Un mezzo fa <b>un viaggio alla volta</b>: riparte solo dal giorno dopo l'ultima consegna del viaggio
+    /// precedente. Un viaggio porta da uno a <see cref="MaxOrdersPerTrip"/> ordini caricati a non più di
+    /// <see cref="MaxLoadingSpreadDays"/> giorni l'uno dall'altro (groupage). Così a una certa ora su un mezzo c'è solo il
+    /// carico di un viaggio: è ciò che un controllo su strada deve trovare.
     /// </summary>
     private void AssignTrips(List<TransportOrder> orders, List<Vehicle> vehicles, List<Driver> drivers, List<Trip> trips)
     {
@@ -384,36 +396,97 @@ public sealed class TmsSeedGenerator
         Vehicle[] tractive = [.. vehicles.Where(v => v.Type != VehicleType.SemiTrailer && !demoPlates.Contains(v.PlateNumber))];
         Vehicle[] trailers = [.. vehicles.Where(v => v.Type == VehicleType.SemiTrailer && !demoPlates.Contains(v.PlateNumber))];
 
+        // Ogni trattore ha il suo rimorchio: anche la targa del rimorchio porta a un solo viaggio alla volta.
+        Dictionary<Vehicle, Vehicle> trailerOf = tractive
+            .Where(v => v.Type == VehicleType.Tractor)
+            .Select((tractor, index) => (tractor, Trailer: trailers[index]))
+            .ToDictionary(pair => pair.tractor, pair => pair.Trailer);
+
         List<TransportOrder> needingTrip =
         [
-            .. orders.Where(o => o.Status is TransportOrderStatus.InTransit or TransportOrderStatus.Delivered
-                || (o.Status == TransportOrderStatus.Planned && _random.Bool()))
+            .. orders
+                .Where(o => o.Status is TransportOrderStatus.InTransit or TransportOrderStatus.Delivered
+                    || (o.Status == TransportOrderStatus.Planned && _random.Bool()))
+                .OrderBy(o => o.PickupDate)
+                .ThenBy(o => o.Code, StringComparer.Ordinal)
         ];
 
-        int next = 0;
+        // L'ultimo viaggio di ogni mezzo: è il solo a cui si può ancora aggiungere un ordine.
+        var latest = new OpenTrip?[tractive.Length];
 
-        while (next < needingTrip.Count)
+        foreach (TransportOrder order in needingTrip)
         {
-            List<TransportOrder> load = needingTrip.GetRange(next, Math.Min(_random.Number(1, 3), needingTrip.Count - next));
-            Vehicle vehicle = _random.ArrayElement(tractive);
-            bool subcontracted = _random.Bool(SubcontractorShare);
-            OrderParty? subcontractor = subcontracted ? NewForeignCompany() : null;
+            DateOnly start = order.PickupDate!.Value;
+            int[] joinable = [.. Enumerable.Range(0, latest.Length).Where(i => latest[i] is { } t && t.Orders < t.Capacity && start <= t.Start.AddDays(MaxLoadingSpreadDays))];
+            int[] free = [.. Enumerable.Range(0, latest.Length).Where(i => latest[i] is not { } t || t.End < start)];
 
-            var trip = new Trip
+            if (joinable.Length > 0 && (free.Length == 0 || _random.Bool(JoinShare)))
             {
-                Code = string.Create(CultureInfo.InvariantCulture, $"TR-{FirstGeneratedOrderNumber + trips.Count - DemoCatalog.Orders.Count}"),
-                Vehicle = vehicle,
-                Trailer = vehicle.Type == VehicleType.Tractor ? _random.ArrayElement(trailers) : null,
-                Driver = Pick(drivers),
-                DepartureDate = load.Min(o => o.PickupDate!.Value),
-                SubcontractorName = subcontractor?.Name,
-                SubcontractorVatNumber = subcontractor?.VatNumber,
-                SubcontractorCountryCode = subcontractor?.CountryCode
-            };
+                latest[_random.ArrayElement(joinable)]!.Add(order);
+            }
+            else if (free.Length > 0)
+            {
+                int index = _random.ArrayElement(free);
 
-            trips.Add(trip);
-            load.ForEach(order => order.Trip = trip);
-            next += load.Count;
+                latest[index] = NewTrip(order, tractive[index], trailerOf, drivers, trips);
+            }
+            else
+            {
+                // Flotta tutta impegnata e nessun carico aperto: l'ordine sale sul viaggio partito più di recente. Meglio un
+                // carico più grande che due viaggi dello stesso mezzo sovrapposti.
+                latest.OfType<OpenTrip>().OrderByDescending(t => t.Start).ThenBy(t => t.Trip.Code, StringComparer.Ordinal).First().Add(order);
+            }
+        }
+    }
+
+    private OpenTrip NewTrip(TransportOrder order, Vehicle vehicle, Dictionary<Vehicle, Vehicle> trailerOf, List<Driver> drivers, List<Trip> trips)
+    {
+        OrderParty? subcontractor = _random.Bool(SubcontractorShare) ? NewForeignCompany() : null;
+
+        var trip = new Trip
+        {
+            Code = string.Create(CultureInfo.InvariantCulture, $"TR-{FirstGeneratedOrderNumber + trips.Count - DemoCatalog.Orders.Count}"),
+            Vehicle = vehicle,
+            Trailer = trailerOf.GetValueOrDefault(vehicle),
+            Driver = Pick(drivers),
+            DepartureDate = order.PickupDate!.Value,
+            SubcontractorName = subcontractor?.Name,
+            SubcontractorVatNumber = subcontractor?.VatNumber,
+            SubcontractorCountryCode = subcontractor?.CountryCode
+        };
+
+        trips.Add(trip);
+
+        var open = new OpenTrip(trip, _random.Number(1, MaxOrdersPerTrip));
+
+        open.Add(order);
+
+        return open;
+    }
+
+    /// <summary>Un viaggio in costruzione: quanti ordini può ancora prendere e fino a quando tiene impegnato il mezzo.</summary>
+    private sealed class OpenTrip(Trip trip, int capacity)
+    {
+        public Trip Trip { get; } = trip;
+
+        public int Capacity { get; } = capacity;
+
+        public int Orders { get; private set; }
+
+        public DateOnly Start => Trip.DepartureDate;
+
+        /// <summary>Ultimo giorno in cui il mezzo ha ancora a bordo qualcosa di questo viaggio.</summary>
+        public DateOnly End { get; private set; }
+
+        public void Add(TransportOrder order)
+        {
+            DateOnly pickup = order.PickupDate!.Value;
+            DateOnly delivery = order.DeliveredAt is { } delivered ? DateOnly.FromDateTime(delivered.DateTime) : order.DeliveryDate ?? pickup;
+            DateOnly end = delivery < pickup ? pickup : delivery;
+
+            order.Trip = Trip;
+            Orders++;
+            End = Orders == 1 || end > End ? end : End;
         }
     }
 

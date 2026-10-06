@@ -27,6 +27,8 @@ public class AuthorizationPolicyTests
     [TestCase(Operation.DocumentRead, AccessScope.AllShipments, AccessScope.Denied, AccessScope.Denied, AccessScope.AllShipments)]
     [TestCase(Operation.ReviewQueueRead, AccessScope.AllShipments, AccessScope.Denied, AccessScope.Denied, AccessScope.AllShipments)]
     [TestCase(Operation.ReviewDecide, AccessScope.AllShipments, AccessScope.Denied, AccessScope.Denied, AccessScope.Denied)]
+    [TestCase(Operation.SettingsRead, AccessScope.Settings, AccessScope.Denied, AccessScope.Denied, AccessScope.Settings)]
+    [TestCase(Operation.ControlMomentSuggest, AccessScope.Denied, AccessScope.Denied, AccessScope.IdentifierRegistry, AccessScope.Denied)]
     public void ScopeFor_Operation_MatchesTheMatrix(
         Operation operation, AccessScope dispatcher, AccessScope claimsManager, AccessScope authority, AccessScope admin)
     {
@@ -55,7 +57,7 @@ public class AuthorizationPolicyTests
         //SUT
         IReadOnlyList<Operation> allowed = AuthorizationPolicy.AllowedOperations(Role.Authority);
 
-        Assert.That(allowed, Is.EqualTo(new[] { Operation.IdentityRead, Operation.IdentifierSearch, Operation.SubsetRead }));
+        Assert.That(allowed, Is.EqualTo(new[] { Operation.IdentityRead, Operation.IdentifierSearch, Operation.SubsetRead, Operation.ControlMomentSuggest }));
     }
 
     [Test]

@@ -53,7 +53,8 @@ public sealed record MappingRunResult(
     AgentModelInfo Model,
     IReadOnlyList<string> Warnings);
 
-public sealed record AuthorityAskRequest(string? Plate, string? Question);
+/// <param name="At">Momento del controllo, se simulato (demo); <c>null</c> = adesso.</param>
+public sealed record AuthorityAskRequest(string? Plate, string? Question, DateTimeOffset? At = null);
 
 public sealed record SubsetReading(string Uil, string SubsetId);
 
@@ -61,7 +62,8 @@ public sealed record SubsetReading(string Uil, string SubsetId);
 /// <param name="DataAvailable">Il modello dichiara di aver trovato il dato nei sottoinsiemi letti.</param>
 /// <param name="QuotedValues">Valori che la risposta cita come presi dai dati.</param>
 /// <param name="UnsupportedValues">Fra i valori citati, quelli che non compaiono nei dati letti: la risposta va presa con riserva.</param>
-/// <param name="Uils">UIL trovati cercando la targa.</param>
+/// <param name="Uils">UIL delle spedizioni a bordo del mezzo al momento del controllo.</param>
+/// <param name="ControlMoment">Momento del controllo, se simulato; <c>null</c> = adesso.</param>
 public sealed record AuthorityAnswerResult(
     string Plate,
     string Question,
@@ -73,4 +75,5 @@ public sealed record AuthorityAnswerResult(
     IReadOnlyList<SubsetReading> SubsetsRead,
     IReadOnlyList<AgentToolCall> ToolCalls,
     AgentModelInfo Model,
-    IReadOnlyList<string> Warnings);
+    IReadOnlyList<string> Warnings,
+    DateTimeOffset? ControlMoment = null);
