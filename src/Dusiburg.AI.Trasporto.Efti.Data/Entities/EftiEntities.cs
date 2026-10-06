@@ -276,6 +276,154 @@ public sealed class FieldProposal
     public int? ResultingDatasetVersion { get; set; }
 }
 
+/// <summary>Un documento caricato su una spedizione (per ora il CMR in PDF), con il testo che se ne è letto.</summary>
+public sealed class Document
+{
+    public int Id { get; set; }
+
+    public int ShipmentId { get; set; }
+
+    public Shipment Shipment { get; set; } = null!;
+
+    public required string FileName { get; set; }
+
+    public long SizeBytes { get; set; }
+
+    /// <summary>Impronta SHA-256 del file, in esadecimale.</summary>
+    public required string Sha256 { get; set; }
+
+    public required byte[] Content { get; set; }
+
+    /// <summary>Il testo letto dal PDF: è ciò che il modello ha visto. È un dato, mai un'istruzione.</summary>
+    public required string Text { get; set; }
+
+    public required string UploadedById { get; set; }
+
+    public required string UploadedByName { get; set; }
+
+    public DateTimeOffset UploadedAt { get; set; }
+
+    public ExtractionResult? Extraction { get; set; }
+}
+
+/// <summary>L'estrazione fatta su un documento: chi l'ha fatta, con quali regole, e che cosa ha restituito.</summary>
+public sealed class ExtractionResult
+{
+    public int Id { get; set; }
+
+    public int DocumentId { get; set; }
+
+    public Document Document { get; set; } = null!;
+
+    public required string ModelProvider { get; set; }
+
+    public required string ModelId { get; set; }
+
+    /// <summary>Letture riuscite del documento.</summary>
+    public int Passes { get; set; }
+
+    /// <summary>Soglia di revisione in vigore: i pesi e la soglia possono cambiare, l'esito di allora resta spiegabile.</summary>
+    public decimal Threshold { get; set; }
+
+    public decimal LiteralWeight { get; set; }
+
+    public decimal FormatWeight { get; set; }
+
+    public decimal TmsWeight { get; set; }
+
+    public decimal AgreementWeight { get; set; }
+
+    public double ElapsedMs { get; set; }
+
+    public long? InputTokens { get; set; }
+
+    public long? OutputTokens { get; set; }
+
+    /// <summary>La risposta grezza del modello alla prima lettura.</summary>
+    public string? RawJson { get; set; }
+
+    public DateTimeOffset CreatedAt { get; set; }
+
+    public List<ExtractionField> Fields { get; set; } = [];
+}
+
+/// <summary>Un campo estratto, con i segnali da cui il codice ha calcolato la confidenza e ciò che ne è seguito.</summary>
+public sealed class ExtractionField
+{
+    public int Id { get; set; }
+
+    public int ExtractionResultId { get; set; }
+
+    public ExtractionResult ExtractionResult { get; set; } = null!;
+
+    public required string FieldPath { get; set; }
+
+    /// <summary>Casella del CMR da cui viene il valore; <c>null</c> se non è una casella numerata.</summary>
+    public string? CmrBox { get; set; }
+
+    public required string Label { get; set; }
+
+    /// <summary>Valore come l'ha restituito il modello.</summary>
+    public required string Value { get; set; }
+
+    /// <summary>Valore nella forma in cui si salverebbe; <c>null</c> se il formato non è valido.</summary>
+    public string? NormalizedValue { get; set; }
+
+    /// <summary>Valore della spedizione al momento dell'estrazione.</summary>
+    public string? CurrentValue { get; set; }
+
+    public bool LiteralMatch { get; set; }
+
+    public bool FormatValid { get; set; }
+
+    /// <summary><c>null</c> = non applicabile: la spedizione non aveva quel dato.</summary>
+    public bool? TmsMatch { get; set; }
+
+    /// <summary><c>null</c> = non applicabile: una sola lettura.</summary>
+    public bool? PassesAgree { get; set; }
+
+    /// <summary>Da 0 a 1.</summary>
+    public decimal Confidence { get; set; }
+
+    /// <summary>Colonna <c>ExtractionFieldOutcomeId</c>, FK verso <c>efti.ExtractionFieldOutcome</c>.</summary>
+    public ExtractionFieldOutcome Outcome { get; set; }
+
+    public string? Note { get; set; }
+
+    /// <summary>La proposta nata da questo campo: subito se sopra soglia, dopo la conferma se era in revisione.</summary>
+    public int? FieldProposalId { get; set; }
+
+    public FieldProposal? FieldProposal { get; set; }
+
+    public ReviewTask? ReviewTask { get; set; }
+}
+
+/// <summary>Una voce della coda di revisione: un campo estratto che una persona deve confermare, correggere o rifiutare.</summary>
+public sealed class ReviewTask
+{
+    public int Id { get; set; }
+
+    public int ExtractionFieldId { get; set; }
+
+    public ExtractionField ExtractionField { get; set; } = null!;
+
+    /// <summary>Colonna <c>ReviewStatusId</c>, FK verso <c>efti.ReviewStatus</c>.</summary>
+    public ReviewStatus Status { get; set; }
+
+    public DateTimeOffset CreatedAt { get; set; }
+
+    public string? DecidedById { get; set; }
+
+    public string? DecidedByName { get; set; }
+
+    public DateTimeOffset? DecidedAt { get; set; }
+
+    /// <summary>Valore scritto dalla persona al posto di quello estratto.</summary>
+    public string? CorrectedValue { get; set; }
+
+    public string? Note { get; set; }
+}
+
 /// <summary>Problema trovato dalla validazione su una versione del dataset.</summary>
 public sealed class ValidationIssue
 {

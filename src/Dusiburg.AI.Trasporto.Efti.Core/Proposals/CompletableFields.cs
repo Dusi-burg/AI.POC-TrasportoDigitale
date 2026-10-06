@@ -72,7 +72,7 @@ public static partial class CompletableFields
         Header("deliveryEvent/scheduledOccurrenceDateTime", "Data di consegna pattuita (yyyy-MM-dd).", FieldValueKind.Date,
             s => FormatDate(s.DeliveryDate), (s, v) => s.DeliveryDate = ParseDate(v)),
         Header("numberOfPackages", "Numero totale di colli.", FieldValueKind.PositiveInteger,
-            s => s.TotalPackages?.ToString(CultureInfo.InvariantCulture), (s, v) => s.TotalPackages = int.Parse(v, CultureInfo.InvariantCulture)),
+            s => FormatCount(s.TotalPackages), (s, v) => s.TotalPackages = int.Parse(v, CultureInfo.InvariantCulture)),
         Header("grossWeight", "Peso lordo totale in kg, con il punto come separatore decimale.", FieldValueKind.PositiveDecimal,
             s => FormatDecimal(s.TotalGrossWeightKg), (s, v) => s.TotalGrossWeightKg = decimal.Parse(v, CultureInfo.InvariantCulture)),
         Header("transportContractDocument/id", "Numero della lettera di vettura.", FieldValueKind.Text,
@@ -87,7 +87,7 @@ public static partial class CompletableFields
             s => s.TrailerCountryCode, (s, v) => s.TrailerCountryCode = v),
 
         Item("transportPackage[n]/itemQuantity", "Colli della riga di merce.", FieldValueKind.PositiveInteger,
-            i => i.PackageCount?.ToString(CultureInfo.InvariantCulture), (i, v) => i.PackageCount = int.Parse(v, CultureInfo.InvariantCulture)),
+            i => FormatCount(i.PackageCount), (i, v) => i.PackageCount = int.Parse(v, CultureInfo.InvariantCulture)),
         DangerousGoods("uNDGID", "Numero ONU, quattro cifre senza prefisso.", FieldValueKind.UnNumber,
             i => i.UnNumber, (i, v) => i.UnNumber = v),
         DangerousGoods("properShippingName", "Denominazione ufficiale di trasporto.", FieldValueKind.Text,
@@ -286,7 +286,10 @@ public static partial class CompletableFields
 
     private static DateOnly ParseDate(string value) => DateOnly.ParseExact(value, DateFormat, CultureInfo.InvariantCulture);
 
-    private static string? FormatDecimal(decimal? value) => value?.ToString("0.###", CultureInfo.InvariantCulture);
+    /// <summary>Colli e pesi a zero sono un dato mancante, non un valore: il TMS li scrive così quando non li conosce.</summary>
+    private static string? FormatCount(int? value) => value is > 0 ? value.Value.ToString(CultureInfo.InvariantCulture) : null;
+
+    private static string? FormatDecimal(decimal? value) => value is > 0 ? value.Value.ToString("0.###", CultureInfo.InvariantCulture) : null;
 
     private static string Shorten(string value) => value.Length <= 60 ? value : value[..60] + "…";
 

@@ -46,6 +46,10 @@ eftiApi.WithConfigurationEnvironment(builder, modelSettings);
 
 // Gate simulato: per quanti minuti dopo la consegna una spedizione resta raggiungibile da un'autorità (default del codice: 7200, cinque giorni).
 eftiApi.WithConfigurationEnvironment(builder, "Efti__GateRetentionMinutes");
+
+// Estrazione dai CMR: soglia sotto cui un campo va in revisione (default del codice: 0,80) e accettazione automatica delle
+// proposte sopra soglia (default: spenta).
+eftiApi.WithConfigurationEnvironment(builder, "EXTRACTION_REVIEW_THRESHOLD", "EXTRACTION_AUTO_ACCEPT");
 agents.WithConfigurationEnvironment(builder, modelSettings);
 
 // Chiave del modello Claude: Parameters:anthropic-api-key. Il parametro si dichiara solo se valorizzato, così l'AppHost parte

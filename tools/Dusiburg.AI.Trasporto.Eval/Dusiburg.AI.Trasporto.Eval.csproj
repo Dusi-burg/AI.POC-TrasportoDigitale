@@ -7,6 +7,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- Solo per generare i CMR sintetici (comando cmr): nessun servizio dipende da MigraDoc. -->
+    <PackageReference Include="PDFsharp-MigraDoc" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\src\Dusiburg.AI.Trasporto.Shared\Dusiburg.AI.Trasporto.Shared.csproj" />
     <ProjectReference Include="..\..\src\Dusiburg.AI.Trasporto.Ai\Dusiburg.AI.Trasporto.Ai.csproj" />
     <ProjectReference Include="..\..\src\Dusiburg.AI.Trasporto.Efti.Core\Dusiburg.AI.Trasporto.Efti.Core.csproj" />

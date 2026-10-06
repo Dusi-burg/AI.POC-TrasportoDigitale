@@ -49,6 +49,9 @@ public static class ColumnSizes
 {
     public const int FieldPath = 200;
     public const int FieldValue = 200;
+
+    /// <summary>Un valore estratto si salva anche se è più lungo di quanto il campo ammetta: lo dirà il controllo di formato.</summary>
+    public const int ExtractedValue = 500;
     public const int SourceReference = 200;
     public const int Rationale = 1000;
     public const int CmrNumber = 35;
@@ -290,6 +293,128 @@ internal sealed class FieldProposalConfiguration : IEntityTypeConfiguration<Fiel
         builder.HasOne<EnumLookup<ProposalStatus>>()
             .WithMany()
             .HasForeignKey(p => p.Status)
+            .OnDelete(DeleteBehavior.Restrict);
+    }
+}
+
+internal sealed class ExtractionFieldOutcomeConfiguration() : EnumLookupConfiguration<ExtractionFieldOutcome>("ExtractionFieldOutcome");
+
+internal sealed class ReviewStatusConfiguration() : EnumLookupConfiguration<ReviewStatus>("ReviewStatus");
+
+internal sealed class DocumentConfiguration : IEntityTypeConfiguration<Document>
+{
+    public void Configure(EntityTypeBuilder<Document> builder)
+    {
+        builder.ToTable("Document");
+
+        builder.HasKey(d => d.Id);
+
+        builder.Property(d => d.FileName).HasMaxLength(200);
+        builder.Property(d => d.Sha256).HasMaxLength(64).IsUnicode(false);
+        builder.Property(d => d.UploadedById).HasMaxLength(50).IsUnicode(false);
+        builder.Property(d => d.UploadedByName).HasMaxLength(ColumnSizes.Name);
+
+        // Documenti di una spedizione, dal più recente.
+        builder.HasIndex(d => d.ShipmentId);
+
+        builder.HasOne(d => d.Shipment)
+            .WithMany()
+            .HasForeignKey(d => d.ShipmentId)
+            .OnDelete(DeleteBehavior.Cascade);
+    }
+}
+
+internal sealed class ExtractionResultConfiguration : IEntityTypeConfiguration<ExtractionResult>
+{
+    public void Configure(EntityTypeBuilder<ExtractionResult> builder)
+    {
+        builder.ToTable("ExtractionResult");
+
+        builder.HasKey(r => r.Id);
+
+        builder.Property(r => r.ModelProvider).HasMaxLength(50).IsUnicode(false);
+        builder.Property(r => r.ModelId).HasMaxLength(100).IsUnicode(false);
+        builder.Property(r => r.Threshold).HasPrecision(4, 3);
+        builder.Property(r => r.LiteralWeight).HasPrecision(4, 3);
+        builder.Property(r => r.FormatWeight).HasPrecision(4, 3);
+        builder.Property(r => r.TmsWeight).HasPrecision(4, 3);
+        builder.Property(r => r.AgreementWeight).HasPrecision(4, 3);
+
+        builder.HasIndex(r => r.DocumentId).IsUnique();
+
+        builder.HasOne(r => r.Document)
+            .WithOne(d => d.Extraction)
+            .HasForeignKey<ExtractionResult>(r => r.DocumentId)
+            .OnDelete(DeleteBehavior.Cascade);
+    }
+}
+
+internal sealed class ExtractionFieldConfiguration : IEntityTypeConfiguration<ExtractionField>
+{
+    public void Configure(EntityTypeBuilder<ExtractionField> builder)
+    {
+        builder.ToTable("ExtractionField", t => t.HasCheckConstraint("CK_ExtractionField_Confidence", "[Confidence] >= 0 AND [Confidence] <= 1"));
+
+        builder.HasKey(f => f.Id);
+
+        builder.Property(f => f.FieldPath).HasMaxLength(ColumnSizes.FieldPath).IsUnicode(false);
+        builder.Property(f => f.CmrBox).HasMaxLength(5).IsUnicode(false);
+        builder.Property(f => f.Label).HasMaxLength(100);
+        builder.Property(f => f.Value).HasMaxLength(ColumnSizes.ExtractedValue);
+        builder.Property(f => f.NormalizedValue).HasMaxLength(ColumnSizes.FieldValue);
+        builder.Property(f => f.CurrentValue).HasMaxLength(ColumnSizes.FieldValue);
+        builder.Property(f => f.Confidence).HasPrecision(4, 3);
+        builder.Property(f => f.Outcome).HasColumnName("ExtractionFieldOutcomeId").HasConversion<byte>();
+        builder.Property(f => f.Note).HasMaxLength(500);
+
+        builder.HasIndex(f => f.ExtractionResultId);
+
+        builder.HasOne(f => f.ExtractionResult)
+            .WithMany(r => r.Fields)
+            .HasForeignKey(f => f.ExtractionResultId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // La proposta appartiene alla spedizione, come il documento: una seconda cancellazione a cascata verso la stessa riga
+        // SQL Server non la ammette.
+        builder.HasOne(f => f.FieldProposal)
+            .WithMany()
+            .HasForeignKey(f => f.FieldProposalId)
+            .OnDelete(DeleteBehavior.NoAction);
+
+        builder.HasOne<EnumLookup<ExtractionFieldOutcome>>()
+            .WithMany()
+            .HasForeignKey(f => f.Outcome)
+            .OnDelete(DeleteBehavior.Restrict);
+    }
+}
+
+internal sealed class ReviewTaskConfiguration : IEntityTypeConfiguration<ReviewTask>
+{
+    public void Configure(EntityTypeBuilder<ReviewTask> builder)
+    {
+        builder.ToTable("ReviewTask");
+
+        builder.HasKey(t => t.Id);
+
+        builder.Property(t => t.Status).HasColumnName("ReviewStatusId").HasConversion<byte>();
+        builder.Property(t => t.DecidedById).HasMaxLength(50).IsUnicode(false);
+        builder.Property(t => t.DecidedByName).HasMaxLength(ColumnSizes.Name);
+        builder.Property(t => t.CorrectedValue).HasMaxLength(ColumnSizes.FieldValue);
+        builder.Property(t => t.Note).HasMaxLength(ColumnSizes.Rationale);
+
+        builder.HasIndex(t => t.ExtractionFieldId).IsUnique();
+
+        // La coda: voci in attesa, dalla più vecchia.
+        builder.HasIndex(t => t.Status);
+
+        builder.HasOne(t => t.ExtractionField)
+            .WithOne(f => f.ReviewTask)
+            .HasForeignKey<ReviewTask>(t => t.ExtractionFieldId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasOne<EnumLookup<ReviewStatus>>()
+            .WithMany()
+            .HasForeignKey(t => t.Status)
             .OnDelete(DeleteBehavior.Restrict);
     }
 }

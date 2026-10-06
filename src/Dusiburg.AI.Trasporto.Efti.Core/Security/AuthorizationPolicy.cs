@@ -30,7 +30,12 @@ public static class AuthorizationPolicy
         new(Operation.TmsOrderRead, false, "GET /api/shipments/{code}/tms-order", "Leggere l'ordine di origine nel TMS, per motivare una proposta di completamento."),
         new(Operation.FieldProposalCreate, true, "POST /api/shipments/{code}/proposals", "Proporre il valore di un campo del dataset: la proposta non modifica il dataset."),
         new(Operation.FieldProposalRead, false, "GET /api/shipments/{code}/proposals", "Leggere le proposte di completamento di una spedizione e il loro esito."),
-        new(Operation.FieldProposalDecide, true, "POST /api/proposals/{id}/decision", "Accettare o rifiutare una proposta: l'accettazione crea una nuova versione del dataset. È un'azione umana, nessun tool la espone.")
+        new(Operation.FieldProposalDecide, true, "POST /api/proposals/{id}/decision", "Accettare o rifiutare una proposta: l'accettazione crea una nuova versione del dataset. È un'azione umana, nessun tool la espone."),
+        new(Operation.DocumentUpload, true, "POST /api/shipments/{code}/documents", "Caricare il CMR in PDF di una spedizione ed estrarne i campi: l'estrazione lascia proposte e voci di revisione, non modifica il dataset."),
+        new(Operation.DocumentList, false, "GET /api/shipments/{code}/documents", "Elencare i documenti caricati su una spedizione."),
+        new(Operation.DocumentRead, false, "GET /api/documents/{id}", "Leggere un documento: testo letto, campi estratti, segnali e confidenza."),
+        new(Operation.ReviewQueueRead, false, "GET /api/review-tasks", "Leggere la coda di revisione dei campi estratti sotto soglia."),
+        new(Operation.ReviewDecide, true, "POST /api/review-tasks/{id}/decision", "Confermare, correggere o rifiutare un campo in revisione: la conferma crea una nuova versione del dataset. È un'azione umana.")
     ];
 
     public static IReadOnlyList<Permission> Permissions { get; } =
@@ -44,6 +49,10 @@ public static class AuthorizationPolicy
         // Completare una spedizione è lavoro dell'ufficio traffico: propone (anche tramite un agente) e decide. Admin guarda soltanto.
         .. Shipments(Role.Dispatcher, Operation.TmsOrderRead, Operation.FieldProposalCreate, Operation.FieldProposalRead, Operation.FieldProposalDecide),
         .. Shipments(Role.Admin, Operation.FieldProposalRead),
+
+        // Documenti e revisione: carica e decide l'ufficio traffico, Admin guarda.
+        .. Shipments(Role.Dispatcher, Operation.DocumentUpload, Operation.DocumentList, Operation.DocumentRead, Operation.ReviewQueueRead, Operation.ReviewDecide),
+        .. Shipments(Role.Admin, Operation.DocumentList, Operation.DocumentRead, Operation.ReviewQueueRead),
 
         // L'autorità non elenca e non legge spedizioni: passa solo dal registro degli identificatori e dall'UIL (D7).
         new(Role.Authority, Operation.IdentifierSearch, AccessScope.IdentifierRegistry),

@@ -3,7 +3,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
-namespace Dusiburg.AI.Trasporto.Agents.Grounding;
+namespace Dusiburg.AI.Trasporto.Shared.Grounding;
 
 /// <summary>
 /// Dice se un valore è riconducibile a una fonte: se compare, alla lettera o come stesso numero o stessa data, nel JSON che un
@@ -16,7 +16,23 @@ public static partial class SourceGrounding
 
     /// <param name="sources">I JSON restituiti dai tool in questo run.</param>
     /// <param name="reason">Perché il valore non è riconducibile; <c>null</c> se lo è.</param>
-    public static bool IsGrounded(string? value, IEnumerable<JsonElement> sources, out string? reason)
+    public static bool IsGrounded(string? value, IEnumerable<JsonElement> sources, out string? reason) =>
+        IsGrounded(value, Read(sources), out reason);
+
+    /// <summary>Lo stesso controllo su testi liberi, per esempio il testo estratto da un documento.</summary>
+    public static bool IsGroundedInText(string? value, IEnumerable<string> texts, out string? reason)
+    {
+        var content = new SourceContent();
+
+        foreach (string text in texts)
+        {
+            CollectText(text, content);
+        }
+
+        return IsGrounded(value, content, out reason);
+    }
+
+    private static bool IsGrounded(string? value, SourceContent content, out string? reason)
     {
         reason = null;
 
@@ -28,8 +44,6 @@ public static partial class SourceGrounding
 
             return false;
         }
-
-        SourceContent content = Read(sources);
 
         if (DateOnly.TryParseExact(text, IsoDate, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateOnly date))
         {
@@ -149,14 +163,6 @@ public static partial class SourceGrounding
     {
         content.Texts.Add(Normalize(text));
 
-        foreach (Match match in NumberInTextPattern().Matches(text))
-        {
-            if (ReadNumberInText(match.Value) is { } number)
-            {
-                content.Numbers.Add(number);
-            }
-        }
-
         foreach (Match match in IsoDateInTextPattern().Matches(text))
         {
             if (DateOnly.TryParseExact(match.Value, IsoDate, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateOnly date))
@@ -172,6 +178,17 @@ public static partial class SourceGrounding
                 content.Dates.Add(date);
             }
         }
+
+        // I numeri si cercano nel testo senza le date: il 10 di "2026-10-08" non è un numero che la fonte dichiara.
+        string withoutDates = ItalianDateInTextPattern().Replace(IsoDateInTextPattern().Replace(text, " "), " ");
+
+        foreach (Match match in NumberInTextPattern().Matches(withoutDates))
+        {
+            if (ReadNumberInText(match.Value) is { } number)
+            {
+                content.Numbers.Add(number);
+            }
+        }
     }
 
     /// <summary>
@@ -179,7 +196,7 @@ public static partial class SourceGrounding
     /// (<c>8.840</c> → 8840), la virgola i decimali (<c>8.840,5</c> → 8840,5). Un punto seguito da una o due cifre è un decimale
     /// (<c>5.1</c>). Così un peso scritto "8.840 kg" non giustifica la proposta 8,84.
     /// </summary>
-    private static decimal? ReadNumberInText(string token)
+    public static decimal? ReadNumberInText(string token)
     {
         string normalized = ThousandsPattern().IsMatch(token)
             ? token.Replace(".", string.Empty, StringComparison.Ordinal).Replace(',', '.')

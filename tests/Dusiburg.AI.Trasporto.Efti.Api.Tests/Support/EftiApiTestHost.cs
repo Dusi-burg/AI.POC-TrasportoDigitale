@@ -46,7 +46,12 @@ internal sealed class EftiApiTestHost : IAsyncDisposable
     public HttpClient Client { get; }
 
     /// <summary>Crea il database, avvia l'API e importa come operatore gli ordini indicati.</summary>
-    public static async Task<EftiApiTestHost> StartAsync(CancellationToken cancellationToken, params string[] orderCodes)
+    public static Task<EftiApiTestHost> StartAsync(CancellationToken cancellationToken, params string[] orderCodes) =>
+        StartAsync(cancellationToken, configureServices: null, orderCodes);
+
+    /// <param name="configureServices">Sostituzioni in più per la fixture, per esempio il modello a copione al posto di quello vero.</param>
+    public static async Task<EftiApiTestHost> StartAsync(
+        CancellationToken cancellationToken, Action<IServiceCollection>? configureServices, params string[] orderCodes)
     {
         string connectionString = TrasportoDatabaseInitializer.LocalConnectionStringFor($"Trasporto_Test_{Guid.NewGuid():N}");
 
@@ -66,6 +71,7 @@ internal sealed class EftiApiTestHost : IAsyncDisposable
                 services.RemoveAll<IHealthProbe>();
                 services.RemoveAll<TimeProvider>();
                 services.AddSingleton<TimeProvider>(new FixedTimeProvider(Now));
+                configureServices?.Invoke(services);
             });
         });
 

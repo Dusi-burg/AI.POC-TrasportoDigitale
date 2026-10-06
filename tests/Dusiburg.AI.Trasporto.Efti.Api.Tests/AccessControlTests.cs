@@ -8,6 +8,8 @@ using Dusiburg.AI.Trasporto.Efti.Api.Tms;
 using Dusiburg.AI.Trasporto.Efti.Core.Security;
 using Dusiburg.AI.Trasporto.Efti.Data;
 using Dusiburg.AI.Trasporto.Efti.Data.Entities;
+using Dusiburg.AI.Trasporto.Ai;
+using Dusiburg.AI.Trasporto.Shared.Contracts.Documents;
 using Dusiburg.AI.Trasporto.Shared.Contracts.Efti;
 using Dusiburg.AI.Trasporto.Shared.Contracts.Views.Efti;
 using Dusiburg.AI.Trasporto.Shared.Errors;
@@ -45,6 +47,11 @@ public class AccessControlTests
     /// <summary>UIL di SH-1001, ottenuto come lo ottiene l'autorità: cercando la targa.</summary>
     private string _uil = null!;
 
+    /// <summary>Modello di estrazione finto: i caricamenti della matrice non chiamano un modello vero.</summary>
+    private readonly StubExtractionModel _model = new();
+
+    private int _documentId;
+
     private static CancellationToken CancellationToken => TestContext.CurrentContext.CancellationToken;
 
     private static IEnumerable<TestCaseData> MatrixCells() =>
@@ -72,6 +79,8 @@ public class AccessControlTests
             {
                 services.AddHttpClient<TmsApiClient>().ConfigurePrimaryHttpMessageHandler(() => _tms);
                 services.RemoveAll<IHealthProbe>();
+                services.RemoveAll<IChatClientFactory>();
+                services.AddSingleton<IChatClientFactory>(_model);
                 services.RemoveAll<TimeProvider>();
                 services.AddSingleton<TimeProvider>(new FixedTimeProvider(Now));
             });
@@ -89,6 +98,11 @@ public class AccessControlTests
         }
 
         _uil = (await FindIdentifiersAsync("ZZ101AA")).Single().Uil;
+
+        // Un documento già caricato, per l'operazione che lo legge.
+        using HttpResponseMessage uploaded = await UploadAsync(TestApiKeys.For(Role.Dispatcher), DemoCmrFiles.CorrectReading("CMR-1001"));
+
+        _documentId = (await uploaded.Content.ReadFromJsonAsync<DocumentDetailView>(TrasportoJson.Options, CancellationToken))!.Document.Id;
     }
 
     [OneTimeTearDown]
@@ -366,6 +380,11 @@ public class AccessControlTests
         Operation.FieldProposalCreate => SendAsync(apiKey, HttpMethod.Post, "/api/shipments/SH-1002/proposals", PostcodeProposal),
         Operation.FieldProposalRead => SendAsync(apiKey, HttpMethod.Get, "/api/shipments/SH-1002/proposals"),
         Operation.FieldProposalDecide => DecideAFreshProposalAsync(apiKey),
+        Operation.DocumentUpload => UploadAsync(apiKey, DemoCmrFiles.CorrectReading("CMR-1001")),
+        Operation.DocumentList => SendAsync(apiKey, HttpMethod.Get, "/api/shipments/SH-1001/documents"),
+        Operation.DocumentRead => SendAsync(apiKey, HttpMethod.Get, $"/api/documents/{_documentId}"),
+        Operation.ReviewQueueRead => SendAsync(apiKey, HttpMethod.Get, "/api/review-tasks"),
+        Operation.ReviewDecide => DecideAFreshReviewTaskAsync(apiKey),
         _ => throw new ArgumentOutOfRangeException(nameof(operation), operation, "Operazione senza richiesta di prova: aggiungerla alla matrice dei test.")
     };
 
@@ -383,6 +402,30 @@ public class AccessControlTests
         ProposeFieldResponse? response = await proposed.Content.ReadFromJsonAsync<ProposeFieldResponse>(TrasportoJson.Options, CancellationToken);
 
         return await SendAsync(apiKey, HttpMethod.Post, $"/api/proposals/{response!.Proposal.Id}/decision", new ProposalDecisionRequest(ProposalStatus.Rejected, "Prova della matrice."));
+    }
+
+    /// <summary>Carica il CMR di SH-1001; il modello di estrazione dei test restituisce la lettura indicata.</summary>
+    private async Task<HttpResponseMessage> UploadAsync(string? apiKey, CmrExtraction reading)
+    {
+        _model.Reply(reading);
+
+        using MultipartFormDataContent form = DemoCmrFiles.Form("CMR-1001.pdf", DemoCmrFiles.Pdf("CMR-1001"));
+        using HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, "/api/shipments/SH-1001/documents") { Content = form }.WithApiKey(apiKey);
+
+        return await _client.SendAsync(request, CancellationToken);
+    }
+
+    /// <summary>
+    /// Una revisione ha bisogno di una voce in attesa: la crea un caricamento dell'operatore con una targa letta male, poi
+    /// decide (rifiutando, così SH-1001 resta com'è) chi ha la chiave indicata.
+    /// </summary>
+    private async Task<HttpResponseMessage> DecideAFreshReviewTaskAsync(string? apiKey)
+    {
+        using HttpResponseMessage uploaded = await UploadAsync(TestApiKeys.For(Role.Dispatcher), DemoCmrFiles.CorrectReading("CMR-1001") with { VehiclePlate = "ZZ101AB" });
+        DocumentDetailView? document = await uploaded.Content.ReadFromJsonAsync<DocumentDetailView>(TrasportoJson.Options, CancellationToken);
+        int taskId = document!.Extraction.Fields.Single(f => f.ReviewTaskId is not null).ReviewTaskId!.Value;
+
+        return await SendAsync(apiKey, HttpMethod.Post, $"/api/review-tasks/{taskId}/decision", new ReviewDecisionRequest(ReviewStatus.Rejected, null, "Prova della matrice."));
     }
 
     private Task<HttpResponseMessage> SendAsync(Role role, HttpMethod method, string path, object? body = null) =>

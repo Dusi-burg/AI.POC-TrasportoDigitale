@@ -1,5 +1,5 @@
 using System.Text.Json;
-using Dusiburg.AI.Trasporto.Agents.Grounding;
+using Dusiburg.AI.Trasporto.Shared.Grounding;
 using Dusiburg.AI.Trasporto.Agents.Tests.Support;
 
 namespace Dusiburg.AI.Trasporto.Agents.Tests;

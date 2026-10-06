@@ -44,6 +44,33 @@ public enum ProposalStatus : byte
     Rejected = 3
 }
 
+/// <summary>Che cosa è successo a un campo estratto da un documento: lo decide il codice, dalla confidenza.</summary>
+public enum ExtractionFieldOutcome : byte
+{
+    /// <summary>Coincide con il valore che la spedizione ha già: nulla da fare.</summary>
+    Matches = 1,
+
+    /// <summary>Sopra soglia: è diventato una proposta di completamento.</summary>
+    Proposed = 2,
+
+    /// <summary>Sotto soglia o con un formato non valido: è nella coda di revisione.</summary>
+    InReview = 3,
+
+    /// <summary>Il campo non esiste sulla spedizione (riga in più, riga non ADR).</summary>
+    NotApplicable = 4
+}
+
+/// <summary>Stato di una voce della coda di revisione.</summary>
+public enum ReviewStatus : byte
+{
+    Pending = 1,
+
+    /// <summary>Confermata da una persona, eventualmente con un valore corretto: il dataset ha una nuova versione.</summary>
+    Confirmed = 2,
+
+    Rejected = 3
+}
+
 /// <summary>Da dove viene il valore proposto.</summary>
 public enum ProposalSource : byte
 {

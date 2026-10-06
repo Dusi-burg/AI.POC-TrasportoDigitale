@@ -32,6 +32,11 @@ Ogni cella dice **su che cosa** vale il permesso; una cella vuota è un rifiuto.
 | `FieldProposalCreate` | tutte le spedizioni | — | — | — |
 | `FieldProposalRead` | tutte le spedizioni | — | — | tutte le spedizioni |
 | `FieldProposalDecide` | tutte le spedizioni | — | — | — |
+| `DocumentUpload` | tutte le spedizioni | — | — | — |
+| `DocumentList` | tutte le spedizioni | — | — | tutte le spedizioni |
+| `DocumentRead` | tutte le spedizioni | — | — | tutte le spedizioni |
+| `ReviewQueueRead` | tutte le spedizioni | — | — | tutte le spedizioni |
+| `ReviewDecide` | tutte le spedizioni | — | — | — |
 
 ## Operazioni
 
@@ -50,6 +55,11 @@ Ogni cella dice **su che cosa** vale il permesso; una cella vuota è un rifiuto.
 | `FieldProposalCreate` | scrittura | `POST /api/shipments/{code}/proposals` | Proporre il valore di un campo del dataset: la proposta non modifica il dataset. |
 | `FieldProposalRead` | lettura | `GET /api/shipments/{code}/proposals` | Leggere le proposte di completamento di una spedizione e il loro esito. |
 | `FieldProposalDecide` | scrittura | `POST /api/proposals/{id}/decision` | Accettare o rifiutare una proposta: l'accettazione crea una nuova versione del dataset. È un'azione umana, nessun tool la espone. |
+| `DocumentUpload` | scrittura | `POST /api/shipments/{code}/documents` | Caricare il CMR in PDF di una spedizione ed estrarne i campi: l'estrazione lascia proposte e voci di revisione, non modifica il dataset. |
+| `DocumentList` | lettura | `GET /api/shipments/{code}/documents` | Elencare i documenti caricati su una spedizione. |
+| `DocumentRead` | lettura | `GET /api/documents/{id}` | Leggere un documento: testo letto, campi estratti, segnali e confidenza. |
+| `ReviewQueueRead` | lettura | `GET /api/review-tasks` | Leggere la coda di revisione dei campi estratti sotto soglia. |
+| `ReviewDecide` | scrittura | `POST /api/review-tasks/{id}/decision` | Confermare, correggere o rifiutare un campo in revisione: la conferma crea una nuova versione del dataset. È un'azione umana. |
 
 ## Ambiti
 

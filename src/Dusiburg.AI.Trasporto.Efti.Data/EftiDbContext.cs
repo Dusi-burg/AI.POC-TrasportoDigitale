@@ -30,6 +30,14 @@ public sealed class EftiDbContext(DbContextOptions<EftiDbContext> options) : DbC
 
     public DbSet<FieldProposal> FieldProposals => Set<FieldProposal>();
 
+    public DbSet<Document> Documents => Set<Document>();
+
+    public DbSet<ExtractionResult> ExtractionResults => Set<ExtractionResult>();
+
+    public DbSet<ExtractionField> ExtractionFields => Set<ExtractionField>();
+
+    public DbSet<ReviewTask> ReviewTasks => Set<ReviewTask>();
+
     public DbSet<EnumLookup<PartyRole>> PartyRoles => Set<EnumLookup<PartyRole>>();
 
     public DbSet<EnumLookup<DatasetStatus>> DatasetStatuses => Set<EnumLookup<DatasetStatus>>();

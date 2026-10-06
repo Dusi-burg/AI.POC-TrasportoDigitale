@@ -1,5 +1,6 @@
 using Dusiburg.AI.Trasporto.Efti.Core.Documents;
 using Dusiburg.AI.Trasporto.Efti.Core.Schema;
+using Dusiburg.AI.Trasporto.Eval.Cmr;
 
 // CLI di valutazione e confronto dei modelli. I comandi di valutazione (eval extraction, eval validation, eval security,
 // bench models) arrivano con la Fase 9.
@@ -17,7 +18,18 @@ if (args is ["docs"])
     return 0;
 }
 
-Console.Error.WriteLine("Comando non riconosciuto. Disponibile: docs. I comandi di valutazione arrivano con la Fase 9.");
+//   cmr    rigenera i CMR sintetici della demo in data/cmr (PDF e verità di riferimento)
+if (args is ["cmr"])
+{
+    foreach (string file in CmrGenerator.WriteAll(Path.Combine(FindRepositoryRoot(), "data", "cmr")))
+    {
+        Console.WriteLine($"Scritto {file}");
+    }
+
+    return 0;
+}
+
+Console.Error.WriteLine("Comando non riconosciuto. Disponibili: docs, cmr. I comandi di valutazione arrivano con la Fase 9.");
 
 return 1;
 

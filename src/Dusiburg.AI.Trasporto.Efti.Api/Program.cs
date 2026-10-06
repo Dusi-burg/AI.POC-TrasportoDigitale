@@ -1,6 +1,10 @@
+using System.Globalization;
 using Dusiburg.AI.Trasporto.Ai;
+using Dusiburg.AI.Trasporto.Documents.Extraction;
 using Dusiburg.AI.Trasporto.Efti.Api.Audit;
 using Dusiburg.AI.Trasporto.Efti.Api.Dev;
+using Dusiburg.AI.Trasporto.Efti.Api.Documents;
+using Dusiburg.AI.Trasporto.Efti.Core.Extraction;
 using Dusiburg.AI.Trasporto.Efti.Api.Gate;
 using Dusiburg.AI.Trasporto.Efti.Api.Health;
 using Dusiburg.AI.Trasporto.Efti.Api.Proposals;
@@ -62,6 +66,32 @@ builder.Services.AddScoped<IdentifierRegistry>();
 // Proposte di completamento (Fase 5): le lascia chi ha il permesso, anche un agente dal tool MCP; le decide una persona.
 builder.Services.AddScoped<FieldProposalService>();
 
+// Estrazione dai CMR (Fase 7): il modello legge, il codice calcola la confidenza e decide dove va ogni campo. Pesi e soglia
+// dalla sezione Extraction; soglia e accettazione automatica anche dalle manopole dell'AppHost.
+builder.Services.AddSingleton<CmrExtractor>();
+builder.Services.AddSingleton<ExtractionAssessor>();
+builder.Services.AddOptions<ExtractionOptions>()
+    .Bind(builder.Configuration.GetSection(ExtractionOptions.SectionName))
+    .Configure<IConfiguration>(static (options, configuration) =>
+    {
+        if (configuration[ExtractionOptions.ThresholdKey] is { Length: > 0 } threshold)
+        {
+            options.ReviewThreshold = decimal.TryParse(threshold, NumberStyles.Number, CultureInfo.InvariantCulture, out decimal value)
+                ? value
+                : throw new InvalidOperationException($"{ExtractionOptions.ThresholdKey} '{threshold}' non valido: serve un numero fra 0 e 1, con il punto decimale.");
+        }
+
+        if (configuration[ExtractionOptions.AutoAcceptKey] is { Length: > 0 } autoAccept)
+        {
+            options.AutoAccept = bool.TryParse(autoAccept, out bool value)
+                ? value
+                : throw new InvalidOperationException($"{ExtractionOptions.AutoAcceptKey} '{autoAccept}' non valido: true oppure false.");
+        }
+    })
+    .Validate(static options => options.IsValid(), $"Sezione {ExtractionOptions.SectionName} non valida: soglia fra 0 e 1, da 1 a 3 letture, pesi non negativi e non tutti a zero.")
+    .ValidateOnStart();
+builder.Services.AddScoped<DocumentService>();
+
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<IHealthProbe, SqlHealthProbe>();
 builder.Services.AddSingleton<IHealthProbe, EftiSchemaHealthProbe>();
@@ -81,12 +111,13 @@ app.UseExceptionHandler();
 
 app.MapDefaultEndpoints();
 
-app.MapGet("/", () => new { service = "Dusiburg.AI.Trasporto.Efti.Api", phase = 5 });
+app.MapGet("/", () => new { service = "Dusiburg.AI.Trasporto.Efti.Api", phase = 7 });
 
 app.MapGroup("/api")
     .MapHealthEndpoints()
     .MapShipmentEndpoints()
     .MapProposalEndpoints()
+    .MapDocumentEndpoints()
     .MapGateEndpoints()
     .MapAuditEndpoints();
 

@@ -22,6 +22,11 @@ public class AuthorizationPolicyTests
     [TestCase(Operation.FieldProposalCreate, AccessScope.AllShipments, AccessScope.Denied, AccessScope.Denied, AccessScope.Denied)]
     [TestCase(Operation.FieldProposalRead, AccessScope.AllShipments, AccessScope.Denied, AccessScope.Denied, AccessScope.AllShipments)]
     [TestCase(Operation.FieldProposalDecide, AccessScope.AllShipments, AccessScope.Denied, AccessScope.Denied, AccessScope.Denied)]
+    [TestCase(Operation.DocumentUpload, AccessScope.AllShipments, AccessScope.Denied, AccessScope.Denied, AccessScope.Denied)]
+    [TestCase(Operation.DocumentList, AccessScope.AllShipments, AccessScope.Denied, AccessScope.Denied, AccessScope.AllShipments)]
+    [TestCase(Operation.DocumentRead, AccessScope.AllShipments, AccessScope.Denied, AccessScope.Denied, AccessScope.AllShipments)]
+    [TestCase(Operation.ReviewQueueRead, AccessScope.AllShipments, AccessScope.Denied, AccessScope.Denied, AccessScope.AllShipments)]
+    [TestCase(Operation.ReviewDecide, AccessScope.AllShipments, AccessScope.Denied, AccessScope.Denied, AccessScope.Denied)]
     public void ScopeFor_Operation_MatchesTheMatrix(
         Operation operation, AccessScope dispatcher, AccessScope claimsManager, AccessScope authority, AccessScope admin)
     {

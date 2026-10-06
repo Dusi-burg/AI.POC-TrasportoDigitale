@@ -1,6 +1,6 @@
 using System.Collections.Frozen;
 using System.Text.Json;
-using Dusiburg.AI.Trasporto.Agents.Grounding;
+using Dusiburg.AI.Trasporto.Shared.Grounding;
 using Dusiburg.AI.Trasporto.Agents.Specs;
 using Dusiburg.AI.Trasporto.Agents.Tools;
 using Dusiburg.AI.Trasporto.Ai;

@@ -33,7 +33,12 @@ public enum Operation : byte
     TmsOrderRead = 10,
     FieldProposalCreate = 11,
     FieldProposalRead = 12,
-    FieldProposalDecide = 13
+    FieldProposalDecide = 13,
+    DocumentUpload = 14,
+    DocumentList = 15,
+    DocumentRead = 16,
+    ReviewQueueRead = 17,
+    ReviewDecide = 18
 }
 
 /// <summary>Su che cosa vale un permesso. Non è una tabella: descrive la cella della matrice dei ruoli.</summary>

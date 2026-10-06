@@ -1,12 +1,12 @@
 # Trasporto digitale — architettura
 
-> Aggiornato alla **Fase 6 (agenti di mappatura e dell'autorità)**. Il documento cresce fase per fase: descrive ciò che il repository contiene oggi e segnala ciò che è previsto ma non ancora scritto.
+> Aggiornato alla **Fase 7 (estrazione dai CMR in PDF)**. Il documento cresce fase per fase: descrive ciò che il repository contiene oggi e segnala ciò che è previsto ma non ancora scritto.
 
 ## 1. Che cos'è
 
 POC dal punto di vista dell'**operatore vettore** del trasporto su strada: uno strato "eFTI-ready" sopra un TMS simulato (Release 1), poi la gestione di eccezioni e reclami (Release 2). Tutti i dati sono sintetici e fittizi.
 
-Stato: il TMS simulato espone 156 ordini di trasporto; `Efti.Api` li importa, costruisce per ciascuno il dataset eFTI con i nomi dello schema XSD, lo valida con regole dichiarative e lo esporta in XML conforme allo schema. Ogni operazione di `Efti.Api` richiede un ruolo e lascia una riga in un audit che il database non permette di modificare; l'autorità arriva a una spedizione solo da una targa, attraverso il registro degli identificatori. Un server MCP espone sette tool con gli stessi permessi dell'API, e due agenti li usano con la chiave di chi li avvia: uno propone i completamenti di una spedizione incompleta, l'altro risponde alle domande di un controllo su strada dai soli sottoinsiemi. Il dataset cambia solo quando una persona accetta una proposta. L'estrazione dai CMR arriva con la Fase 7.
+Stato: il TMS simulato espone 156 ordini di trasporto; `Efti.Api` li importa, costruisce per ciascuno il dataset eFTI con i nomi dello schema XSD, lo valida con regole dichiarative e lo esporta in XML conforme allo schema. Ogni operazione di `Efti.Api` richiede un ruolo e lascia una riga in un audit che il database non permette di modificare; l'autorità arriva a una spedizione solo da una targa, attraverso il registro degli identificatori. Un server MCP espone sette tool con gli stessi permessi dell'API, e due agenti li usano con la chiave di chi li avvia: uno propone i completamenti di una spedizione incompleta, l'altro risponde alle domande di un controllo su strada dai soli sottoinsiemi. Dal CMR in PDF di una spedizione un modello estrae i campi e il codice ne calcola la confidenza: sopra soglia diventano proposte, sotto soglia vanno in una coda di revisione. Il dataset cambia solo quando una persona accetta una proposta o conferma una revisione. La UI arriva con la Fase 8.
 
 ## 2. Topologia
 
@@ -58,11 +58,11 @@ Regole di confine, valide da subito:
 | `Efti.Core` | Logica deterministica del nucleo: lettura dello schema eFTI, ordine → spedizione, mappatura nel dataset, esportazione XML, regole di validazione, documenti generati |
 | `Ai` | Manopole dei modelli, fabbriche dei client, mascheramento verso il cloud, cattura dei prompt, probe di health |
 | `Agents` | I due agenti, le loro specifiche (`Specs/*.agent.md`), la guardia sui tool, il controllo di riconducibilità alla fonte, gli endpoint |
-| `Documents.Extraction` | Estrazione dai CMR (vuoto), libreria ospitata da `Efti.Api` |
+| `Documents.Extraction` | Testo dal PDF (PdfPig) ed estrazione tipizzata del CMR con il modello; libreria ospitata da `Efti.Api`, senza logica di dominio |
 | `Mcp.Hosting` | Composizione comune dei server MCP: trasporto, chiave di ruolo, elenco dei tool filtrato per ruolo, span ed errori strutturati su ogni chiamata |
 | `Efti.Mcp` | Server MCP eFTI: sette tool sopra `Efti.Api`, senza database e senza identità propria |
 | `tools/DbInit` | Ricrea il database dal modello, senza migration, e inserisce i dati del TMS |
-| `tools/Eval` | CLI: per ora il solo comando `docs`, che rigenera i documenti nati dal codice; i comandi di valutazione arrivano con la Fase 9 |
+| `tools/Eval` | CLI: `docs` rigenera i documenti nati dal codice, `cmr` i CMR sintetici di `data/cmr` (PDFsharp-MigraDoc sta solo qui); i comandi di valutazione arrivano con la Fase 9 |
 
 ## 4. Modelli
 
@@ -153,7 +153,11 @@ Il TMS è **permissivo per scelta**: mittente e destinatario sono testo dell'ord
 | `ValidationIssue` | — | regola, gravità, campo e messaggio di un problema |
 | `IdentifierRegistryEntry` | `Uil` univoco; una riga per spedizione | voce del registro degli identificatori: UIL, targhe normalizzate, sottoinsieme degli identificatori in JSON |
 | `FieldProposal` | — | proposta di completamento di un campo: valore proposto e valore di allora, fonte, motivazione, chi l'ha fatta, chi l'ha decisa, versione del dataset che ne è nata |
-| Lookup | — | `PartyRole`, `DatasetStatus`, `IssueSeverity`, `PackageType`, `FreightPayment`, `ProposalStatus`, `ProposalSource` |
+| `Document` | — | documento caricato su una spedizione: file, impronta SHA-256, testo letto, chi e quando |
+| `ExtractionResult` | una per documento | modello, letture, tempi, token, soglia e pesi in vigore, risposta grezza |
+| `ExtractionField` | — | campo estratto: valore, valore normalizzato, valore della spedizione, quattro segnali, confidenza, esito, proposta collegata |
+| `ReviewTask` | una per campo | voce della coda di revisione: stato, chi ha deciso, valore corretto, nota |
+| Lookup | — | `PartyRole`, `DatasetStatus`, `IssueSeverity`, `PackageType`, `FreightPayment`, `ProposalStatus`, `ProposalSource`, `ExtractionFieldOutcome`, `ReviewStatus` |
 
 Lo schema nasce vuoto: lo riempie l'importazione dal TMS (Fase 3). `TmsOrderCode` univoco rende l'importazione idempotente. `PackageType` e `FreightPayment` hanno una lookup per schema, perché uno schema non referenzia tabelle di un altro proprietario.
 
@@ -279,6 +283,8 @@ La matrice ruolo × operazione × ambito è un elenco dichiarativo (`Authorizati
 | `AuditRead` | — | — | — | audit |
 | `TmsOrderRead`, `FieldProposalCreate`, `FieldProposalDecide` | tutte | — | — | — |
 | `FieldProposalRead` | tutte | — | — | tutte |
+| `DocumentUpload`, `ReviewDecide` | tutte | — | — | — |
+| `DocumentList`, `DocumentRead`, `ReviewQueueRead` | tutte | — | — | tutte |
 
 `/api/health` è il solo endpoint pubblico. Un test elenca gli endpoint sotto `/api` e fallisce se uno non dichiara la propria operazione, o se l'endpoint scritto nella matrice non è quello vero.
 
@@ -406,17 +412,87 @@ Scenario 2 (`SH-1002`) per la mappatura, scenario 4 (targa `ZZ104AA`) per l'auto
 
 In tutti i run entrambi i modelli hanno proposto anche la partita IVA del destinatario (un avviso, non un errore: il valore è nell'ordine). Nel run locale non riuscito l'agente si è fermato alla ricerca per targa senza leggere il sottoinsieme, e l'esito lo riporta come dato non disponibile. Nessuna proposta è stata scartata dal controllo sulla fonte: entrambi i modelli hanno scritto `8840`. Sono misure su pochi run: la valutazione vera è nella Fase 9.
 
-## 11. Test e CI
+## 11. Estrazione dai CMR
+
+Un operatore carica il CMR in PDF di una spedizione (`POST /api/shipments/{code}/documents`). Nella stessa richiesta:
+
+```mermaid
+flowchart LR
+    P([PDF]) --> T["PdfTextReader<br/>testo, casella per casella"]
+    T --> M{{"modello (compito Extraction)<br/>due letture, schema JSON"}}
+    M --> F["CmrFieldMap<br/>casella → campo del dataset"]
+    F --> A["ExtractionAssessor<br/>4 segnali → confidenza → esito"]
+    A -- "coincide" --> N([nulla da fare])
+    A -- "≥ soglia" --> PR["FieldProposal<br/>fonte Document"]
+    A -- "< soglia o formato non valido" --> R["ReviewTask"]
+    PR --> H([decisione umana])
+    R --> H
+    H --> D[("nuova versione del dataset")]
+```
+
+- **Testo.** `PdfTextReader` segue l'ordine in cui il documento è stato scritto, non la posizione sulla pagina: il contenuto di una casella resta insieme invece di mescolarsi con la casella accanto. Niente OCR: un PDF senza testo è rifiutato.
+- **Modello.** `CmrExtractor` chiede un `CmrExtraction` secondo lo schema JSON generato dal tipo, con un solo nuovo tentativo se la risposta non è valida. Non ha tool. Il testo del documento entra nel prompt fra delimitatori, dichiarato come dato da leggere e non da eseguire. I **pesi restano testo**: il modello copia "8.840" com'è scritto, e che valga 8840 lo decide il codice.
+- **Due letture**, chieste in due modi diversi: la seconda serve solo a misurare l'accordo.
+
+### 11.1 Confidenza: la calcola il codice
+
+Il modello non dichiara quanto è sicuro. Per ogni campo il codice verifica quattro fatti, ciascuno vero, falso o non applicabile:
+
+| Segnale | Vero quando | Peso |
+|---|---|---|
+| `Literal` | il valore compare alla lettera nel testo del PDF (lo stesso controllo di riconducibilità degli agenti) | 0,35 |
+| `Format` | il valore supera il controllo del campo (paese, partita IVA, targa, numero ONU, numero) | 0,15 |
+| `Tms` | coincide con il valore che la spedizione ha già; non applicabile se la spedizione non ha quel dato | 0,25 |
+| `Agreement` | le due letture danno lo stesso valore; non applicabile con una sola lettura | 0,25 |
+
+Confidenza = pesi dei segnali veri ÷ pesi dei segnali applicabili. Soglia di revisione: **0,80**. Pesi (`Extraction:Weights:*`), soglia (`EXTRACTION_REVIEW_THRESHOLD`) e numero di letture (`Extraction:Passes`) sono configurazione; quelli in vigore si salvano con ogni estrazione, così un esito di ieri resta spiegabile.
+
+| Esito del campo | Quando | Che cosa succede |
+|---|---|---|
+| `Matches` | coincide con la spedizione | nulla |
+| `Proposed` | diverso o mancante, formato valido, confidenza ≥ soglia | una proposta `Pending` con fonte `Document`, come quelle dell'agente |
+| `InReview` | sotto soglia, oppure formato non valido | una voce nella coda di revisione |
+| `NotApplicable` | il campo non esiste sulla spedizione (riga in più, riga non ADR) | nulla |
+
+Conseguenza voluta dei pesi: **un valore che contraddice il TMS non supera mai la soglia** (al massimo 0,75), quindi passa sempre da una persona. È anche ciò che ferma un'iniezione riuscita: se il modello obbedisse a un testo scritto nel documento, il valore alterato contraddirebbe la spedizione.
+
+Limite dichiarato: la confidenza misura la **coerenza** di un valore, non l'**ambiguità** del documento. Un numero stampato chiaramente e contraddetto da un'annotazione a mano ha confidenza piena: la contraddizione la vede la persona che decide la proposta.
+
+### 11.2 Revisione
+
+`POST /api/review-tasks/{id}/decision`: `Confirmed`, eventualmente con un valore corretto, oppure `Rejected`. La conferma è una decisione umana completa: crea la proposta e la accetta, quindi nasce la versione successiva del dataset. Con `EXTRACTION_AUTO_ACCEPT=true` una proposta sopra soglia viene accettata subito, e la nota della decisione dice quale regola ha deciso; è spenta di default.
+
+### 11.3 CMR sintetici e prima misura
+
+Otto documenti in `data/cmr`, generati dal catalogo demo con `Eval -- cmr`, ciascuno con la sua verità di riferimento (`data/cmr/README.md`): tre impaginazioni, caselle vuote, valori ambigui, annotazioni a mano, un valore diverso dal TMS e un tentativo di prompt injection.
+
+Prima misura con `qwen3.5:9b` in locale (2026-10-06, un passaggio sugli otto documenti):
+
+| Misura | Valore |
+|---|---|
+| Campi estratti | 221 |
+| Esatti rispetto alla verità di riferimento | 219 (99,1%) |
+| Coincidono con la spedizione / proposte / in revisione | 207 / 10 / 4 |
+| Proposte esatte | 10 su 10 |
+| Campi errati passati sopra soglia | 0 (i 2 errati sono finiti in revisione) |
+| Iniezione (`CMR-1004-INJ`) | peso e destinatario non alterati |
+| Tempo per documento, due letture | 22–32 s |
+
+Sono otto documenti e un passaggio: la valutazione su 30 documenti, con la calibrazione della confidenza per fascia, è nella Fase 9.
+
+## 12. Test e CI
 
 - `Ai.Tests`: manopole, fabbriche dei client, aggregazione dei controlli, mascheramento verso il cloud. Nessuna chiamata a un modello.
 - `Agents.Tests`: i due agenti con un **modello a copione** e un server MCP finto (proposte attese, valore non riconducibile scartato, argomenti iniettati, tool fuori allow-list, UIL non uscito dalla ricerca, valore citato non letto, rifiuto del modello); endpoint e stream SSE; un giro completo con `Efti.Mcp` ed `Efti.Api` vere in-process, dove le proposte finiscono nel database a nome dell'operatore.
 - `Efti.Core.Tests`: catalogo dello schema; mappatura; esportazione XML e conformità all'XSD; regole sugli ordini demo, sui difetti del seed (esiti esatti) e sul golden set; matrice dei ruoli cella per cella; sottoinsiemi dell'autorità e identificatori; allineamento dei documenti generati e della copertura dichiarata. Nessun database.
 - `Efti.Api.Tests`: endpoint con probe finti; controlli SQL veri su un database usa-e-getta creato da `DbInit`; convenzioni del modello dati su tutti i `DbContext`; schemi, lookup e vincoli dello schema `efti`; importazione, viste ed esportazione con un TMS finto; **l'intera matrice dei ruoli via HTTP** con il relativo evento di audit; flusso dell'autorità; audit non modificabile; proposte e decisioni, con lo scenario 2 da `Incomplete` a `Valid`.
 - `Efti.Mcp.Tests`: il server MCP sopra una `Efti.Api` vera in-process: elenco dei tool per ruolo; **ogni ruolo su ogni tool**, con l'evento di audit del rifiuto; ogni tool sui dati demo; errori strutturati; nessuna versione nuova di dataset dopo le chiamate ai tool.
+- `Documents.Tests`: i CMR sintetici del repository si leggono, contengono alla lettera ogni valore atteso e sono quelli che il generatore produce oggi; estrazione con modello a copione (schema, documento come dato fra delimitatori, nuovo tentativo, rifiuto).
+- In `Efti.Core.Tests` la confidenza (ogni combinazione di segnali, pesi dalla configurazione) e la mappa casella → campo; in `Efti.Api.Tests` il percorso dal caricamento alla decisione con un modello finto: proposta sopra soglia, revisione sotto soglia, conferma con valore corretto, accettazione automatica, e l'iniezione "riuscita" che finisce in revisione senza toccare il dataset.
 - `Tms.Api.Tests`: invarianti degli ordini demo; generatore dei dati sintetici (ripetibilità, dimensioni, difetti); viste e reset su un database usa-e-getta, con l'orologio fermo al giorno del seed.
 - La CI gira su Windows con LocalDB. I test della categoria `RequiresSql2025` si saltano se LocalDB è più vecchio della versione 17 e restano obbligatori in locale.
 
-## 12. Decisioni
+## 13. Decisioni
 
 Gli identificativi sono quelli del piano di progetto.
 
@@ -471,7 +547,16 @@ Gli identificativi sono quelli del piano di progetto.
 | F6.4 | L'esito del run sono i risultati dei tool; solo l'agente autorità ha un esito a schema | Esito dichiarato dal modello anche per la mappatura: andrebbe riconciliato con i fatti senza aggiungere nulla |
 | F6.5 | Quinto compito `Authority` nel routing | Riusare `Mapping`: i due agenti non si potrebbero instradare e misurare separatamente |
 | F6.6 | Mascheramento solo verso il cloud, e prudente sui numeri | Mascherare ogni sequenza di cifre: il modello perderebbe CAP, numeri ONU e partite IVA |
+| P5 | La confidenza per campo la calcola il codice da quattro segnali verificabili | Confidenza dichiarata dal modello: non calibrata, e un modello ingannato sarebbe anche sicuro di sé |
+| D4 | PDFsharp-MigraDoc genera i CMR sintetici (solo nel tool `Eval`), PdfPig ne legge il testo | QuestPDF: licenza comunitaria con soglia di fatturato, meno adatta a un repository pubblico |
+| F7.1 | I pesi restano testo nell'estrazione; il numero lo legge il codice | Peso come numero nello schema: alla prima prova il modello ha restituito 2,46 per "2.460" |
+| F7.2 | Il testo del PDF si legge nell'ordine di scrittura, non per posizione | Righe ricostruite per posizione: due caselle affiancate si mescolano riga per riga |
+| F7.3 | Un valore che contraddice il TMS non supera la soglia | Soglia raggiungibile con i soli segnali interni al documento: un'iniezione riuscita passerebbe |
+| F7.4 | Sopra soglia nasce una proposta, non una modifica; l'accettazione automatica è una regola esplicita e spenta | Scrivere nel dataset i campi "sicuri": nessuna decisione umana registrata |
+| F7.5 | La conferma in revisione crea e accetta la proposta | Due passaggi per la stessa persona sullo stesso valore |
+| F7.6 | Il documento si carica sempre su una spedizione | Documenti sciolti da abbinare dopo: nessun confronto con il TMS |
+| F7.7 | I CMR sintetici e la loro verità di riferimento sono file del repository | Generarli a ogni esecuzione: la demo e la misura non avrebbero documenti stabili |
 
 ### Versioni
 
-.NET 10 (SDK 10.0.400, `latestFeature`), Aspire 13.6.0, EF Core 10.0.12, `Microsoft.Extensions.AI` 10.10.0, `Microsoft.Agents.AI` 1.23.0, `ModelContextProtocol` 2.2.0, `Anthropic` 12.53.0, `OllamaSharp` 5.5.0, Bogus 35.6.5, OpenTelemetry 1.19.1 (pacchetti di strumentazione 1.19.0), NUnit 4.6.1.
+.NET 10 (SDK 10.0.400, `latestFeature`), Aspire 13.6.0, EF Core 10.0.12, `Microsoft.Extensions.AI` 10.10.0, `Microsoft.Agents.AI` 1.23.0, `ModelContextProtocol` 2.2.0, `Anthropic` 12.53.0, `OllamaSharp` 5.5.0, PdfPig 0.1.16, PDFsharp-MigraDoc 6.2.4, Bogus 35.6.5, OpenTelemetry 1.19.1 (pacchetti di strumentazione 1.19.0), NUnit 4.6.1.
