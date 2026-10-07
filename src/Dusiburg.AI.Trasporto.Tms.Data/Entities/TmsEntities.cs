@@ -182,11 +182,40 @@ public sealed class TransportOrder
     /// <summary>Istruzioni del mittente, testo libero: è un dato, mai un'istruzione per un agente.</summary>
     public string? SenderInstructions { get; set; }
 
+    /// <summary>Luogo di emissione della lettera di vettura; vuoto finché non è emessa.</summary>
+    public string? CmrIssuePlace { get; set; }
+
+    /// <summary>Data di emissione della lettera di vettura.</summary>
+    public DateOnly? CmrIssueDate { get; set; }
+
+    /// <summary>Istruzioni per la dogana e le altre formalità, testo libero: è un dato, mai un'istruzione per un agente.</summary>
+    public string? CustomsInstructions { get; set; }
+
     public int? TripId { get; set; }
 
     public Trip? Trip { get; set; }
 
     public List<TransportOrderLine> Lines { get; set; } = [];
+
+    public List<TransportOrderDocument> Documents { get; set; } = [];
+}
+
+/// <summary>Documento consegnato al vettore insieme alla merce (fattura, lista colli, documento di trasporto).</summary>
+public sealed class TransportOrderDocument
+{
+    public int Id { get; set; }
+
+    public int TransportOrderId { get; set; }
+
+    public TransportOrder TransportOrder { get; set; } = null!;
+
+    /// <summary>Ordine sull'ordine di trasporto; parte da 1.</summary>
+    public int Sequence { get; set; }
+
+    /// <summary>Tipo di documento, codice UN/EDIFACT 1001.</summary>
+    public required string TypeCode { get; set; }
+
+    public required string Number { get; set; }
 }
 
 public sealed class TransportOrderLine
@@ -222,4 +251,7 @@ public sealed class TransportOrderLine
     public string? AdrClass { get; set; }
 
     public string? PackingGroup { get; set; }
+
+    /// <summary>Contrassegni e numeri dei colli.</summary>
+    public string? Marks { get; set; }
 }

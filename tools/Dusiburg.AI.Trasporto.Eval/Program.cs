@@ -1,4 +1,5 @@
 using Dusiburg.AI.Trasporto.Efti.Core.Documents;
+using Dusiburg.AI.Trasporto.Efti.Core.Ecmr;
 using Dusiburg.AI.Trasporto.Efti.Core.Schema;
 using Dusiburg.AI.Trasporto.Eval.Cmr;
 
@@ -6,7 +7,7 @@ using Dusiburg.AI.Trasporto.Eval.Cmr;
 // bench models) arrivano con la Fase 9.
 //
 // Uso: dotnet run --project tools/Dusiburg.AI.Trasporto.Eval -- docs
-//   docs   rigenera i documenti di docs/ che nascono dal codice (regole di validazione, copertura del dataset, ruoli)
+//   docs   rigenera i documenti di docs/ che nascono dal codice (regole di validazione, copertura del dataset, ruoli, regole dell'eCMR)
 if (args is ["docs"])
 {
     string docs = Path.Combine(FindRepositoryRoot(), "docs");
@@ -14,6 +15,7 @@ if (args is ["docs"])
     Write(Path.Combine(docs, GeneratedDocuments.ValidationRulesFile), GeneratedDocuments.RenderValidationRules());
     Write(Path.Combine(docs, GeneratedDocuments.CoverageFile), GeneratedDocuments.RenderCoverage(EftiSchemaCatalog.Default));
     Write(Path.Combine(docs, GeneratedDocuments.RolesFile), GeneratedDocuments.RenderRoles());
+    Write(Path.Combine(docs, GeneratedDocuments.EcmrRulesFile), GeneratedDocuments.RenderEcmrRules(EcmrSchema.Default));
 
     return 0;
 }

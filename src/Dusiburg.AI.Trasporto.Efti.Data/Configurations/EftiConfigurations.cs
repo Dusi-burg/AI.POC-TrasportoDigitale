@@ -40,6 +40,8 @@ internal sealed class PackageTypeConfiguration() : EnumLookupConfiguration<Packa
 
 internal sealed class FreightPaymentConfiguration() : EnumLookupConfiguration<FreightPayment>("FreightPayment");
 
+internal sealed class EcmrStatusConfiguration() : EnumLookupConfiguration<EcmrStatus>("EcmrStatus");
+
 internal sealed class ProposalStatusConfiguration() : EnumLookupConfiguration<ProposalStatus>("ProposalStatus");
 
 internal sealed class ProposalSourceConfiguration() : EnumLookupConfiguration<ProposalSource>("ProposalSource");
@@ -57,6 +59,11 @@ public static class ColumnSizes
     public const int CmrNumber = 35;
     public const int ProperShippingName = 200;
     public const int AdrClass = 10;
+    public const int Marks = 100;
+    public const int CustomsInstructions = 500;
+    public const int DocumentNumber = 35;
+    public const int RuleCode = 50;
+    public const int IssueMessage = 500;
 
     public const int Code = 20;
     public const int Name = 200;
@@ -96,6 +103,8 @@ internal sealed class ShipmentConfiguration : IEntityTypeConfiguration<Shipment>
         builder.Property(s => s.CodAmount).HasPrecision(18, 2);
         builder.Property(s => s.DeclaredValue).HasPrecision(18, 2);
         builder.Property(s => s.SenderInstructions).HasMaxLength(1000);
+        builder.Property(s => s.CmrIssuePlace).HasMaxLength(ColumnSizes.City);
+        builder.Property(s => s.CustomsInstructions).HasMaxLength(ColumnSizes.CustomsInstructions);
 
         builder.OwnsOne(s => s.Pickup, location => ConfigureLocation(location, "Pickup"));
         builder.OwnsOne(s => s.Delivery, location => ConfigureLocation(location, "Delivery"));
@@ -216,6 +225,7 @@ internal sealed class ConsignmentItemConfiguration : IEntityTypeConfiguration<Co
         builder.Property(i => i.ProperShippingName).HasMaxLength(ColumnSizes.ProperShippingName);
         builder.Property(i => i.AdrClass).HasMaxLength(ColumnSizes.AdrClass).IsUnicode(false);
         builder.Property(i => i.PackingGroup).HasMaxLength(3).IsUnicode(false);
+        builder.Property(i => i.Marks).HasMaxLength(ColumnSizes.Marks);
 
         builder.HasIndex(i => new { i.ShipmentId, i.SequenceNumber }).IsUnique();
 
@@ -438,6 +448,78 @@ internal sealed class ValidationIssueConfiguration : IEntityTypeConfiguration<Va
         builder.HasOne(i => i.EftiDataset)
             .WithMany(d => d.Issues)
             .HasForeignKey(i => i.EftiDatasetId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasOne<EnumLookup<IssueSeverity>>()
+            .WithMany()
+            .HasForeignKey(i => i.Severity)
+            .OnDelete(DeleteBehavior.Restrict);
+    }
+}
+
+internal sealed class AccompanyingDocumentConfiguration : IEntityTypeConfiguration<AccompanyingDocument>
+{
+    public void Configure(EntityTypeBuilder<AccompanyingDocument> builder)
+    {
+        builder.ToTable("AccompanyingDocument", t => t.HasCheckConstraint("CK_AccompanyingDocument_Sequence", "[Sequence] >= 1"));
+
+        builder.HasKey(d => d.Id);
+
+        builder.Property(d => d.TypeCode).HasMaxLength(3).IsUnicode(false);
+        builder.Property(d => d.Number).HasMaxLength(ColumnSizes.DocumentNumber);
+
+        builder.HasIndex(d => new { d.ShipmentId, d.Sequence }).IsUnique();
+
+        builder.HasOne(d => d.Shipment)
+            .WithMany(s => s.AccompanyingDocuments)
+            .HasForeignKey(d => d.ShipmentId)
+            .OnDelete(DeleteBehavior.Cascade);
+    }
+}
+
+internal sealed class EcmrDocumentConfiguration : IEntityTypeConfiguration<EcmrDocument>
+{
+    public void Configure(EntityTypeBuilder<EcmrDocument> builder)
+    {
+        builder.ToTable("EcmrDocument", t => t.HasCheckConstraint("CK_EcmrDocument_Version", "[Version] >= 1"));
+
+        builder.HasKey(d => d.Id);
+
+        builder.Property(d => d.Status).HasColumnName("EcmrStatusId").HasConversion<byte>();
+        builder.Property(d => d.SchemaVersion).HasMaxLength(20).IsUnicode(false);
+
+        builder.HasIndex(d => new { d.ShipmentId, d.Version }).IsUnique();
+
+        builder.HasOne(d => d.Shipment)
+            .WithMany(s => s.EcmrDocuments)
+            .HasForeignKey(d => d.ShipmentId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasOne<EnumLookup<EcmrStatus>>()
+            .WithMany()
+            .HasForeignKey(d => d.Status)
+            .OnDelete(DeleteBehavior.Restrict);
+    }
+}
+
+internal sealed class EcmrIssueConfiguration : IEntityTypeConfiguration<EcmrIssue>
+{
+    public void Configure(EntityTypeBuilder<EcmrIssue> builder)
+    {
+        builder.ToTable("EcmrIssue");
+
+        builder.HasKey(i => i.Id);
+
+        builder.Property(i => i.RuleCode).HasMaxLength(ColumnSizes.RuleCode).IsUnicode(false);
+        builder.Property(i => i.Severity).HasColumnName("IssueSeverityId").HasConversion<byte>();
+        builder.Property(i => i.FieldPath).HasMaxLength(ColumnSizes.FieldPath).IsUnicode(false);
+        builder.Property(i => i.Message).HasMaxLength(ColumnSizes.IssueMessage);
+
+        builder.HasIndex(i => i.EcmrDocumentId);
+
+        builder.HasOne(i => i.EcmrDocument)
+            .WithMany(d => d.Issues)
+            .HasForeignKey(i => i.EcmrDocumentId)
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasOne<EnumLookup<IssueSeverity>>()

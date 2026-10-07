@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Dusiburg.AI.Trasporto.Efti.Core.Dataset;
 using Dusiburg.AI.Trasporto.Efti.Core.Documents;
+using Dusiburg.AI.Trasporto.Efti.Core.Ecmr;
 using Dusiburg.AI.Trasporto.Efti.Core.Schema;
 using Dusiburg.AI.Trasporto.Efti.Core.Tests.Support;
 using Dusiburg.AI.Trasporto.Efti.Core.Validation;
@@ -56,6 +57,19 @@ public class GeneratedDocumentsTests
 
         Assert.That(onDisk, Is.EqualTo(rendered), $"docs/{GeneratedDocuments.RolesFile} non è allineato alla matrice dei ruoli: {Regenerate}");
         Assert.That(Enum.GetNames<Operation>().Concat(Enum.GetNames<Role>()).Select(name => $"`{name}`"), Is.All.Matches<string>(rendered.Contains));
+    }
+
+    [Test]
+    public void EcmrRulesDocument_InRepository_MatchesTheRules()
+    {
+        //SETUP
+        string onDisk = ReadDocument(GeneratedDocuments.EcmrRulesFile);
+
+        //SUT
+        string rendered = GeneratedDocuments.RenderEcmrRules(EcmrSchema.Default);
+
+        Assert.That(onDisk, Is.EqualTo(rendered), $"docs/{GeneratedDocuments.EcmrRulesFile} non è allineato alle regole: {Regenerate}");
+        Assert.That(EcmrRules.All.Select(r => $"`{r.Code}`"), Is.All.Matches<string>(rendered.Contains));
     }
 
     [Test]

@@ -166,6 +166,8 @@ internal sealed class TransportOrderConfiguration : IEntityTypeConfiguration<Tra
         builder.Property(o => o.CodAmount).HasPrecision(18, 2);
         builder.Property(o => o.DeclaredValue).HasPrecision(18, 2);
         builder.Property(o => o.SenderInstructions).HasMaxLength(1000);
+        builder.Property(o => o.CmrIssuePlace).HasMaxLength(ColumnSizes.City);
+        builder.Property(o => o.CustomsInstructions).HasMaxLength(500);
 
         builder.OwnsOne(o => o.Consignor, party => ConfigureParty(party, "Consignor"));
         builder.OwnsOne(o => o.Consignee, party => ConfigureParty(party, "Consignee"));
@@ -241,6 +243,7 @@ internal sealed class TransportOrderLineConfiguration : IEntityTypeConfiguration
         builder.Property(l => l.ProperShippingName).HasMaxLength(200);
         builder.Property(l => l.AdrClass).HasMaxLength(10).IsUnicode(false);
         builder.Property(l => l.PackingGroup).HasMaxLength(3).IsUnicode(false);
+        builder.Property(l => l.Marks).HasMaxLength(100);
 
         builder.HasIndex(l => new { l.TransportOrderId, l.LineNumber }).IsUnique();
 
@@ -253,5 +256,25 @@ internal sealed class TransportOrderLineConfiguration : IEntityTypeConfiguration
             .WithMany()
             .HasForeignKey(l => l.PackageType)
             .OnDelete(DeleteBehavior.Restrict);
+    }
+}
+
+internal sealed class TransportOrderDocumentConfiguration : IEntityTypeConfiguration<TransportOrderDocument>
+{
+    public void Configure(EntityTypeBuilder<TransportOrderDocument> builder)
+    {
+        builder.ToTable("TransportOrderDocument", t => t.HasCheckConstraint("CK_TransportOrderDocument_Sequence", "[Sequence] >= 1"));
+
+        builder.HasKey(d => d.Id);
+
+        builder.Property(d => d.TypeCode).HasMaxLength(3).IsUnicode(false);
+        builder.Property(d => d.Number).HasMaxLength(35);
+
+        builder.HasIndex(d => new { d.TransportOrderId, d.Sequence }).IsUnique();
+
+        builder.HasOne(d => d.TransportOrder)
+            .WithMany(o => o.Documents)
+            .HasForeignKey(d => d.TransportOrderId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

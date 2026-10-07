@@ -40,7 +40,9 @@ public enum Operation : byte
     ReviewQueueRead = 17,
     ReviewDecide = 18,
     SettingsRead = 19,
-    ControlMomentSuggest = 20
+    ControlMomentSuggest = 20,
+    EcmrRead = 21,
+    EcmrExport = 22
 }
 
 /// <summary>Su che cosa vale un permesso. Non è una tabella: descrive la cella della matrice dei ruoli.</summary>

@@ -55,6 +55,7 @@ public sealed class TmsViewQueries(TmsDbContext db)
             .AsNoTracking()
             .Include(o => o.Customer)
             .Include(o => o.Lines)
+            .Include(o => o.Documents)
             .Include(o => o.Trip!).ThenInclude(t => t.Vehicle)
             .Include(o => o.Trip!).ThenInclude(t => t.Trailer)
             .Include(o => o.Trip!).ThenInclude(t => t.Driver)
@@ -94,7 +95,11 @@ public sealed class TmsViewQueries(TmsDbContext db)
             order.Trip is null ? null : ToView(order.Trip),
             [.. order.Lines.OrderBy(l => l.LineNumber).Select(l => new TransportOrderLineView(
                 l.LineNumber, l.Description, l.PackageCount, l.PackageType, l.GrossWeightKg, l.VolumeM3,
-                l.IsDangerousGoods, l.UnNumber, l.ProperShippingName, l.AdrClass, l.PackingGroup))]);
+                l.IsDangerousGoods, l.UnNumber, l.ProperShippingName, l.AdrClass, l.PackingGroup, l.Marks))],
+            order.CmrIssuePlace,
+            order.CmrIssueDate,
+            order.CustomsInstructions,
+            [.. order.Documents.OrderBy(d => d.Sequence).Select(d => new OrderDocumentView(d.TypeCode, d.Number))]);
     }
 
     private static PartyView ToView(OrderParty party) =>

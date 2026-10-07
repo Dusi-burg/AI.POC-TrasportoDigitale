@@ -67,6 +67,9 @@ public static class ShipmentFactory
             DeclaredValue = order.DeclaredValue,
             TransshipmentAllowed = order.TransshipmentAllowed,
             SenderInstructions = order.SenderInstructions,
+            CmrIssuePlace = order.CmrIssuePlace,
+            CmrIssueDate = order.CmrIssueDate,
+            CustomsInstructions = order.CustomsInstructions,
             ImportedAt = importedAt,
             UpdatedAt = importedAt
         };
@@ -93,7 +96,16 @@ public static class ShipmentFactory
             UnNumber = line.UnNumber,
             ProperShippingName = line.ProperShippingName,
             AdrClass = line.AdrClass,
-            PackingGroup = line.PackingGroup
+            PackingGroup = line.PackingGroup,
+            Marks = line.Marks
+        }));
+
+        shipment.AccompanyingDocuments.AddRange((order.Documents ?? []).Select((document, index) => new AccompanyingDocument
+        {
+            Shipment = shipment,
+            Sequence = index + 1,
+            TypeCode = document.TypeCode,
+            Number = document.Number
         }));
 
         return shipment;

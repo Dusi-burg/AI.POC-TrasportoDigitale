@@ -1,4 +1,6 @@
+using Dusiburg.AI.Trasporto.Efti.Api.Ecmr;
 using Dusiburg.AI.Trasporto.Efti.Api.Gate;
+using Dusiburg.AI.Trasporto.Efti.Core.Ecmr;
 using Dusiburg.AI.Trasporto.Efti.Api.Tms;
 using Dusiburg.AI.Trasporto.Efti.Core.Import;
 using Dusiburg.AI.Trasporto.Efti.Core.Validation;
@@ -20,7 +22,7 @@ public sealed class TransportOrderNotFoundException(string orderCode) : Exceptio
 public sealed class TransportOrderNotImportableException(string message) : Exception(message);
 
 /// <summary>
-/// Importazione dal TMS: legge l'ordine, lo copia in una spedizione, costruisce il dataset eFTI e lo valida. Mappatura e regole
+/// Importazione dal TMS: legge l'ordine, lo copia in una spedizione, costruisce il dataset eFTI e il documento eCMR e li valida. Mappatura e regole
 /// sono in <c>Efti.Core</c>; qui si orchestra e si salva. Idempotente sul codice dell'ordine: una spedizione già importata non
 /// si tocca, perché da quel momento il dataset cambia solo con una decisione umana.
 /// </summary>
@@ -28,6 +30,7 @@ public sealed class ShipmentImportService(
     EftiDbContext db,
     TmsApiClient tms,
     EftiValidator validator,
+    EcmrValidator ecmrValidator,
     IdentifierRegistry registry,
     IOptions<CarrierOptions> carrier,
     TimeProvider timeProvider,
@@ -119,6 +122,9 @@ public sealed class ShipmentImportService(
                 Message = Truncate(f.Message, MaxMessageLength)
             })]
         });
+
+        // Il documento eCMR nasce dalla stessa spedizione, nello stesso momento e con lo stesso numero di versione (Fase 8b).
+        shipment.EcmrDocuments.Add(EcmrVersions.Create(ecmrValidator.Evaluate(shipment), ecmrValidator.SchemaVersion, version: 1, now));
 
         db.Shipments.Add(shipment);
         await db.SaveChangesAsync(cancellationToken);

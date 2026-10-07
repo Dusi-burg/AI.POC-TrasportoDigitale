@@ -16,9 +16,19 @@
         <h1 class="h3 mb-0">
             @shipment.Shipment.Code
             <span class="badge @Presentation.BadgeClass(shipment.Dataset.Status)" id="dataset-status">@Presentation.Label(shipment.Dataset.Status)</span>
-            <span class="small text-muted fs-6">dataset v@(shipment.Dataset.Version) · ordine @shipment.Shipment.TmsOrderCode</span>
+            <span class="small text-muted fs-6">dataset eFTI v@(shipment.Dataset.Version) · ordine @shipment.Shipment.TmsOrderCode</span>
+            @if (Model.Ecmr is { } ecmrStatus)
+            {
+                <span class="badge @Presentation.BadgeClass(ecmrStatus.Status)" id="ecmr-status">eCMR: @Presentation.Label(ecmrStatus.Status)</span>
+            }
         </h1>
-        <a class="btn btn-outline-secondary btn-sm" asp-page-handler="Xml" asp-route-code="@Model.Code" id="download-xml">Scarica l'XML eFTI</a>
+        <div>
+            <a class="btn btn-outline-secondary btn-sm" asp-page-handler="Xml" asp-route-code="@Model.Code" id="download-xml">Scarica l'XML eFTI</a>
+            @if (Model.Ecmr is not null)
+            {
+                <a class="btn btn-outline-secondary btn-sm" asp-page-handler="EcmrXml" asp-route-code="@Model.Code" id="download-ecmr-xml">Scarica l'XML eCMR</a>
+            }
+        </div>
     </div>
 
     <div class="row g-3 mb-4">
@@ -94,6 +104,34 @@
                 }
             </tbody>
         </table>
+    }
+
+    @if (Model.Ecmr is { } ecmr)
+    {
+        <h2 class="h5 mt-4">Lettera di vettura elettronica (eCMR)</h2>
+        <p class="small text-muted mb-2">Nasce dalla stessa spedizione del dataset eFTI, con regole e stato propri: il dataset eFTI è ciò che vede
+            l'autorità, l'eCMR è il contratto di trasporto. Schema UN/CEFACT @ecmr.SchemaVersion, documento v@(ecmr.Version).</p>
+        @if (ecmr.Issues.Count == 0)
+        {
+            <p class="text-success" id="ecmr-no-issues">Tutte le indicazioni della lettera di vettura sono presenti e l'XML è conforme allo schema.</p>
+        }
+        else
+        {
+            <table class="table table-sm align-middle" id="ecmr-issues">
+                <thead><tr><th>Gravità</th><th>Regola</th><th>Elemento eCMR</th><th>Messaggio</th></tr></thead>
+                <tbody>
+                    @foreach (ValidationIssueView issue in ecmr.Issues)
+                    {
+                        <tr>
+                            <td><span class="badge @Presentation.BadgeClass(issue.Severity)">@Presentation.Label(issue.Severity)</span></td>
+                            <td><code>@issue.RuleCode</code></td>
+                            <td class="small"><code>@issue.FieldPath</code></td>
+                            <td>@issue.Message</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
     }
 
     @if (Model.CanWork && shipment.Issues.Count > 0)
@@ -249,6 +287,14 @@
         <summary class="h5 d-inline-block">Dataset eFTI (JSON, v@(shipment.Dataset.Version), schema @shipment.Dataset.SchemaVersion)</summary>
         <pre class="bg-light border rounded p-3 small mt-2" id="dataset-json">@Presentation.Json(shipment.Dataset.Json)</pre>
     </details>
+
+    @if (Model.Ecmr is { } ecmrDocument)
+    {
+        <details class="mt-2">
+            <summary class="h5 d-inline-block">Documento eCMR (JSON, v@(ecmrDocument.Version), schema @ecmrDocument.SchemaVersion)</summary>
+            <pre class="bg-light border rounded p-3 small mt-2" id="ecmr-json">@Presentation.Json(ecmrDocument.Json)</pre>
+        </details>
+    }
 }
 
 @section Scripts {

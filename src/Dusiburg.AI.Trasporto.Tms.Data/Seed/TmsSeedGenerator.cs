@@ -76,6 +76,11 @@ public sealed class TmsSeedGenerator
         List<TransportOrder> orders = [.. DemoCatalog.Orders.Select(demo => generator.CreateDemoOrder(demo, customers, vehicles, drivers, trips))];
 
         List<TransportOrder> generated = [.. Enumerable.Range(0, GeneratedOrders).Select(index => generator.CreateOrder(index, customers))];
+
+        // Prima dei difetti: i dati della lettera di vettura nascono dall'ordine pulito.
+        orders.ForEach(AddConsignmentNoteData);
+        generated.ForEach(AddConsignmentNoteData);
+
         generator.AssignTrips(generated, vehicles, drivers, trips);
         Dictionary<string, IReadOnlyList<SeedDefect>> defects = generator.ApplyDefects(generated);
 
@@ -233,6 +238,53 @@ public sealed class TmsSeedGenerator
                 PackingGroup = line.DangerousGoods?.PackingGroup
             })]
         };
+    }
+
+    /// <summary>
+    /// Dati della lettera di vettura (Fase 8b) <b>derivati</b> dall'ordine, senza usare il generatore casuale: aggiungerli non
+    /// sposta la sequenza dei numeri, quindi ordini, viaggi e difetti restano quelli di prima. Un trasporto nazionale già
+    /// partito riceve qui il numero della sua lettera di vettura (<c>LDV-…</c>): quelli internazionali lo hanno già. Emissione
+    /// solo se l'ordine ha il numero; contrassegni solo sulle righe con colli.
+    /// </summary>
+    private static void AddConsignmentNoteData(TransportOrder order)
+    {
+        string number = order.Code[(order.Code.IndexOf('-', StringComparison.Ordinal) + 1)..];
+        bool international = order.Pickup.CountryCode != order.Delivery.CountryCode;
+
+        if (order.CmrNumber is null && !international && order.PickedUpAt is not null)
+        {
+            order.CmrNumber = $"LDV-{number}";
+        }
+
+        if (order.CmrNumber is not null)
+        {
+            order.CmrIssuePlace = order.Pickup.City;
+            order.CmrIssueDate = order.PickupDate;
+        }
+
+        foreach (TransportOrderLine line in order.Lines.Where(l => l.PackageCount > 0))
+        {
+            line.Marks = string.Create(CultureInfo.InvariantCulture, $"{order.Code} {line.LineNumber}/{order.Lines.Count}");
+        }
+
+        (string TypeCode, string Number)[] documents = international
+            ? [("380", $"INV-{number}"), ("271", $"PL-{number}")]
+            : [("270", $"DDT-{number}")];
+
+        order.Documents =
+        [
+            .. documents.Select((document, index) => new TransportOrderDocument
+            {
+                Sequence = index + 1,
+                TypeCode = document.TypeCode,
+                Number = document.Number
+            })
+        ];
+
+        if (international && new[] { order.Pickup.CountryCode, order.Delivery.CountryCode }.Any(country => country is not null && !EuropeanUnion.IsMember(country)))
+        {
+            order.CustomsInstructions = "Operazioni doganali a cura del destinatario; fattura commerciale e lista colli allegate.";
+        }
     }
 
     private static OrderParty ToOrderParty(DemoParty party) => new()

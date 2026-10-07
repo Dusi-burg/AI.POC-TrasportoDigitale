@@ -27,6 +27,29 @@ public class TmsSeedGeneratorTests
     }
 
     [Test]
+    public void Generate_ConsignmentNoteData_IsDerivedFromTheOrder()
+    {
+        //SUT
+        IReadOnlyList<TransportOrder> orders = Data.Orders;
+
+        TransportOrder international = orders.Single(o => o.Code == "TO-1004");
+        TransportOrder notIssued = orders.Single(o => o.Code == "TO-1002");
+        TransportOrder shell = orders.Single(o => o.Code == "TO-1003");
+        Assert.That((international.CmrIssuePlace, international.CmrIssueDate), Is.EqualTo(("Livorno", international.PickupDate)));
+        Assert.That(international.Lines.Select(l => l.Marks), Is.EqualTo(new[] { "TO-1004 1/2", "TO-1004 2/2" }));
+        Assert.That(international.Documents.Select(d => (d.Sequence, d.TypeCode, d.Number)), Is.EqualTo(new[] { (1, "380", "INV-1004"), (2, "271", "PL-1004") }));
+        Assert.That((notIssued.CmrNumber, notIssued.CmrIssuePlace, notIssued.CmrIssueDate), Is.EqualTo(((string?)null, (string?)null, (DateOnly?)null)));
+        Assert.That(shell.Lines.Select(l => l.Marks), Is.All.Null, "senza colli non ci sono contrassegni");
+        // Emissione solo con il numero della lettera di vettura; ogni ordine ha i suoi documenti; dogana solo fuori dall'Unione.
+        Assert.That(orders, Is.All.Matches<TransportOrder>(o => (o.CmrNumber is null) == (o.CmrIssueDate is null) && (o.CmrNumber is null) == (o.CmrIssuePlace is null)));
+        Assert.That(orders, Is.All.Matches<TransportOrder>(o => o.Documents.Count is 1 or 2));
+        Assert.That(orders.Where(o => o.CustomsInstructions is not null).Select(o => o.Code), Is.Not.Empty);
+        // Anche i trasporti nazionali già partiti hanno una lettera di vettura, con un numero proprio.
+        Assert.That(orders.Where(o => o.Pickup.CountryCode == o.Delivery.CountryCode && o.PickedUpAt is not null).Select(o => o.CmrNumber),
+            Is.Not.Empty.And.All.StartsWith("LDV-"));
+    }
+
+    [Test]
     public void Generate_OtherDate_ShiftsDatesButKeepsCodesAndDefects()
     {
         //SUT

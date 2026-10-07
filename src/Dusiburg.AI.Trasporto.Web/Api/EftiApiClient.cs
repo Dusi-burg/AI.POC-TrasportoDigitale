@@ -47,6 +47,21 @@ public sealed class EftiApiClient(HttpClient http)
             response.Headers.TryGetValues("X-Efti-Dataset-Status", out IEnumerable<string>? values) ? values.FirstOrDefault() : null);
     }
 
+    /// <summary>Il documento eCMR della spedizione: stato, indicazioni mancanti e contenuto.</summary>
+    public Task<EcmrDocumentView> GetEcmrAsync(string code, CancellationToken cancellationToken) =>
+        GetAsync<EcmrDocumentView>($"api/shipments/{Uri.EscapeDataString(code)}/ecmr", cancellationToken);
+
+    /// <summary>L'eCMR in XML UN/CEFACT, con il suo stato (intestazione <c>X-Ecmr-Status</c>).</summary>
+    public async Task<(string Xml, string? EcmrStatus)> GetEcmrXmlAsync(string code, CancellationToken cancellationToken)
+    {
+        using HttpResponseMessage response = await http.GetAsync($"api/shipments/{Uri.EscapeDataString(code)}/ecmr.xml", cancellationToken);
+
+        await ApiProblemException.ThrowIfErrorAsync(response, cancellationToken);
+
+        return (await response.Content.ReadAsStringAsync(cancellationToken),
+            response.Headers.TryGetValues("X-Ecmr-Status", out IEnumerable<string>? values) ? values.FirstOrDefault() : null);
+    }
+
     public Task<List<FieldProposalView>> ListProposalsAsync(string code, CancellationToken cancellationToken) =>
         GetAsync<List<FieldProposalView>>($"api/shipments/{Uri.EscapeDataString(code)}/proposals", cancellationToken);
 

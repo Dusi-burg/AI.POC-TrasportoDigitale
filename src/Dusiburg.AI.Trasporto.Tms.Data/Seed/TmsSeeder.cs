@@ -46,6 +46,7 @@ public static class TmsSeeder
 
             await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
 
+            await db.TransportOrderDocuments.ExecuteDeleteAsync(cancellationToken);
             await db.TransportOrderLines.ExecuteDeleteAsync(cancellationToken);
             await db.TransportOrders.ExecuteDeleteAsync(cancellationToken);
             await db.Trips.ExecuteDeleteAsync(cancellationToken);

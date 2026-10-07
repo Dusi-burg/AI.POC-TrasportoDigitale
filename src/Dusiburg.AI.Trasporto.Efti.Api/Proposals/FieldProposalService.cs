@@ -1,4 +1,6 @@
+using Dusiburg.AI.Trasporto.Efti.Api.Ecmr;
 using Dusiburg.AI.Trasporto.Efti.Api.Gate;
+using Dusiburg.AI.Trasporto.Efti.Core.Ecmr;
 using Dusiburg.AI.Trasporto.Efti.Core.Proposals;
 using Dusiburg.AI.Trasporto.Efti.Core.Schema;
 using Dusiburg.AI.Trasporto.Efti.Core.Validation;
@@ -31,7 +33,7 @@ public sealed class ProposalException(ProposalFailure failure, string message) :
 /// un valore sia accettabile lo decide <see cref="CompletableFields"/>: codice deterministico, non chi propone.
 /// </summary>
 public sealed class FieldProposalService(
-    EftiDbContext db, EftiValidator validator, EftiSchemaCatalog catalog, IdentifierRegistry registry, TimeProvider timeProvider)
+    EftiDbContext db, EftiValidator validator, EcmrValidator ecmrValidator, EftiSchemaCatalog catalog, IdentifierRegistry registry, TimeProvider timeProvider)
 {
     public const int MaxRows = 200;
 
@@ -198,6 +200,12 @@ public sealed class FieldProposalService(
             })]
         });
 
+        // La stessa decisione rigenera anche il documento eCMR, con lo stesso numero di versione.
+        EcmrDocument ecmr = EcmrVersions.Create(ecmrValidator.Evaluate(shipment), ecmrValidator.SchemaVersion, datasetVersion + 1, now);
+
+        ecmr.ShipmentId = shipment.Id;
+        db.EcmrDocuments.Add(ecmr);
+
         // Solo un dataset valido si pubblica sul gate. Se torna incompleto la voce resta: la lettura per UIL lo rifiuta da sé.
         if (evaluation.Status == DatasetStatus.Valid)
         {
@@ -223,7 +231,11 @@ public sealed class FieldProposalService(
         await ShipmentGraph().SingleAsync(s => s.Id == id, cancellationToken);
 
     private IQueryable<Shipment> ShipmentGraph() =>
-        db.Shipments.Include(s => s.Parties).ThenInclude(p => p.Party).Include(s => s.Items).AsSplitQuery();
+        db.Shipments
+            .Include(s => s.Parties).ThenInclude(p => p.Party)
+            .Include(s => s.Items)
+            .Include(s => s.AccompanyingDocuments)
+            .AsSplitQuery();
 
     /// <summary>Versione e stato dell'ultimo dataset (indice univoco <c>ShipmentId</c>, <c>Version</c>).</summary>
     private async Task<(int Version, DatasetStatus Status)> LatestDatasetAsync(int shipmentId, CancellationToken cancellationToken)

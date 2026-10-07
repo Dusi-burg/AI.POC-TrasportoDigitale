@@ -11,6 +11,8 @@
   <ItemGroup>
     <!-- Schemi XSD eFTI (Apache-2.0, data/efti-schema/README.md): copiati accanto all'assembly, in efti-schema/. -->
     <Content Include="..\..\data\efti-schema\**\*.xsd" Link="efti-schema\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Schemi XSD dell'eCMR UN/CEFACT D25A (data/ecmr-schema/README.md): copiati accanto all'assembly, in ecmr-schema/. -->
+    <Content Include="..\..\data\ecmr-schema\**\*.xsd" Link="ecmr-schema\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

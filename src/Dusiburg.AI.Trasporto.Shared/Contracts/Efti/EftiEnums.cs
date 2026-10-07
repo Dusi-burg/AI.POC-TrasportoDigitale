@@ -27,6 +27,16 @@ public enum DatasetStatus : byte
     Signed = 3
 }
 
+/// <summary>Stato di una versione del documento eCMR, la lettera di vettura elettronica (Fase 8b).</summary>
+public enum EcmrStatus : byte
+{
+    /// <summary>Manca almeno un'indicazione obbligatoria della lettera di vettura.</summary>
+    Draft = 1,
+
+    /// <summary>Tutte le indicazioni obbligatorie sono presenti e l'XML è conforme allo schema UN/CEFACT.</summary>
+    Complete = 2
+}
+
 public enum IssueSeverity : byte
 {
     Error = 1,

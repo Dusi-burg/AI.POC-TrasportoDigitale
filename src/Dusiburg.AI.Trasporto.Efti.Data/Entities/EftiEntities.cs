@@ -86,6 +86,15 @@ public sealed class Shipment
     /// <summary>Istruzioni del mittente, testo libero: è un dato, mai un'istruzione per un agente.</summary>
     public string? SenderInstructions { get; set; }
 
+    /// <summary>Luogo di emissione della lettera di vettura; vuoto finché non è emessa.</summary>
+    public string? CmrIssuePlace { get; set; }
+
+    /// <summary>Data di emissione della lettera di vettura.</summary>
+    public DateOnly? CmrIssueDate { get; set; }
+
+    /// <summary>Istruzioni per la dogana e le altre formalità, testo libero: è un dato, mai un'istruzione per un agente.</summary>
+    public string? CustomsInstructions { get; set; }
+
     public DateTimeOffset ImportedAt { get; set; }
 
     public DateTimeOffset UpdatedAt { get; set; }
@@ -95,6 +104,77 @@ public sealed class Shipment
     public List<ConsignmentItem> Items { get; set; } = [];
 
     public List<EftiDataset> Datasets { get; set; } = [];
+
+    public List<AccompanyingDocument> AccompanyingDocuments { get; set; } = [];
+
+    public List<EcmrDocument> EcmrDocuments { get; set; } = [];
+}
+
+/// <summary>Documento consegnato al vettore insieme alla merce (fattura, lista colli): casella 5 della lettera di vettura.</summary>
+public sealed class AccompanyingDocument
+{
+    public int Id { get; set; }
+
+    public int ShipmentId { get; set; }
+
+    public Shipment Shipment { get; set; } = null!;
+
+    /// <summary>Ordine sulla spedizione; parte da 1.</summary>
+    public int Sequence { get; set; }
+
+    /// <summary>Tipo di documento, codice UN/EDIFACT 1001.</summary>
+    public required string TypeCode { get; set; }
+
+    public required string Number { get; set; }
+}
+
+/// <summary>
+/// Una versione del documento eCMR di una spedizione (Fase 8b): nasce insieme alla versione del dataset eFTI con lo stesso
+/// numero, dalla stessa spedizione, ma con mappatura, regole e stato propri.
+/// </summary>
+public sealed class EcmrDocument
+{
+    public int Id { get; set; }
+
+    public int ShipmentId { get; set; }
+
+    public Shipment Shipment { get; set; } = null!;
+
+    /// <summary>Progressivo per spedizione, uguale a quello del dataset eFTI nato nello stesso momento.</summary>
+    public int Version { get; set; }
+
+    /// <summary>Colonna <c>EcmrStatusId</c>, FK verso <c>efti.EcmrStatus</c>.</summary>
+    public EcmrStatus Status { get; set; }
+
+    /// <summary>Versione dello schema UN/CEFACT con cui è stato prodotto (es. <c>100.D25A</c>).</summary>
+    public required string SchemaVersion { get; set; }
+
+    /// <summary>Il documento con i nomi degli elementi dello schema eCMR.</summary>
+    public required string Json { get; set; }
+
+    public DateTimeOffset CreatedAt { get; set; }
+
+    public List<EcmrIssue> Issues { get; set; } = [];
+}
+
+/// <summary>Problema trovato dalle regole dell'eCMR su una versione del documento.</summary>
+public sealed class EcmrIssue
+{
+    public int Id { get; set; }
+
+    public int EcmrDocumentId { get; set; }
+
+    public EcmrDocument EcmrDocument { get; set; } = null!;
+
+    public required string RuleCode { get; set; }
+
+    /// <summary>Colonna <c>IssueSeverityId</c>, FK verso <c>efti.IssueSeverity</c>.</summary>
+    public IssueSeverity Severity { get; set; }
+
+    /// <summary>Percorso dell'elemento nel documento eCMR.</summary>
+    public string? FieldPath { get; set; }
+
+    public required string Message { get; set; }
 }
 
 /// <summary>
@@ -196,6 +276,9 @@ public sealed class ConsignmentItem
     public string? AdrClass { get; set; }
 
     public string? PackingGroup { get; set; }
+
+    /// <summary>Contrassegni e numeri dei colli.</summary>
+    public string? Marks { get; set; }
 }
 
 /// <summary>Una versione del dataset eFTI di una spedizione: il JSON e il suo stato.</summary>

@@ -40,6 +40,13 @@ internal static class TestData
             ? [new ValidationIssueView("ADR-002", IssueSeverity.Error, "consignment.items[1].dangerousGoods.unNumber", "Manca il numero ONU della merce pericolosa.")]
             : []);
 
+    public static EcmrDocumentView Ecmr(string code = "SH-1002", EcmrStatus status = EcmrStatus.Draft) => new(
+        code, 1, status, "100.D25A", Moment, status == EcmrStatus.Draft ? 1 : 0, 0,
+        JsonDocument.Parse("""{ "ExchangedDocument": { "TypeCode": "730" }, "SpecifiedSupplyChainConsignment": { "ID": "SH" } }""").RootElement,
+        status == EcmrStatus.Draft
+            ? [new ValidationIssueView("E-NUMBER", IssueSeverity.Error, "ExchangedDocument/ID", "Numero della lettera di vettura mancante: non è ancora stata emessa.")]
+            : []);
+
     public static FieldProposalView Proposal(int id = 7, ProposalStatus status = ProposalStatus.Pending) => new(
         id, "SH-1002", "consignment.items[1].dangerousGoods.unNumber", "2014", null, 1, ProposalSource.TmsOrder, "TO-1002: senderInstructions",
         "Il numero ONU è scritto nelle istruzioni del mittente.", status, "agent-mapping", "Agente di mappatura", Moment, null, null, null, null, null);

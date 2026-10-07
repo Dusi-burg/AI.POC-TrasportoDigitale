@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns:clm63035ChargePaying="urn:un:unece:uncefact:codelist:standard:UNECE:PartyRoleCode_ChargePaying:D24A"
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+    targetNamespace="urn:un:unece:uncefact:codelist:standard:UNECE:PartyRoleCode_ChargePaying:D24A"
+    elementFormDefault="qualified"
+    version="5.13">
+  <xsd:simpleType name="PartyRoleCodeChargePayingContentType">
+    <xsd:restriction base="xsd:token">
+      <xsd:enumeration value="CA"/>
+      <xsd:enumeration value="CN"/>
+      <xsd:enumeration value="CX"/>
+      <xsd:enumeration value="CZ"/>
+      <xsd:enumeration value="GS"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+</xsd:schema>

@@ -39,6 +39,8 @@ Ogni cella dice **su che cosa** vale il permesso; una cella vuota è un rifiuto.
 | `ReviewDecide` | tutte le spedizioni | — | — | — |
 | `SettingsRead` | configurazione | — | — | configurazione |
 | `ControlMomentSuggest` | — | — | registro degli identificatori | — |
+| `EcmrRead` | tutte le spedizioni | tutte le spedizioni | — | tutte le spedizioni |
+| `EcmrExport` | tutte le spedizioni | tutte le spedizioni | — | tutte le spedizioni |
 
 ## Operazioni
 
@@ -64,6 +66,8 @@ Ogni cella dice **su che cosa** vale il permesso; una cella vuota è un rifiuto.
 | `ReviewDecide` | scrittura | `POST /api/review-tasks/{id}/decision` | Confermare, correggere o rifiutare un campo in revisione: la conferma crea una nuova versione del dataset. È un'azione umana. |
 | `SettingsRead` | lettura | `GET /api/settings` | Vedere la configurazione in vigore: modello per compito, pesi e soglia dell'estrazione, permanenza sul gate. Le manopole si cambiano sull'AppHost. |
 | `ControlMomentSuggest` | lettura | `GET /api/gate/control-moments?plate=` | Aiuto per la demo: i momenti recenti in cui simulare un controllo su strada per quella targa. Restituisce solo date e numero di spedizioni a bordo. |
+| `EcmrRead` | lettura | `GET /api/shipments/{code}/ecmr` | Leggere il documento eCMR di una spedizione: stato, indicazioni mancanti e contenuto con i nomi dello schema UN/CEFACT. |
+| `EcmrExport` | lettura | `GET /api/shipments/{code}/ecmr.xml` | Scaricare l'eCMR in XML UN/CEFACT. |
 
 ## Ambiti
 

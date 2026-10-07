@@ -22,6 +22,9 @@ public sealed class DetailsModel(EftiApiClient api, EftiLongRunningClient longRu
 
     public ShipmentDetailView? Shipment { get; private set; }
 
+    /// <summary>Il documento eCMR, nato dalla stessa spedizione del dataset eFTI ma con stato proprio.</summary>
+    public EcmrDocumentView? Ecmr { get; private set; }
+
     public IReadOnlyList<FieldProposalView> Proposals { get; private set; } = [];
 
     public IReadOnlyList<DocumentSummaryView> Documents { get; private set; } = [];
@@ -43,7 +46,14 @@ public sealed class DetailsModel(EftiApiClient api, EftiLongRunningClient longRu
     {
         Shipment = await LoadAsync(() => api.GetShipmentAsync(Code, cancellationToken));
 
-        if (Shipment is null || !CanSeeWork)
+        if (Shipment is null)
+        {
+            return;
+        }
+
+        Ecmr = await LoadAsync(() => api.GetEcmrAsync(Code, cancellationToken));
+
+        if (!CanSeeWork)
         {
             return;
         }
@@ -62,6 +72,23 @@ public sealed class DetailsModel(EftiApiClient api, EftiLongRunningClient longRu
             (string xml, string? status) = await api.GetDatasetXmlAsync(Code, cancellationToken);
 
             return File(Encoding.UTF8.GetBytes(xml), "application/xml", $"{Code}-efti-{status ?? "dataset"}.xml");
+        }
+        catch (Exception exception) when (Describe(exception) is { } message)
+        {
+            ActionError = message;
+
+            return RedirectToPage(new { Code });
+        }
+    }
+
+    /// <summary>Download dell'eCMR in XML UN/CEFACT: il file viene dall'API, la Web lo passa al browser.</summary>
+    public async Task<IActionResult> OnGetEcmrXmlAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            (string xml, string? status) = await api.GetEcmrXmlAsync(Code, cancellationToken);
+
+            return File(Encoding.UTF8.GetBytes(xml), "application/xml", $"{Code}-ecmr-{status ?? "document"}.xml");
         }
         catch (Exception exception) when (Describe(exception) is { } message)
         {

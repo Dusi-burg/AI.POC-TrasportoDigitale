@@ -25,6 +25,8 @@ public sealed class TmsDbContext(DbContextOptions<TmsDbContext> options) : DbCon
 
     public DbSet<TransportOrderLine> TransportOrderLines => Set<TransportOrderLine>();
 
+    public DbSet<TransportOrderDocument> TransportOrderDocuments => Set<TransportOrderDocument>();
+
     public DbSet<EnumLookup<TransportOrderStatus>> TransportOrderStatuses => Set<EnumLookup<TransportOrderStatus>>();
 
     public DbSet<EnumLookup<VehicleType>> VehicleTypes => Set<EnumLookup<VehicleType>>();

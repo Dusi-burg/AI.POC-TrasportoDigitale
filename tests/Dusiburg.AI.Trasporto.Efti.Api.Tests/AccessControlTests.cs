@@ -439,6 +439,8 @@ public class AccessControlTests
         Operation.ReviewDecide => DecideAFreshReviewTaskAsync(apiKey),
         Operation.SettingsRead => SendAsync(apiKey, HttpMethod.Get, "/api/settings"),
         Operation.ControlMomentSuggest => SendAsync(apiKey, HttpMethod.Get, "/api/gate/control-moments?plate=ZZ101AA"),
+        Operation.EcmrRead => SendAsync(apiKey, HttpMethod.Get, "/api/shipments/SH-1001/ecmr"),
+        Operation.EcmrExport => SendAsync(apiKey, HttpMethod.Get, "/api/shipments/SH-1001/ecmr.xml"),
         _ => throw new ArgumentOutOfRangeException(nameof(operation), operation, "Operazione senza richiesta di prova: aggiungerla alla matrice dei test.")
     };
 

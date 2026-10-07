@@ -6,6 +6,7 @@ using Dusiburg.AI.Trasporto.DbInit;
 using Dusiburg.AI.Trasporto.Efti.Api.Tests.Support;
 using Dusiburg.AI.Trasporto.Efti.Api.Tms;
 using Dusiburg.AI.Trasporto.Efti.Core.Dataset;
+using Dusiburg.AI.Trasporto.Efti.Core.Ecmr;
 using Dusiburg.AI.Trasporto.Efti.Core.Schema;
 using Dusiburg.AI.Trasporto.Efti.Data;
 using Dusiburg.AI.Trasporto.Shared.Contracts.Efti;
@@ -271,6 +272,79 @@ public class ShipmentImportTests
         Assert.That(incomplete.StatusCode, Is.EqualTo(HttpStatusCode.OK));
         Assert.That(incomplete.Headers.GetValues("X-Efti-Dataset-Status"), Is.EqualTo(new[] { "Incomplete" }));
         Assert.That((unknown.StatusCode, await ReadProblemCodeAsync(unknown)), Is.EqualTo((HttpStatusCode.NotFound, ErrorCodes.NotFound)));
+    }
+
+    [Test]
+    public async Task Import_CreatesTheEcmrNextToTheDataset_WithItsOwnStatus()
+    {
+        //SUT
+        await ImportAsync("TO-1004");
+        await ImportAsync("TO-1003");
+
+        EcmrDocumentView complete = (await _client.GetFromJsonAsync<EcmrDocumentView>("/api/shipments/SH-1004/ecmr", TrasportoJson.Options, CancellationToken))!;
+        EcmrDocumentView draft = (await _client.GetFromJsonAsync<EcmrDocumentView>("/api/shipments/SH-1003/ecmr", TrasportoJson.Options, CancellationToken))!;
+        Assert.That((complete.Version, complete.Status, complete.SchemaVersion, complete.Errors), Is.EqualTo((1, EcmrStatus.Complete, "100.D25A", 0)));
+        Assert.That(complete.Json.GetProperty("ExchangedDocument").GetProperty("ID").GetString(), Is.EqualTo("CMR-1004001"));
+        Assert.That(complete.Json.GetProperty("SpecifiedSupplyChainConsignment").GetProperty("AssociatedReferencedDocument").GetArrayLength(), Is.EqualTo(2));
+        Assert.That((draft.Version, draft.Status), Is.EqualTo((1, EcmrStatus.Draft)));
+        Assert.That(draft.Issues.Select(i => i.RuleCode).Distinct(), Is.EquivalentTo(new[] { "E-PACKAGES", "E-GROSS-WEIGHT" }));
+        Assert.That(draft.Issues.Select(i => i.FieldPath), Is.All.StartsWith("SpecifiedSupplyChainConsignment/"));
+    }
+
+    [Test]
+    public async Task ExportEcmr_CompleteShipment_ReturnsXmlConformToTheUnCefactSchema()
+    {
+        //SETUP
+        await ImportAsync("TO-1004");
+
+        //SUT
+        using HttpResponseMessage response = await _client.GetAsync("/api/shipments/SH-1004/ecmr.xml", CancellationToken);
+        XDocument document = XDocument.Parse(await response.Content.ReadAsStringAsync(CancellationToken));
+
+        XNamespace rsm = EcmrSchema.Default.TargetNamespace;
+        XNamespace ram = "urn:un:unece:uncefact:data:standard:ReusableAggregateBusinessInformationEntity:100";
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That(response.Content.Headers.ContentType!.MediaType, Is.EqualTo("application/xml"));
+        Assert.That(response.Headers.GetValues("X-Ecmr-Status"), Is.EqualTo(new[] { "Complete" }));
+        Assert.That(EcmrSchema.Default.Validate(document), Is.Empty);
+        Assert.That(document.Root!.Name, Is.EqualTo(rsm + "eCMR"));
+        Assert.That(document.Descendants(ram + "UNDGIdentificationCode").Single().Value, Is.EqualTo("1263"));
+        Assert.That(document.Descendants(ram + "Marking").Select(m => m.Value), Is.EqualTo(new[] { "TO-1004 1/2", "TO-1004 2/2" }));
+    }
+
+    [Test]
+    public async Task ExportEcmr_DraftOrUnknownShipment_SaysSoInHeaderOrStatus()
+    {
+        //SETUP
+        await ImportAsync("TO-1002");
+
+        //SUT
+        using HttpResponseMessage draft = await _client.GetAsync("/api/shipments/SH-1002/ecmr.xml", CancellationToken);
+        using HttpResponseMessage unknownXml = await _client.GetAsync("/api/shipments/SH-9999/ecmr.xml", CancellationToken);
+        using HttpResponseMessage unknownView = await _client.GetAsync("/api/shipments/SH-9999/ecmr", CancellationToken);
+
+        Assert.That(draft.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That(draft.Headers.GetValues("X-Ecmr-Status"), Is.EqualTo(new[] { "Draft" }));
+        Assert.That((unknownXml.StatusCode, await ReadProblemCodeAsync(unknownXml)), Is.EqualTo((HttpStatusCode.NotFound, ErrorCodes.NotFound)));
+        Assert.That((unknownView.StatusCode, await ReadProblemCodeAsync(unknownView)), Is.EqualTo((HttpStatusCode.NotFound, ErrorCodes.NotFound)));
+    }
+
+    [Test]
+    public async Task ImportAll_EveryShipmentHasOneEcmr_NationalOnesIncluded()
+    {
+        //SUT
+        await ImportAsync(orderCode: null);
+
+        int shipments = await CountAsync(db => db.Shipments.CountAsync(CancellationToken));
+        int documents = await CountAsync(db => db.EcmrDocuments.CountAsync(CancellationToken));
+        int completeNational = await CountAsync(db => db.EcmrDocuments.CountAsync(
+            d => d.Status == EcmrStatus.Complete && d.Shipment.Pickup.CountryCode == d.Shipment.Delivery.CountryCode, CancellationToken));
+        int complete = await CountAsync(db => db.EcmrDocuments.CountAsync(d => d.Status == EcmrStatus.Complete, CancellationToken));
+        int schemaFailures = await CountAsync(db => db.EcmrIssues.CountAsync(i => i.RuleCode == EcmrRules.SchemaRuleCode, CancellationToken));
+        Assert.That(documents, Is.EqualTo(shipments));
+        Assert.That(completeNational, Is.GreaterThan(20));
+        Assert.That(complete, Is.GreaterThan(20));
+        Assert.That(schemaFailures, Is.Zero);
     }
 
     [TestCase("/api/views/shipments/SH-9999", HttpStatusCode.NotFound, ErrorCodes.NotFound)]

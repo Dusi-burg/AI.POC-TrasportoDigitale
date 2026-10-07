@@ -38,6 +38,14 @@ public sealed class EftiDbContext(DbContextOptions<EftiDbContext> options) : DbC
 
     public DbSet<ReviewTask> ReviewTasks => Set<ReviewTask>();
 
+    public DbSet<AccompanyingDocument> AccompanyingDocuments => Set<AccompanyingDocument>();
+
+    public DbSet<EcmrDocument> EcmrDocuments => Set<EcmrDocument>();
+
+    public DbSet<EcmrIssue> EcmrIssues => Set<EcmrIssue>();
+
+    public DbSet<EnumLookup<EcmrStatus>> EcmrStatuses => Set<EnumLookup<EcmrStatus>>();
+
     public DbSet<EnumLookup<PartyRole>> PartyRoles => Set<EnumLookup<PartyRole>>();
 
     public DbSet<EnumLookup<DatasetStatus>> DatasetStatuses => Set<EnumLookup<DatasetStatus>>();

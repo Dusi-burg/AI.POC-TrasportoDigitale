@@ -32,6 +32,15 @@ public static class Presentation
         _ => "text-bg-warning"
     };
 
+    public static string Label(EcmrStatus status) => status switch
+    {
+        EcmrStatus.Draft => "Bozza",
+        EcmrStatus.Complete => "Completo",
+        _ => status.ToString()
+    };
+
+    public static string BadgeClass(EcmrStatus status) => status == EcmrStatus.Complete ? "text-bg-success" : "text-bg-warning";
+
     public static string Label(IssueSeverity severity) => severity == IssueSeverity.Error ? "Errore" : "Avviso";
 
     public static string BadgeClass(IssueSeverity severity) => severity == IssueSeverity.Error ? "text-bg-danger" : "text-bg-warning";

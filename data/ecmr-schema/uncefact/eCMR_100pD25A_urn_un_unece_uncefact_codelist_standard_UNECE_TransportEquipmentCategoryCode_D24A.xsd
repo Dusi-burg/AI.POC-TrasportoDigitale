@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns:clm68053="urn:un:unece:uncefact:codelist:standard:UNECE:TransportEquipmentCategoryCode:D24A"
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+    targetNamespace="urn:un:unece:uncefact:codelist:standard:UNECE:TransportEquipmentCategoryCode:D24A"
+    elementFormDefault="qualified"
+    version="5.6">
+  <xsd:simpleType name="TransportEquipmentCategoryCodeContentType">
+    <xsd:restriction base="xsd:token">
+      <xsd:enumeration value="BX"/>
+      <xsd:enumeration value="CN"/>
+      <xsd:enumeration value="SM"/>
+      <xsd:enumeration value="TE"/>
+      <xsd:enumeration value="TN"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+</xsd:schema>

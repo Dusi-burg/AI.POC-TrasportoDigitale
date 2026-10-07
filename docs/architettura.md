@@ -1,12 +1,12 @@
 # Trasporto digitale — architettura
 
-> Aggiornato alla **Fase 8 (UI Web)**. Il documento cresce fase per fase: descrive ciò che il repository contiene oggi e segnala ciò che è previsto ma non ancora scritto.
+> Aggiornato alla **Fase 8b (eCMR parallelo al dataset eFTI)**. Il documento cresce fase per fase: descrive ciò che il repository contiene oggi e segnala ciò che è previsto ma non ancora scritto.
 
 ## 1. Che cos'è
 
 POC dal punto di vista dell'**operatore vettore** del trasporto su strada: uno strato "eFTI-ready" sopra un TMS simulato (Release 1), poi la gestione di eccezioni e reclami (Release 2). Tutti i dati sono sintetici e fittizi.
 
-Stato: il TMS simulato espone 156 ordini di trasporto; `Efti.Api` li importa, costruisce per ciascuno il dataset eFTI con i nomi dello schema XSD, lo valida con regole dichiarative e lo esporta in XML conforme allo schema. Ogni operazione di `Efti.Api` richiede un ruolo e lascia una riga in un audit che il database non permette di modificare; l'autorità arriva a una spedizione solo da una targa, attraverso il registro degli identificatori. Un server MCP espone sette tool con gli stessi permessi dell'API, e due agenti li usano con la chiave di chi li avvia: uno propone i completamenti di una spedizione incompleta, l'altro risponde alle domande di un controllo su strada dai soli sottoinsiemi. Dal CMR in PDF di una spedizione un modello estrae i campi e il codice ne calcola la confidenza: sopra soglia diventano proposte, sotto soglia vanno in una coda di revisione. Il dataset cambia solo quando una persona accetta una proposta o conferma una revisione. La UI arriva con la Fase 8.
+Stato: il TMS simulato espone 156 ordini di trasporto; `Efti.Api` li importa, costruisce per ciascuno il dataset eFTI con i nomi dello schema XSD, lo valida con regole dichiarative e lo esporta in XML conforme allo schema. Ogni operazione di `Efti.Api` richiede un ruolo e lascia una riga in un audit che il database non permette di modificare; l'autorità arriva a una spedizione solo da una targa, attraverso il registro degli identificatori. Un server MCP espone sette tool con gli stessi permessi dell'API, e due agenti li usano con la chiave di chi li avvia: uno propone i completamenti di una spedizione incompleta, l'altro risponde alle domande di un controllo su strada dai soli sottoinsiemi. Dal CMR in PDF di una spedizione un modello estrae i campi e il codice ne calcola la confidenza: sopra soglia diventano proposte, sotto soglia vanno in una coda di revisione. Il dataset cambia solo quando una persona accetta una proposta o conferma una revisione. Dalla stessa spedizione nasce anche il **documento eCMR** (la lettera di vettura elettronica), con mappatura, regole e stato propri, esportato nell'XML UN/CEFACT e validato con il suo XSD (§7.6).
 
 ## 2. Topologia
 
@@ -119,6 +119,7 @@ Segreti, solo negli user-secrets dell'AppHost: `ConnectionStrings:sql` e `Parame
 | 10 | Posizionamento dei modelli | — | embedding in VRAM, chat non tutta in VRAM |
 | 11 | Schema eFTI | i file XSD non si leggono o non si compilano | — |
 | 12 | Chiavi di ruolo | — | un ruolo non ha la sua chiave e non può autenticarsi |
+| 13 | Schema eCMR | i file XSD UN/CEFACT non si leggono o non si compilano | — |
 
 Il controllo 9 guarda solo se la chiave è presente: non chiama l'API.
 
@@ -136,8 +137,9 @@ Convenzioni, verificate da un test sui metadati di tutti i `DbContext`: tabelle 
 | `Vehicle` | `PlateNumber` | motrici e rimorchi |
 | `Driver` | `Code` (`DRV-01`) | autista |
 | `Trip` | `Code` (`TR-1001`) | motrice, rimorchio facoltativo, autista, eventuale vettore successivo |
-| `TransportOrder` | `Code` (`TO-1001`) | mittente, destinatario, luoghi e date di presa e consegna, totali dichiarati, dati contrattuali |
-| `TransportOrderLine` | (`TransportOrderId`, `LineNumber`) | merce, colli, imballo, peso, volume, dati ADR |
+| `TransportOrder` | `Code` (`TO-1001`) | mittente, destinatario, luoghi e date di presa e consegna, totali dichiarati, dati contrattuali; luogo e data di emissione della lettera di vettura, istruzioni doganali |
+| `TransportOrderLine` | (`TransportOrderId`, `LineNumber`) | merce, colli, imballo, peso, volume, dati ADR, contrassegni e numeri dei colli |
+| `TransportOrderDocument` | (`TransportOrderId`, `Sequence`) | documento consegnato al vettore: tipo (UN/EDIFACT 1001) e numero |
 | Lookup | — | `TransportOrderStatus`, `VehicleType`, `PackageType`, `FreightPayment` |
 
 Il TMS è **permissivo per scelta**: mittente e destinatario sono testo dell'ordine e non anagrafiche, indirizzi e descrizioni sono annullabili, il codice paese non è vincolato, i totali di testata sono dichiarati a parte dalle righe. Un TMS reale contiene dati sporchi, e nel POC devono poter esistere per essere scoperti dalla validazione eFTI.
@@ -152,13 +154,16 @@ Il TMS è **permissivo per scelta**: mittente e destinatario sono testo dell'ord
 | `ConsignmentItem` | (`ShipmentId`, `SequenceNumber`) | riga di merce |
 | `EftiDataset` | (`ShipmentId`, `Version`) | dataset in JSON, versione dello schema, stato |
 | `ValidationIssue` | — | regola, gravità, campo e messaggio di un problema |
+| `AccompanyingDocument` | (`ShipmentId`, `Sequence`) | documento consegnato al vettore insieme alla merce |
+| `EcmrDocument` | (`ShipmentId`, `Version`) | documento eCMR in JSON, versione dello schema UN/CEFACT, stato; stessa versione del dataset eFTI nato nello stesso momento |
+| `EcmrIssue` | — | regola, gravità, elemento e messaggio di un problema dell'eCMR |
 | `IdentifierRegistryEntry` | `Uil` univoco; una riga per spedizione | voce del registro degli identificatori: UIL, targhe normalizzate, sottoinsieme degli identificatori in JSON |
 | `FieldProposal` | — | proposta di completamento di un campo: valore proposto e valore di allora, fonte, motivazione, chi l'ha fatta, chi l'ha decisa, versione del dataset che ne è nata |
 | `Document` | — | documento caricato su una spedizione: file, impronta SHA-256, testo letto, chi e quando |
 | `ExtractionResult` | una per documento | modello, letture, tempi, token, soglia e pesi in vigore, risposta grezza |
 | `ExtractionField` | — | campo estratto: valore, valore normalizzato, valore della spedizione, cinque segnali, confidenza, esito, proposta collegata |
 | `ReviewTask` | una per campo | voce della coda di revisione: stato, chi ha deciso, valore corretto, nota |
-| Lookup | — | `PartyRole`, `DatasetStatus`, `IssueSeverity`, `PackageType`, `FreightPayment`, `ProposalStatus`, `ProposalSource`, `ExtractionFieldOutcome`, `ReviewStatus` |
+| Lookup | — | `PartyRole`, `DatasetStatus`, `EcmrStatus`, `IssueSeverity`, `PackageType`, `FreightPayment`, `ProposalStatus`, `ProposalSource`, `ExtractionFieldOutcome`, `ReviewStatus` |
 
 Lo schema nasce vuoto: lo riempie l'importazione dal TMS (Fase 3). `TmsOrderCode` univoco rende l'importazione idempotente. `PackageType` e `FreightPayment` hanno una lookup per schema, perché uno schema non referenzia tabelle di un altro proprietario.
 
@@ -264,7 +269,49 @@ L'importazione è **idempotente sul codice dell'ordine**: una spedizione già im
 
 ### 7.5 Documenti generati
 
-`docs/regole-di-validazione.md`, `docs/copertura-dataset.md` e `docs/ruoli.md` nascono dal codice e si rigenerano con `dotnet run --project tools/Dusiburg.AI.Trasporto.Eval -- docs`. Un test confronta i file con ciò che il codice produce: se una regola o la copertura cambiano senza rigenerare, la build dei test fallisce.
+`docs/regole-di-validazione.md`, `docs/copertura-dataset.md`, `docs/ruoli.md` e `docs/regole-ecmr.md` nascono dal codice e si rigenerano con `dotnet run --project tools/Dusiburg.AI.Trasporto.Eval -- docs`. Un test confronta i file con ciò che il codice produce: se una regola o la copertura cambiano senza rigenerare, la build dei test fallisce.
+
+### 7.6 eCMR parallelo al dataset eFTI (Fase 8b)
+
+L'eCMR è il **contratto di trasporto** in forma elettronica; il dataset eFTI è l'informazione che l'autorità deve poter leggere. Non sono l'uno un sottoinsieme dell'altro, quindi dalla stessa `Shipment` nascono due prodotti indipendenti:
+
+```mermaid
+flowchart LR
+    S["Shipment"] --> M1["EftiDatasetMapper"] --> V1["regole eFTI + XSD eFTI"] --> D1[("EftiDataset vN<br/>Incomplete · Valid")]
+    S --> M2["EcmrMapper"] --> V2["regole eCMR + XSD UN/CEFACT"] --> D2[("EcmrDocument vN<br/>Draft · Complete")]
+    D1 -- "Valid" --> G[("gate: autorità")]
+    D2 --> X["XML eCMR"]
+```
+
+Nascono e si rigenerano negli stessi due punti, con lo **stesso numero di versione**: l'importazione e l'accettazione di una proposta (o la conferma di una revisione, che è la stessa cosa).
+
+**Schema.** eCMR UN/CEFACT **D25A** (`100.D25A`), 28 file in `data/ecmr-schema/uncefact`, copiati accanto all'assembly e compilati una volta (`EcmrSchema`). Radice `rsm:eCMR` con `ExchangedDocument` (intestazione) e `SpecifiedSupplyChainConsignment` (la spedizione).
+
+**JSON e XML.** Il documento si salva in JSON **con i nomi degli elementi dello schema** (`EcmrMapper`). L'XML non è scritto campo per campo: `EcmrXmlExporter` percorre lo schema compilato e ne prende ordine degli elementi, namespace e attributi; un nome che lo schema non conosce è un errore. Forma del JSON: elemento ripetibile = array; valore con attributo = `{ "value": …, "unitCode": … }`; data e indicatore = oggetto con l'elemento scelto (`{ "DateTimeString": { "value": "20261004", "format": "102" } }`, `{ "Indicator": true }`).
+
+**Stati.**
+
+| Stato | Quando |
+|---|---|
+| `Draft` | almeno un problema bloccante |
+| `Complete` | nessun problema bloccante **e** XML conforme all'XSD |
+
+L'eCMR si produce **anche per i trasporti nazionali**, con le stesse regole (decisione dell'utente del 2026-10-07): cambia solo la dichiarazione di assoggettamento alla convenzione CMR, che si scrive sui soli trasporti internazionali.
+
+**Regole.** Elenco dichiarativo (`EcmrRules`, documento generato [regole-ecmr.md](regole-ecmr.md)): le indicazioni dell'art. 6 della convenzione CMR. Sono regole di esempio, non consulenza legale. Come per l'eFTI, la conformità all'XSD (`E-SCHEMA`) si controlla solo se nessun'altra regola bloccante è violata.
+
+**Dati aggiunti** al TMS simulato e alla spedizione, perché alla lettera di vettura mancavano: luogo e data di emissione, istruzioni per la dogana, contrassegni e numeri dei colli, documenti consegnati al vettore. Nel seed sono **derivati** dall'ordine senza usare il generatore casuale: ordini, viaggi e difetti sono rimasti quelli di prima. Un trasporto nazionale già partito riceve nel seed un numero proprio (`LDV-…`); quelli internazionali lo avevano già (`CMR-…`). L'emissione c'è solo se l'ordine ha il numero della lettera di vettura: una spedizione pianificata è quindi `Draft` finché non parte, anche se il suo dataset eFTI è `Valid`.
+
+**Ciò che lo schema non porta**: il valore dichiarato (art. 24) viaggia come nota del documento; la classe ADR resta nel dataset eFTI; firme e riserve del vettore sono fuori dal perimetro della Release 1. La dichiarazione di assoggettamento alla CMR è un testo fisso in `ExchangedDocument/Remarks`, solo sui trasporti internazionali.
+
+| Endpoint | Scopo |
+|---|---|
+| `GET /api/shipments/{code}/ecmr` | ultima versione del documento: stato, problemi, JSON |
+| `GET /api/shipments/{code}/ecmr.xml` | XML UN/CEFACT; l'intestazione `X-Ecmr-Status` ne dice lo stato. Si scarica anche in bozza: in quel caso può non essere conforme |
+
+Con il seed di default (149 spedizioni, misurato sul database importato il 2026-10-07): 88 `Complete` (42 internazionali, 46 nazionali) e 61 `Draft`; nessun errore di schema. I due stati sono davvero indipendenti: 18 spedizioni hanno il dataset eFTI `Valid` e l'eCMR `Draft` (non ancora partite, senza lettera di vettura emessa) e 6 l'inverso (un'incoerenza di pesi o di date che le regole eFTI segnalano e l'art. 6 non riguarda).
+
+Limiti: i dati solo-eCMR (emissione, contrassegni, documenti, dogana) arrivano dal TMS e non sono completabili con una proposta; l'autorità non vede l'eCMR; nessun tool MCP lo espone.
 
 ## 8. Identità, ruoli e audit
 
@@ -282,6 +329,7 @@ La matrice ruolo × operazione × ambito è un elenco dichiarativo (`Authorizati
 |---|---|---|---|---|
 | `IdentityRead` | sé | sé | sé | sé |
 | `ShipmentList`, `ShipmentRead`, `DatasetExport` | tutte | tutte | — | tutte |
+| `EcmrRead`, `EcmrExport` | tutte | tutte | — | tutte |
 | `ShipmentImport` | tutte | — | — | — |
 | `IdentifierSearch`, `ControlMomentSuggest` | — | — | registro | — |
 | `SubsetRead` | — | — | sottoinsieme | — |
@@ -504,7 +552,7 @@ La Web (Razor Pages, `:5306`) rende eseguibili dal browser gli scenari 1–4. **
 | Pagina | Contenuto | Menu di |
 |---|---|---|
 | `/Shipments` | elenco con stato del dataset, filtri, "Importa dal TMS" | `Dispatcher`, `ClaimsManager`, `Admin` |
-| `/Shipments/Details/{code}` | soggetti, righe, problemi, dataset JSON, download dell'XML; agente di mappatura; proposte da decidere; documenti e caricamento del CMR; accessi dell'autorità | — |
+| `/Shipments/Details/{code}` | soggetti, righe, problemi, dataset JSON, download dell'XML; **eCMR** (stato proprio, indicazioni mancanti, JSON, download dell'XML UN/CEFACT); agente di mappatura; proposte da decidere; documenti e caricamento del CMR; accessi dell'autorità | — |
 | `/Documents/Details/{id}` | campi estratti con i cinque segnali, confidenza rispetto alla soglia, note a mano, testo letto | — |
 | `/Documents/Review` | coda di revisione: conferma (con valore corretto facoltativo) o rifiuto | `Dispatcher`, `Admin` |
 | `/Authority` | targa → UIL e identificatori → sottoinsieme `EU03`/`EU05a`, con un riepilogo in parole (etichette in italiano, numeri all'italiana) e il JSON eFTI sotto come dettaglio; domanda all'agente autorità | `Authority` |
@@ -526,8 +574,8 @@ I CMR sintetici di `data/cmr` sono copiati accanto alla Web: si scaricano da `/d
 
 - `Ai.Tests`: manopole, fabbriche dei client, aggregazione dei controlli, mascheramento verso il cloud. Nessuna chiamata a un modello.
 - `Agents.Tests`: i due agenti con un **modello a copione** e un server MCP finto (proposte attese, valore non riconducibile scartato, argomenti iniettati, tool fuori allow-list, UIL non uscito dalla ricerca, valore citato non letto, rifiuto del modello); endpoint e stream SSE; un giro completo con `Efti.Mcp` ed `Efti.Api` vere in-process, dove le proposte finiscono nel database a nome dell'operatore.
-- `Efti.Core.Tests`: catalogo dello schema; mappatura; esportazione XML e conformità all'XSD; regole sugli ordini demo, sui difetti del seed (esiti esatti) e sul golden set; matrice dei ruoli cella per cella; sottoinsiemi dell'autorità e identificatori; allineamento dei documenti generati e della copertura dichiarata. Nessun database.
-- `Efti.Api.Tests`: endpoint con probe finti; controlli SQL veri su un database usa-e-getta creato da `DbInit`; convenzioni del modello dati su tutti i `DbContext`; schemi, lookup e vincoli dello schema `efti`; importazione, viste ed esportazione con un TMS finto; **l'intera matrice dei ruoli via HTTP** con il relativo evento di audit; flusso dell'autorità; audit non modificabile; proposte e decisioni, con lo scenario 2 da `Incomplete` a `Valid`.
+- `Efti.Core.Tests`: catalogo dello schema; mappatura; esportazione XML e conformità all'XSD; regole sugli ordini demo, sui difetti del seed (esiti esatti) e sul golden set; matrice dei ruoli cella per cella; sottoinsiemi dell'autorità e identificatori; allineamento dei documenti generati e della copertura dichiarata; **eCMR**: schema, mappatura, XML conforme all'XSD per ogni spedizione completa del seed, stati e regole esatti degli ordini demo, un caso per ogni regola. Nessun database.
+- `Efti.Api.Tests`: endpoint con probe finti; controlli SQL veri su un database usa-e-getta creato da `DbInit`; convenzioni del modello dati su tutti i `DbContext`; schemi, lookup e vincoli dello schema `efti`; importazione, viste ed esportazione con un TMS finto; **l'intera matrice dei ruoli via HTTP** con il relativo evento di audit; flusso dell'autorità; audit non modificabile; proposte e decisioni, con lo scenario 2 da `Incomplete` a `Valid`; l'eCMR creato dall'importazione e rigenerato da una decisione, lettura e download dell'XML.
 - `Efti.Mcp.Tests`: il server MCP sopra una `Efti.Api` vera in-process: elenco dei tool per ruolo; **ogni ruolo su ogni tool**, con l'evento di audit del rifiuto; ogni tool sui dati demo; errori strutturati; nessuna versione nuova di dataset dopo le chiamate ai tool.
 - `Documents.Tests`: i CMR sintetici del repository si leggono, contengono alla lettera ogni valore atteso e sono quelli che il generatore produce oggi; estrazione con modello a copione (schema, documento come dato fra delimitatori, nuovo tentativo, rifiuto).
 - In `Efti.Core.Tests` la confidenza (ogni combinazione di segnali, pesi dalla configurazione) e la mappa casella → campo; in `Efti.Api.Tests` il percorso dal caricamento alla decisione con un modello finto: proposta sopra soglia, revisione sotto soglia, conferma con valore corretto, accettazione automatica, e l'iniezione "riuscita" che finisce in revisione senza toccare il dataset.
@@ -609,6 +657,12 @@ Gli identificativi sono quelli del piano di progetto.
 | F8.10 | Il momento simulato del controllo è un'impostazione di demo, limitata alla finestra del gate e registrata nell'audit | Data libera nella ricerca: l'autorità potrebbe sfogliare i trasporti passati di un mezzo |
 | F8.7 | L'agente autorità risponde dopo aver letto tutti e due i sottoinsiemi; quello che il modello salta lo legge il codice | Lasciare al modello la scelta del sottoinsieme: si fermava al primo e dichiarava "non disponibile" un dato presente nell'altro |
 | F8.6 | Misure e date arrivano all'agente autorità già scritte per una persona; le converte il codice | Chiedere al modello di convertire "5300.000 KGM": in Fase 7 lo stesso modello ha letto "2.460" come 2,46 |
+| F8b.1 | L'eCMR è un secondo prodotto della stessa spedizione, con regole, stato e versioni proprie | Ricavarlo dal dataset eFTI: sono due cose diverse (contratto e informazione regolamentare), e i dati contrattuali non sono nei sottoinsiemi |
+| F8b.2 | XML UN/CEFACT D25A validato con gli XSD ufficiali, tenuti inalterati nel repository | Un formato proprio per caselle: leggibile ma non interoperabile. Uno schema ricostruito dalla guideline: non sarebbe quello ufficiale |
+| F8b.3 | Il JSON usa i nomi dello schema e l'XML si ricava percorrendo lo schema compilato | Scrivere l'XML campo per campo: ordine e namespace sbagliati si scoprirebbero solo alla validazione |
+| F8b.4 | Solo `Draft` e `Complete`: niente emissione né firma simulata | Stato `Issued` che blocca le modifiche: rimandato, con le riserve, alla Release 2 |
+| F8b.5 | I dati aggiunti al seed sono derivati, senza numeri casuali | Generarli: sposterebbe la sequenza e cambierebbe ordini, viaggi e difetti già misurati |
+| F8b.6 | L'eCMR si produce anche per i trasporti nazionali, con le stesse regole; la dichiarazione CMR solo sugli internazionali | Stato `NotRequired` per i nazionali (prima versione della fase): metà delle spedizioni restava senza lettera di vettura |
 
 ### Versioni
 

@@ -37,7 +37,9 @@ public static class AuthorizationPolicy
         new(Operation.ReviewQueueRead, false, "GET /api/review-tasks", "Leggere la coda di revisione dei campi estratti sotto soglia."),
         new(Operation.ReviewDecide, true, "POST /api/review-tasks/{id}/decision", "Confermare, correggere o rifiutare un campo in revisione: la conferma crea una nuova versione del dataset. È un'azione umana."),
         new(Operation.SettingsRead, false, "GET /api/settings", "Vedere la configurazione in vigore: modello per compito, pesi e soglia dell'estrazione, permanenza sul gate. Le manopole si cambiano sull'AppHost."),
-        new(Operation.ControlMomentSuggest, false, "GET /api/gate/control-moments?plate=", "Aiuto per la demo: i momenti recenti in cui simulare un controllo su strada per quella targa. Restituisce solo date e numero di spedizioni a bordo.")
+        new(Operation.ControlMomentSuggest, false, "GET /api/gate/control-moments?plate=", "Aiuto per la demo: i momenti recenti in cui simulare un controllo su strada per quella targa. Restituisce solo date e numero di spedizioni a bordo."),
+        new(Operation.EcmrRead, false, "GET /api/shipments/{code}/ecmr", "Leggere il documento eCMR di una spedizione: stato, indicazioni mancanti e contenuto con i nomi dello schema UN/CEFACT."),
+        new(Operation.EcmrExport, false, "GET /api/shipments/{code}/ecmr.xml", "Scaricare l'eCMR in XML UN/CEFACT.")
     ];
 
     public static IReadOnlyList<Permission> Permissions { get; } =
@@ -47,6 +49,11 @@ public static class AuthorizationPolicy
         .. Shipments(Role.Dispatcher, Operation.ShipmentList, Operation.ShipmentRead, Operation.ShipmentImport, Operation.DatasetExport),
         .. Shipments(Role.ClaimsManager, Operation.ShipmentList, Operation.ShipmentRead, Operation.DatasetExport),
         .. Shipments(Role.Admin, Operation.ShipmentList, Operation.ShipmentRead, Operation.DatasetExport),
+
+        // L'eCMR è il contratto di trasporto: lo vede chi lavora per il vettore, non l'autorità.
+        .. Shipments(Role.Dispatcher, Operation.EcmrRead, Operation.EcmrExport),
+        .. Shipments(Role.ClaimsManager, Operation.EcmrRead, Operation.EcmrExport),
+        .. Shipments(Role.Admin, Operation.EcmrRead, Operation.EcmrExport),
 
         // Completare una spedizione è lavoro dell'ufficio traffico: propone (anche tramite un agente) e decide. Admin guarda soltanto.
         .. Shipments(Role.Dispatcher, Operation.TmsOrderRead, Operation.FieldProposalCreate, Operation.FieldProposalRead, Operation.FieldProposalDecide),

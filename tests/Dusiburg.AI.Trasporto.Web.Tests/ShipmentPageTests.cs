@@ -238,9 +238,42 @@ public class ShipmentPageTests
         Assert.That(xml, Is.EqualTo("<eFTIDataset />"));
     }
 
+    [Test]
+    public async Task Details_ShowsTheEcmrNextToTheDataset_WithItsOwnStatusAndIssues()
+    {
+        //SETUP
+        await using WebTestHost host = WebTestHost.Start(DetailsApi("SH-1002"));
+
+        //SUT
+        string page = await host.Client.GetStringAsync("/Shipments/Details/SH-1002", CancellationToken);
+
+        Assert.That(page, Does.Contain("id=\"ecmr-status\"").And.Contain("eCMR: Bozza"));
+        Assert.That(page, Does.Contain("id=\"ecmr-issues\"").And.Contain("E-NUMBER").And.Contain("ExchangedDocument/ID"));
+        Assert.That(page, Does.Contain("id=\"download-ecmr-xml\"").And.Contain("handler=EcmrXml"));
+        Assert.That(page, Does.Contain("id=\"ecmr-json\"").And.Contain("SpecifiedSupplyChainConsignment"));
+        Assert.That(host.Api.CallsTo("/api/shipments/SH-1002/ecmr").Single().ApiKey, Is.EqualTo(WebTestHost.KeyOf(Role.Dispatcher)));
+    }
+
+    [Test]
+    public async Task EcmrXml_DownloadsTheDocumentFromTheApi()
+    {
+        //SETUP
+        await using WebTestHost host = WebTestHost.Start(new PreparedApi()
+            .Text("/api/shipments/SH-1001/ecmr.xml", "<rsm:eCMR />", "application/xml", ("X-Ecmr-Status", "Complete")));
+
+        //SUT
+        HttpResponseMessage response = await host.Client.GetAsync("/Shipments/Details/SH-1001?handler=EcmrXml", CancellationToken);
+        string xml = await response.Content.ReadAsStringAsync(CancellationToken);
+
+        Assert.That(response.Content.Headers.ContentType?.MediaType, Is.EqualTo("application/xml"));
+        Assert.That(response.Content.Headers.ContentDisposition?.FileName, Is.EqualTo("SH-1001-ecmr-Complete.xml"));
+        Assert.That(xml, Is.EqualTo("<rsm:eCMR />"));
+    }
+
     /// <summary>Tutto ciò che la pagina di una spedizione chiede all'API.</summary>
     private static PreparedApi DetailsApi(string code) => new PreparedApi()
         .Get($"/api/views/shipments/{code}", TestData.Shipment(code))
+        .Get($"/api/shipments/{code}/ecmr", TestData.Ecmr(code))
         .Get($"/api/shipments/{code}/proposals", new[] { TestData.Proposal() })
         .Get($"/api/shipments/{code}/documents", new[] { TestData.DocumentSummary(5, code) })
         .Get($"/api/shipments/{code}/authority-access", new[] { TestData.Audit(21, Role.Authority, Operation.SubsetRead, AuditOutcome.Success) });

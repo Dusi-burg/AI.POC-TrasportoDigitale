@@ -1,5 +1,6 @@
 using System.Text;
 using Dusiburg.AI.Trasporto.Efti.Core.Dataset;
+using Dusiburg.AI.Trasporto.Efti.Core.Ecmr;
 using Dusiburg.AI.Trasporto.Efti.Core.Schema;
 using Dusiburg.AI.Trasporto.Efti.Core.Security;
 using Dusiburg.AI.Trasporto.Efti.Core.Validation;
@@ -19,6 +20,8 @@ public static class GeneratedDocuments
     public const string CoverageFile = "copertura-dataset.md";
 
     public const string RolesFile = "ruoli.md";
+
+    public const string EcmrRulesFile = "regole-ecmr.md";
 
     /// <summary>Sottoinsiemi che il POC mostra all'autorità (D6).</summary>
     public static readonly IReadOnlyList<string> AuthoritySubsets = EftiSubsets.Authority;
@@ -203,6 +206,49 @@ public static class GeneratedDocuments
         {
             yield return path[..index];
         }
+    }
+
+    public static string RenderEcmrRules(EcmrSchema schema)
+    {
+        var text = new StringBuilder();
+
+        text.AppendLine("# Regole del documento eCMR");
+        text.AppendLine();
+        text.AppendLine(GeneratedNotice);
+        text.AppendLine();
+        text.AppendLine($"Schema: eCMR UN/CEFACT versione **{schema.Version}** (`data/ecmr-schema/`). " +
+            "Il documento eCMR nasce dalla stessa spedizione del dataset eFTI, con mappatura, regole e stato propri.");
+        text.AppendLine();
+        text.AppendLine("Le regole sono codice deterministico e riprendono le indicazioni che l'art. 6 della convenzione CMR chiede alla " +
+            "lettera di vettura: sono **regole di esempio, non consulenza legale**. Un documento è **Complete** quando nessuna regola " +
+            "di gravità Errore è violata e l'XML esportato è conforme allo schema; altrimenti è **Draft**. Le regole valgono per ogni " +
+            "trasporto, anche nazionale. Gli avvisi non cambiano lo stato.");
+        text.AppendLine();
+        text.AppendLine($"Regole: {EcmrRules.All.Count}, di cui {EcmrRules.All.Count(r => r.Severity == IssueSeverity.Error)} bloccanti.");
+
+        foreach (IGrouping<RuleCategory, ValidationRule> category in EcmrRules.All.GroupBy(r => r.Category))
+        {
+            text.AppendLine();
+            text.AppendLine($"## {CategoryTitle(category.Key)}");
+            text.AppendLine();
+            text.AppendLine("| Codice | Gravità | Elemento eCMR | Regola |");
+            text.AppendLine("|---|---|---|---|");
+
+            foreach (ValidationRule rule in category)
+            {
+                text.AppendLine($"| `{rule.Code}` | {SeverityLabel(rule.Severity)} | {CodeList(rule.Field)} | {rule.Explanation} |");
+            }
+        }
+
+        text.AppendLine();
+        text.AppendLine("## Ciò che lo schema non porta");
+        text.AppendLine();
+        text.AppendLine("- **Dichiarazione di assoggettamento alla CMR** (lett. k): testo fisso in `ExchangedDocument/Remarks`, solo sui trasporti internazionali.");
+        text.AppendLine("- **Valore dichiarato** (art. 24): lo schema non ha un elemento dedicato; viaggia come `ExchangedDocument/IncludedNote`.");
+        text.AppendLine("- **Classe ADR**: non ha un elemento nello schema; resta nel dataset eFTI.");
+        text.AppendLine("- **Firme e riserve del vettore**: fuori dal perimetro della Release 1.");
+
+        return text.ToString().ReplaceLineEndings("\n");
     }
 
     private static string CategoryTitle(RuleCategory category) => category switch

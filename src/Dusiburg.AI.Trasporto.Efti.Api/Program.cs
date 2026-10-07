@@ -5,6 +5,7 @@ using Dusiburg.AI.Trasporto.Efti.Api.Audit;
 using Dusiburg.AI.Trasporto.Efti.Api.Dev;
 using Dusiburg.AI.Trasporto.Efti.Api.Documents;
 using Dusiburg.AI.Trasporto.Efti.Core.Extraction;
+using Dusiburg.AI.Trasporto.Efti.Api.Ecmr;
 using Dusiburg.AI.Trasporto.Efti.Api.Gate;
 using Dusiburg.AI.Trasporto.Efti.Api.Health;
 using Dusiburg.AI.Trasporto.Efti.Api.Proposals;
@@ -13,6 +14,7 @@ using Dusiburg.AI.Trasporto.Efti.Api.Settings;
 using Dusiburg.AI.Trasporto.Efti.Api.Shipments;
 using Dusiburg.AI.Trasporto.Efti.Api.Tms;
 using Dusiburg.AI.Trasporto.Efti.Core.Dataset;
+using Dusiburg.AI.Trasporto.Efti.Core.Ecmr;
 using Dusiburg.AI.Trasporto.Efti.Core.Gate;
 using Dusiburg.AI.Trasporto.Efti.Core.Import;
 using Dusiburg.AI.Trasporto.Efti.Core.Schema;
@@ -44,6 +46,12 @@ builder.Services.AddSingleton(_ => EftiSchemaCatalog.Default);
 builder.Services.AddSingleton<EftiXmlExporter>();
 builder.Services.AddSingleton<EftiXmlValidator>();
 builder.Services.AddSingleton<EftiValidator>();
+
+// eCMR parallelo al dataset eFTI (Fase 8b): schema UN/CEFACT letto una volta sola, mappatura e regole proprie.
+builder.Services.AddSingleton(_ => EcmrSchema.Default);
+builder.Services.AddSingleton<EcmrXmlExporter>();
+builder.Services.AddSingleton<EcmrValidator>();
+builder.Services.AddScoped<EcmrQueries>();
 builder.Services.Configure<CarrierOptions>(builder.Configuration.GetSection(CarrierOptions.SectionName));
 builder.Services.AddScoped<ShipmentImportService>();
 builder.Services.AddScoped<ShipmentViewQueries>();
@@ -96,6 +104,7 @@ builder.Services.AddScoped<DocumentService>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<IHealthProbe, SqlHealthProbe>();
 builder.Services.AddSingleton<IHealthProbe, EftiSchemaHealthProbe>();
+builder.Services.AddSingleton<IHealthProbe, EcmrSchemaHealthProbe>();
 builder.Services.AddSingleton<IHealthProbe, RoleKeysHealthProbe>();
 builder.Services.AddSingleton<HealthService>();
 builder.Services.AddSingleton<HealthReportCache>();
@@ -117,6 +126,7 @@ app.MapGet("/", () => new { service = "Dusiburg.AI.Trasporto.Efti.Api", phase = 
 app.MapGroup("/api")
     .MapHealthEndpoints()
     .MapShipmentEndpoints()
+    .MapEcmrEndpoints()
     .MapProposalEndpoints()
     .MapDocumentEndpoints()
     .MapSettingsEndpoints()

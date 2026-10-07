@@ -39,7 +39,12 @@ public sealed record TransportOrderLineView(
     string? UnNumber,
     string? ProperShippingName,
     string? AdrClass,
-    string? PackingGroup);
+    string? PackingGroup,
+    string? Marks = null);
+
+/// <summary>Documento consegnato al vettore insieme alla merce.</summary>
+/// <param name="TypeCode">Tipo di documento, codice UN/EDIFACT 1001 (<c>380</c> fattura, <c>271</c> lista colli, <c>270</c> documento di trasporto).</param>
+public sealed record OrderDocumentView(string TypeCode, string Number);
 
 public sealed record VehicleView(string PlateNumber, string CountryCode, VehicleType Type);
 
@@ -64,4 +69,8 @@ public sealed record TransportOrderDetailView(
     bool TransshipmentAllowed,
     string? SenderInstructions,
     TripView? Trip,
-    IReadOnlyList<TransportOrderLineView> Lines);
+    IReadOnlyList<TransportOrderLineView> Lines,
+    string? CmrIssuePlace = null,
+    DateOnly? CmrIssueDate = null,
+    string? CustomsInstructions = null,
+    IReadOnlyList<OrderDocumentView>? Documents = null);

@@ -26,6 +26,9 @@ internal static class EftiDevEndpoints
                 await db.Documents.ExecuteDeleteAsync(cancellationToken);
                 await db.FieldProposals.ExecuteDeleteAsync(cancellationToken);
                 await db.IdentifierRegistry.ExecuteDeleteAsync(cancellationToken);
+                await db.EcmrIssues.ExecuteDeleteAsync(cancellationToken);
+                await db.EcmrDocuments.ExecuteDeleteAsync(cancellationToken);
+                await db.AccompanyingDocuments.ExecuteDeleteAsync(cancellationToken);
                 await db.ValidationIssues.ExecuteDeleteAsync(cancellationToken);
                 await db.Datasets.ExecuteDeleteAsync(cancellationToken);
                 await db.ConsignmentItems.ExecuteDeleteAsync(cancellationToken);

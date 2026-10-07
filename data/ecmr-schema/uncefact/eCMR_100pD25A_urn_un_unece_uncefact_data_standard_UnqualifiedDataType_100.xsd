@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns:udt="urn:un:unece:uncefact:data:standard:UnqualifiedDataType:100"
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+    targetNamespace="urn:un:unece:uncefact:data:standard:UnqualifiedDataType:100"
+    elementFormDefault="qualified"
+    version="100.D25A">
+  <xsd:complexType name="AmountType">
+    <xsd:simpleContent>
+      <xsd:extension base="xsd:decimal">
+        <xsd:attribute name="currencyID" type="xsd:token"/>
+      </xsd:extension>
+    </xsd:simpleContent>
+  </xsd:complexType>
+  <xsd:complexType name="CodeType">
+    <xsd:simpleContent>
+      <xsd:extension base="xsd:token">
+        <xsd:attribute name="listAgencyID" type="xsd:token"/>
+      </xsd:extension>
+    </xsd:simpleContent>
+  </xsd:complexType>
+  <xsd:simpleType name="DateTimeDateTimeStringContentType">
+    <xsd:restriction base="xsd:string"/>
+  </xsd:simpleType>
+  <xsd:complexType name="DateTimeType">
+    <xsd:choice>
+      <xsd:element name="DateTimeString">
+        <xsd:complexType>
+          <xsd:simpleContent>
+            <xsd:extension base="udt:DateTimeDateTimeStringContentType">
+              <xsd:attribute name="format" type="xsd:string"/>
+            </xsd:extension>
+          </xsd:simpleContent>
+        </xsd:complexType>
+      </xsd:element>
+      <xsd:element name="DateTime" type="xsd:dateTime"/>
+    </xsd:choice>
+  </xsd:complexType>
+  <xsd:complexType name="IDType">
+    <xsd:simpleContent>
+      <xsd:extension base="xsd:token">
+        <xsd:attribute name="schemeAgencyID" type="xsd:token"/>
+      </xsd:extension>
+    </xsd:simpleContent>
+  </xsd:complexType>
+  <xsd:simpleType name="IndicatorIndicatorStringContentType">
+    <xsd:restriction base="xsd:string">
+      <xsd:pattern value="true"/>
+      <xsd:pattern value="false"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+  <xsd:complexType name="IndicatorType">
+    <xsd:choice>
+      <xsd:element name="IndicatorString">
+        <xsd:complexType>
+          <xsd:simpleContent>
+            <xsd:extension base="udt:IndicatorIndicatorStringContentType"/>
+          </xsd:simpleContent>
+        </xsd:complexType>
+      </xsd:element>
+      <xsd:element name="Indicator" type="xsd:boolean"/>
+    </xsd:choice>
+  </xsd:complexType>
+  <xsd:complexType name="MeasureType">
+    <xsd:simpleContent>
+      <xsd:extension base="xsd:decimal">
+        <xsd:attribute name="unitCode" type="xsd:token"/>
+      </xsd:extension>
+    </xsd:simpleContent>
+  </xsd:complexType>
+  <xsd:complexType name="NumericType">
+    <xsd:simpleContent>
+      <xsd:extension base="xsd:decimal"/>
+    </xsd:simpleContent>
+  </xsd:complexType>
+  <xsd:complexType name="QuantityType">
+    <xsd:simpleContent>
+      <xsd:extension base="xsd:decimal">
+        <xsd:attribute name="unitCode" type="xsd:token"/>
+      </xsd:extension>
+    </xsd:simpleContent>
+  </xsd:complexType>
+  <xsd:complexType name="TextType">
+    <xsd:simpleContent>
+      <xsd:extension base="xsd:string">
+        <xsd:attribute name="languageID" type="xsd:token"/>
+      </xsd:extension>
+    </xsd:simpleContent>
+  </xsd:complexType>
+</xsd:schema>

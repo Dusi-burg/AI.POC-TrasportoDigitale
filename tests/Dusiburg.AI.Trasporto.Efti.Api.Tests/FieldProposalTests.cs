@@ -123,6 +123,7 @@ public class FieldProposalTests
     {
         //SETUP
         ShipmentDetailView before = await _api.GetAsync<ShipmentDetailView>(Role.Dispatcher, "/api/views/shipments/SH-1002", CancellationToken);
+        EcmrDocumentView ecmrBefore = await _api.GetAsync<EcmrDocumentView>(Role.Dispatcher, "/api/shipments/SH-1002/ecmr", CancellationToken);
         string uil = UilOf(before);
         using HttpResponseMessage subsetBefore = await _api.SendAsync(Role.Authority, HttpMethod.Get, $"/api/gate/subset?uil={uil}&subsetId=EU05a", body: null, CancellationToken);
         (string FieldPath, string Value)[] completions =
@@ -148,6 +149,7 @@ public class FieldProposalTests
         List<ConsignmentIdentifiersView> onBoardAfter = await FindOnGateAsync("ZZ102AA");
         AuthoritySubsetView dangerousGoods = await _api.GetAsync<AuthoritySubsetView>(Role.Authority, $"/api/gate/subset?uil={uil}&subsetId=EU05a", CancellationToken);
         List<EftiDataset> versions = await _api.DatasetsAsync("SH-1002", CancellationToken);
+        EcmrDocumentView ecmrAfter = await _api.GetAsync<EcmrDocumentView>(Role.Dispatcher, "/api/shipments/SH-1002/ecmr", CancellationToken);
 
         Assert.That((before.Dataset.Version, before.Dataset.Status, before.Shipment.Errors), Is.EqualTo((1, DatasetStatus.Incomplete, 4)));
         Assert.That(subsetBefore.StatusCode, Is.EqualTo(HttpStatusCode.NotFound), "un dataset incompleto non è sul gate");
@@ -173,6 +175,13 @@ public class FieldProposalTests
         Assert.That(onBoardAfter, Is.Empty, "pubblicata, ma TO-1002 parte domani: per targa si trova solo ciò che è già a bordo");
         // Il dataset valido è pubblicato: con il suo UIL si legge.
         Assert.That(dangerousGoods.Dataset.GetProperty("includedConsignmentItem")[0].GetProperty("transportDangerousGoods")[0].GetProperty("uNDGID").GetString(), Is.EqualTo("2014"));
+        // L'eCMR segue le stesse versioni ma ha il suo stato: valida per l'eFTI, la spedizione non ha ancora una lettera di vettura emessa.
+        Assert.That((ecmrBefore.Version, ecmrBefore.Status, ecmrBefore.Issues.Select(i => i.RuleCode).Distinct()),
+            Is.EqualTo((1, EcmrStatus.Draft, new[] { "E-NUMBER", "E-ISSUE", "E-DANGEROUS-GOODS" })).Using(ViewComparer));
+        Assert.That((ecmrAfter.Version, ecmrAfter.Status, ecmrAfter.Issues.Select(i => i.RuleCode).Distinct()),
+            Is.EqualTo((5, EcmrStatus.Draft, new[] { "E-NUMBER", "E-ISSUE" })).Using(ViewComparer));
+        Assert.That(ecmrAfter.Json.GetProperty("SpecifiedSupplyChainConsignment").GetProperty("IncludedSupplyChainConsignmentItem")[0]
+            .GetProperty("ApplicableTransportDangerousGoods")[0].GetProperty("UNDGIdentificationCode").GetString(), Is.EqualTo("2014"));
     }
 
     [Test]
@@ -231,6 +240,10 @@ public class FieldProposalTests
             Is.EqualTo((Operation.TmsOrderRead, "SH-1002", "SH-1002", "TO-1002", AuditOutcome.Success)));
         Assert.That((unknown.StatusCode, await EftiApiTestHost.ReadProblemCodeAsync(unknown, CancellationToken)), Is.EqualTo((HttpStatusCode.NotFound, ErrorCodes.NotFound)));
     }
+
+    /// <summary>Versione, stato e codici delle regole di un eCMR: le sequenze si confrontano per contenuto.</summary>
+    private static readonly Func<(int, EcmrStatus, IEnumerable<string>), (int, EcmrStatus, string[]), bool> ViewComparer =
+        (actual, expected) => actual.Item1 == expected.Item1 && actual.Item2 == expected.Item2 && actual.Item3.SequenceEqual(expected.Item3);
 
     private Task<ProposeFieldResponse> ProposeAsync(string shipmentCode, ProposeFieldRequest request) =>
         _api.PostAsync<ProposeFieldResponse>(Role.Dispatcher, $"/api/shipments/{shipmentCode}/proposals", request, CancellationToken);
