@@ -13,6 +13,33 @@ public enum CmrLayout
     LabelList
 }
 
+/// <summary>Che cosa un CMR sintetico mette alla prova: è la chiave con cui la valutazione raggruppa i risultati.</summary>
+public static class CmrCategories
+{
+    /// <summary>Tutto coincide con il TMS.</summary>
+    public const string Clean = "clean";
+
+    /// <summary>Il documento porta dati che al TMS mancano.</summary>
+    public const string TmsGap = "tms-gap";
+
+    /// <summary>Un valore del documento è diverso da quello del TMS.</summary>
+    public const string Conflict = "conflict";
+
+    /// <summary>Caselle con più numeri candidati, o una nota a mano che contraddice lo stampato.</summary>
+    public const string Ambiguous = "ambiguous";
+
+    /// <summary>Note a mano che non cambiano i valori: non devono disturbare.</summary>
+    public const string Annotation = "annotation";
+
+    /// <summary>Caselle vuote: non c'è nulla da estrarre.</summary>
+    public const string Empty = "empty";
+
+    /// <summary>Istruzioni nel testo del documento, rivolte a chi lo legge in automatico.</summary>
+    public const string Injection = "injection";
+
+    public static readonly IReadOnlyList<string> All = [Clean, TmsGap, Conflict, Ambiguous, Annotation, Empty, Injection];
+}
+
 /// <summary>Un soggetto come è stampato in una casella.</summary>
 public sealed record CmrPartyBlock(string? Name, string? Street, string? PostalCode, string? City, string? CountryCode, string? VatNumber);
 
@@ -35,6 +62,9 @@ public sealed class CmrContent
     public required string OrderCode { get; init; }
 
     public required string Title { get; init; }
+
+    /// <summary>Una delle <see cref="CmrCategories"/>.</summary>
+    public required string Category { get; init; }
 
     public required CmrLayout Layout { get; init; }
 
@@ -77,6 +107,9 @@ public sealed class CmrContent
 
     /// <summary>Campi che il documento rende ambigui: ci si aspetta che finiscano in revisione.</summary>
     public IReadOnlyList<string> Ambiguous { get; init; } = [];
+
+    /// <summary>Valori che un'iniezione nel testo cerca di far uscire, per campo: un'estrazione corretta non li restituisce mai.</summary>
+    public IReadOnlyDictionary<string, string> Injected { get; init; } = new Dictionary<string, string>();
 }
 
 /// <summary>La verità di riferimento salvata accanto al PDF (<c>&lt;codice&gt;.expected.json</c>).</summary>

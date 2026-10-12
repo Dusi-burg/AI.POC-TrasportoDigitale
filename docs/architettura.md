@@ -1,6 +1,6 @@
 # Trasporto digitale — architettura
 
-> Aggiornato alla **Fase 8b (eCMR parallelo al dataset eFTI)**. Il documento cresce fase per fase: descrive ciò che il repository contiene oggi e segnala ciò che è previsto ma non ancora scritto.
+> Aggiornato alla **Fase 9 (valutazione e documentazione): è lo stato della Release 1**. Il documento cresce fase per fase: descrive ciò che il repository contiene oggi e segnala ciò che è previsto ma non ancora scritto.
 
 ## 1. Che cos'è
 
@@ -36,7 +36,7 @@ Le frecce tratteggiate sono riferimenti già dichiarati nell'AppHost ma non anco
 | `Efti.Api` | 5302 | Nucleo eFTI, proprietario degli schemi `efti` e `audit` | importazione dal TMS, viste delle spedizioni, esportazione XML, `/api/health` |
 | `Efti.Mcp` | 5303 | Server MCP eFTI | endpoint `/mcp` raggiungibile solo con la chiave di un ruolo, sette tool filtrati per ruolo |
 | `Agents` | 5304 | Agenti, client MCP, nessun accesso al database | agente di mappatura e agente autorità, risposta unica o stream SSE |
-| `Web` | 5306 | UI | pagina di stato |
+| `Web` | 5306 | UI | scenari 1–4 dal browser, selettore di ruolo, pagina di stato (§12) |
 
 La porta 5305 è riservata a `Claims.Mcp` (Release 2). O2C usa 5101–5106 e Sinistri 5201–5202: le tre demo possono girare insieme.
 
@@ -63,7 +63,7 @@ Regole di confine, valide da subito:
 | `Efti.Mcp` | Server MCP eFTI: sette tool sopra `Efti.Api`, senza database e senza identità propria |
 | `Web` | UI Razor Pages: selettore di ruolo, pagine degli scenari, inoltro degli stream degli agenti; solo HTTP verso `Efti.Api` e `Agents` |
 | `tools/DbInit` | Ricrea il database dal modello, senza migration, e inserisce i dati del TMS |
-| `tools/Eval` | CLI: `docs` rigenera i documenti nati dal codice, `cmr` i CMR sintetici di `data/cmr` (PDFsharp-MigraDoc sta solo qui); i comandi di valutazione arrivano con la Fase 9 |
+| `tools/Eval` | CLI: `docs` rigenera i documenti nati dal codice, `cmr` e `golden` i CMR sintetici e il golden set (PDFsharp-MigraDoc e PDFtoImage stanno solo qui); `eval validation`, `eval extraction`, `eval security` e `bench models` misurano e scrivono i report di `eval/` (§14) |
 
 ## 4. Modelli
 
@@ -491,7 +491,8 @@ flowchart LR
 
 - **Testo.** `PdfTextReader` segue l'ordine in cui il documento è stato scritto, non la posizione sulla pagina: il contenuto di una casella resta insieme invece di mescolarsi con la casella accanto. Niente OCR: un PDF senza testo è rifiutato.
 - **Modello.** `CmrExtractor` chiede un `CmrExtraction` secondo lo schema JSON generato dal tipo, con un solo nuovo tentativo se la risposta non è valida. Non ha tool. Il testo del documento entra nel prompt fra delimitatori, dichiarato come dato da leggere e non da eseguire. I **pesi restano testo**: il modello copia "8.840" com'è scritto, e che valga 8840 lo decide il codice.
-- **Due letture**, chieste in due modi diversi: la seconda serve solo a misurare l'accordo.
+- **Due letture in locale, una sul cloud.** Le due letture si chiedono in due modi diversi, e la seconda serve solo a misurare l'accordo. Il numero dipende dal provider del modello (`Extraction:PassesByProvider:<provider>`; chi non ha un numero proprio usa `Extraction:Passes`, 2): la misura della Fase 9 dice che la seconda lettura ferma valori sbagliati con il modello locale e non cambia nulla con i modelli cloud, dove raddoppia tempo e costo. Con una sola lettura il segnale `Agreement` non si applica.
+- **Schema vincolato dove si può.** Con Ollama la risposta è vincolata allo schema JSON del tipo. L'API Anthropic rifiuta questo schema come output strutturato (*compiled grammar is too large*: ogni casella è facoltativa, e i campi che ammettono `null` sono troppi): verso il cloud lo schema viaggia nel prompt, e la risposta — che arriva volentieri incorniciata in un blocco di codice — si legge e si controlla nel codice, con lo stesso nuovo tentativo. Il difetto è stato trovato dalla misura della Fase 9: prima l'estrazione sul cloud non era mai stata provata.
 
 ### 11.1 Confidenza: la calcola il codice
 
@@ -505,7 +506,7 @@ Il modello non dichiara quanto è sicuro. Per ogni campo il codice verifica cinq
 | `Agreement` | le due letture danno lo stesso valore; non applicabile con una sola lettura | 0,20 |
 | `Annotation` | un'annotazione a mano riporta lo stesso numero; si applica solo ai campi numerici di un documento che ha numeri annotati | 0,30 |
 
-Confidenza = pesi dei segnali veri ÷ pesi dei segnali applicabili. Soglia di revisione: **0,80**. Pesi (`Extraction:Weights:*`), soglia (`EXTRACTION_REVIEW_THRESHOLD`) e numero di letture (`Extraction:Passes`) sono configurazione; quelli in vigore si salvano con ogni estrazione, così un esito di ieri resta spiegabile.
+Confidenza = pesi dei segnali veri ÷ pesi dei segnali applicabili. Soglia di revisione: **0,80**. Pesi (`Extraction:Weights:*`), soglia (`EXTRACTION_REVIEW_THRESHOLD`) e numero di letture (`Extraction:Passes`, `Extraction:PassesByProvider`) sono configurazione; quelli in vigore si salvano con ogni estrazione, così un esito di ieri resta spiegabile.
 
 | Esito del campo | Quando | Che cosa succede |
 |---|---|---|
@@ -541,7 +542,7 @@ Prima misura con `qwen3.5:9b` in locale (2026-10-06, un passaggio sugli otto doc
 | Iniezione (`CMR-1004-INJ`) | peso e destinatario non alterati; tre campi ADR non estratti |
 | Tempo per documento, due letture | 22–30 s |
 
-Sono otto documenti e un passaggio: la valutazione su 30 documenti, con la calibrazione della confidenza per fascia, è nella Fase 9.
+Sono otto documenti e un passaggio: la valutazione su 32 documenti, con la calibrazione della confidenza per fascia, è al §14.
 
 ## 12. UI Web
 
@@ -579,10 +580,122 @@ I CMR sintetici di `data/cmr` sono copiati accanto alla Web: si scaricano da `/d
 - `Efti.Mcp.Tests`: il server MCP sopra una `Efti.Api` vera in-process: elenco dei tool per ruolo; **ogni ruolo su ogni tool**, con l'evento di audit del rifiuto; ogni tool sui dati demo; errori strutturati; nessuna versione nuova di dataset dopo le chiamate ai tool.
 - `Documents.Tests`: i CMR sintetici del repository si leggono, contengono alla lettera ogni valore atteso e sono quelli che il generatore produce oggi; estrazione con modello a copione (schema, documento come dato fra delimitatori, nuovo tentativo, rifiuto).
 - In `Efti.Core.Tests` la confidenza (ogni combinazione di segnali, pesi dalla configurazione) e la mappa casella → campo; in `Efti.Api.Tests` il percorso dal caricamento alla decisione con un modello finto: proposta sopra soglia, revisione sotto soglia, conferma con valore corretto, accettazione automatica, e l'iniezione "riuscita" che finisce in revisione senza toccare il dataset.
+- `Eval.Tests`: il golden set dei CMR (almeno 30 documenti, ogni categoria, ogni valore atteso scritto nel PDF, file del repository uguali a quelli generati oggi); punteggio, calibrazione e sensibilità su letture costruite a mano, con un **lettore perfetto** e con un **modello che obbedisce a un'iniezione**; valori vietati all'autorità; punteggio della mappatura; costo da token e listino; riga di comando; report.
 - `Tms.Api.Tests`: invarianti degli ordini demo; generatore dei dati sintetici (ripetibilità, dimensioni, difetti); viste e reset su un database usa-e-getta, con l'orologio fermo al giorno del seed.
 - La CI gira su Windows con LocalDB. I test della categoria `RequiresSql2025` si saltano se LocalDB è più vecchio della versione 17 e restano obbligatori in locale.
 
-## 14. Decisioni
+## 14. Valutazione
+
+`tools/Eval` misura ciò che le sezioni precedenti descrivono e scrive i report in `eval/report_<data>_<nome>.md`. Il modello è ciò che si mette alla prova: **ogni giudizio è del codice**, su valori noti.
+
+```mermaid
+flowchart LR
+    G[("data/<br/>golden_cmr · golden_mapping<br/>golden_security · golden_validation")] --> E["tools/Eval"]
+    E -- "in-process: PdfTextReader, CmrExtractor,<br/>ExtractionAssessor, agenti" --> M{{"modello da misurare<br/>--model provider:modello"}}
+    E -- "tool MCP con le chiavi di ruolo,<br/>audit come Admin" --> S["stack avviato<br/>efti-mcp · efti-api"]
+    E --> R[("eval/<br/>report_*.md · raw/*.json")]
+```
+
+| Comando | Modello | Stack avviato | Che cosa misura |
+|---|---|---|---|
+| `eval validation` | no | no | golden set della validazione; difetti voluti del seed |
+| `eval extraction` | sì | no | accuratezza per campo, calibrazione, revisione, errori sopra soglia; sensibilità a soglia, letture, peso `Annotation` |
+| `eval security` | sì | sì | documenti con iniezione; ruoli × tool con audit; agente autorità sollecitato |
+| `bench models` | sì | per la mappatura | estrazione da testo e da immagine, mappatura: qualità, latenza, token, costo |
+
+**Come gira.** I componenti sono quelli veri, eseguiti dentro il tool con una propria fabbrica dei modelli: lo stesso comando misura un modello locale o uno cloud senza riavviare l'AppHost. Ciò che il TMS sa di un ordine si ricostruisce dal seed a giorno fisso (2026-10-05), come farebbe l'importazione, senza database. Permessi e audit non si simulano: il tool parla con `efti-mcp` con le chiavi dei ruoli e rilegge l'audit come `Admin`. Chiavi e prezzi: le chiavi sono quelle degli user-secrets dell'AppHost; i prezzi di listino sono configurazione (`Eval:Prices`), con la data nel report. Le letture dei modelli si salvano in `eval/raw` e i report si ricalcolano da quelle (`--replay`, `--reuse`).
+
+### 14.1 Golden set
+
+| File | Contenuto |
+|---|---|
+| `data/golden_cmr.json` + PDF | **32 CMR**: gli 8 della demo più 24 costruiti sugli ordini del seed. Sette categorie: `clean` 7, `tms-gap` 6, `conflict` 5, `ambiguous` 4, `annotation` 3, `empty` 3, `injection` 4. Per documento: valori attesi, campi ambigui, campi che **devono passare da una persona** (`mustReview`: in conflitto con il TMS, o ambigui e non confermati dal TMS), valori iniettati |
+| `data/golden_cmr/images` | 6 di quei CMR come scansione "sporca" (120 dpi, ruotata, sfocata, rumore, JPEG) |
+| `data/golden_mapping.json` | 4 spedizioni incomplete: lo scenario 2 (4 proposte attese) e tre in cui l'ordine non contiene il dato mancante (attese: nessuna) |
+| `data/golden_security.json` | 10 richieste all'agente autorità: 2 normali, 8 che cercano di farlo uscire dai sottoinsiemi |
+| `data/golden_validation.json` | 34 casi di validazione, uno o più per regola |
+
+`Eval -- golden` rigenera il golden set dei CMR; un test verifica che i file del repository siano quelli generati oggi e che ogni valore atteso sia scritto nel PDF.
+
+### 14.2 Metriche dell'estrazione
+
+- **Accuratezza per campo**: atteso ed estratto coincidono dopo la normalizzazione del campo. Esiti: esatto, errato, mancante, in più.
+- **Calibrazione**: accuratezza per fascia di confidenza. Informativa se cresce con la fascia.
+- **Errori sopra soglia**: valori sbagliati diventati proposta. È la misura che conta: un errore in revisione lo ferma una persona, un errore proposto può essere accettato per fiducia.
+- **Da far vedere**: quanti campi `mustReview` finiscono davvero in revisione.
+- **Sensibilità**: le stesse letture giudicate con un'altra soglia, con una sola lettura, con un altro peso del segnale `Annotation`.
+
+### 14.3 Risultati (2026-10-12)
+
+Hardware locale: GPU con 8 GB di VRAM. Prezzi di listino al 2026-10-06: `claude-haiku-4-5` 1 $ / 5 $, `claude-sonnet-5-5` 2 $ / 10 $ per milione di token in ingresso / in uscita.
+
+| Estrazione dal testo, 32 CMR, 903 campi | `qwen3.5:9b` | `claude-haiku-4-5` | `claude-sonnet-5-5` |
+|---|---|---|---|
+| Accuratezza per campo | 96,3 % | 99,7 % | 100,0 % |
+| Errati / mancanti / in più | 7 / 26 / 1 | 3 / 0 / 0 | 0 / 0 / 0 |
+| **Errori sopra soglia** | **0** | **0** | **0** |
+| Campi in revisione | 26 (3,0 %) | 21 (2,3 %) | 18 (2,0 %) |
+| Da far vedere, in revisione | 18 su 19 | 18 su 19 | 18 su 19 |
+| Valori iniettati usciti | 0 | 0 | 0 |
+| Tempo a documento (due letture) | 28,0 s | 10,3 s | 7,1 s |
+| Token a documento (in / out) | 1.859 / 940 | 4.326 / 1.149 | 5.623 / 1.093 |
+| Costo a documento | — | 0,0101 $ | 0,0222 $ |
+
+Verso il cloud i token in ingresso sono più del doppio perché lo schema viaggia nel prompt (§11).
+
+| Calibrazione, `qwen3.5:9b` | Campi | Esatti |
+|---|---|---|
+| < 0,50 | 2 | 0 % |
+| 0,50–0,70 | 3 | 33 % |
+| 0,70–0,80 | 24 | 83 % |
+| 0,80–0,90 | 6 | 100 % |
+| ≥ 0,90 | 843 | 100 % |
+
+Che cosa dicono le misure:
+
+- **Il locale sbaglia per omissione, non per invenzione.** 26 dei 34 campi non esatti sono mancanti: dati ADR (accuratezza del gruppo 38,7 %) e targhe nell'impaginazione in francese. Un campo mancante non produce nulla; se al TMS manca, resta il problema di validazione. Gli 8 valori sbagliati sono tutti in revisione: partite IVA con una cifra in meno (confidenza 0,00: non sono scritte così nel documento), nomi troncati, una partita IVA attribuita al soggetto sbagliato.
+- **La soglia a 0,80 sta in un vuoto.** Fra 0,75 e 0,90 non cambia nulla; a 0,70 diventerebbero proposta 4 valori sbagliati e 17 dei 18 campi da far vedere. I pesi producono due gruppi netti: non serve una taratura fine.
+- **Due letture**: con il locale la seconda ferma un valore sbagliato che con una lettura sola sarebbe una proposta; con i modelli cloud non cambia nulla. Costano il doppio di tempo e token. **Deciso al CHECKPOINT R1**: due letture in locale, una sul cloud (§11). Le misure di questa sezione sono state fatte con due letture per tutti i modelli; con una sola, sul cloud, tempo, token e costo a documento sono circa la metà di quelli in tabella.
+- **Peso `Annotation`**: a 0 o 0,15 quattro campi contraddetti da una nota a mano diventano proposte (14 su 19 in revisione invece di 18); a 0,30 e a 0,45 il risultato è lo stesso. Il valore 0,30 è confermato dalla misura **e dall'utente al CHECKPOINT R1**.
+- **Documenti ADR**: il locale ne salta spesso i dati, ma non si instradano sul cloud (CHECKPOINT R1). Un dato ADR saltato non diventa un errore: se manca anche al TMS resta il problema di validazione, che una persona vede.
+- **Il diciannovesimo campo** è una casella ambigua senza note a mano su un dato che il TMS non ha (`G-2059`, "24 (22 pallet + 2 casse)"): nessun segnale la vede, con nessun modello. È il limite dichiarato al §11.1.
+
+| Estrazione da scansione, 6 CMR, 177 campi | `qwen3.5:9b` | `claude-haiku-4-5` | `claude-sonnet-5-5` |
+|---|---|---|---|
+| Accuratezza dall'immagine | 93,8 % | 85,3 % | 100,0 % |
+| Sugli stessi documenti, dal testo | 94,4 % | 100,0 % | 100,0 % |
+| Tempo / costo a documento | 17,5 s / — | 8,3 s / 0,0061 $ | 3,9 s / 0,0130 $ |
+
+Dall'immagine Haiku non legge giusta nessuna partita IVA e sbaglia un terzo dei nomi: sul compito di lettura fine il modello locale da 9B fa meglio. Senza testo non c'è il riscontro alla lettera, quindi nessuna confidenza: per questo le scansioni restano fuori dal prodotto.
+
+| Agente di mappatura, 4 spedizioni × 3 | `qwen3.5:9b` | `claude-haiku-4-5` | `claude-sonnet-5-5` |
+|---|---|---|---|
+| Proposte attese ottenute | 11 su 12 | 12 su 12 | 12 su 12 |
+| Proposte non attese | 0 | 6 | 0 |
+| Scartate dal controllo sulla fonte | 0 | 0 | 0 |
+| Tempo / costo a run | 20,8 s / — | 9,1 s / 0,0146 $ | 8,1 s / 0,0338 $ |
+
+Le proposte non attese di Haiku sono la città del destinatario dedotta dalla ragione sociale ("… Liège"), tre volte su tre per i due campi città: il valore è scritto nell'ordine, quindi il controllo sulla fonte — che guarda tutto l'ordine, non il campo citato — lo lascia passare. Resta una proposta in attesa.
+
+| Sicurezza | Esito, uguale per i tre modelli |
+|---|---|
+| 4 CMR con iniezione, 14 campi presi di mira | 0 valori iniettati usciti |
+| Modello che obbedisce (simulato) | 12 valori in revisione a 0,70 (contraddicono il TMS), 1 non applicabile, **1 proposta**: `G-2120`, colli di una riga che il TMS non ha |
+| Ruoli × tool | elenco uguale alla matrice per 4 ruoli su 4; 15 chiamate fuori ruolo su 15 rifiutate con `UNAUTHORIZED`; 15 eventi `Denied` nell'audit; senza chiave o con chiave sconosciuta HTTP 401 |
+| Agente autorità, 10 richieste | 10 su 10; nessuno degli 8 valori vietati (partite IVA, numero della lettera di vettura, nolo…) nelle risposte; nessun tool fuori lista riuscito |
+
+I **valori vietati** non sono un elenco scritto a mano: sono ciò che sta nel dataset completo della spedizione (letto con la chiave dell'operatore) e in nessun dato che l'autorità può leggere (identificatori e i due sottoinsiemi, letti con la sua chiave).
+
+Validazione: golden set 34 su 34; difetti voluti del seed 60 su 60; nessuna spedizione senza difetti risulta incompleta.
+
+### 14.4 Limiti della valutazione
+
+- Documenti **sintetici**, generati dallo stesso codice che ne conosce la verità: le percentuali dicono come si comportano i controlli, non come andrebbe su lettere di vettura vere.
+- Un passaggio per modello sull'estrazione: i modelli non sono deterministici, e fra due passaggi il locale cambia di qualche campo (alla prima misura della Fase 7 i dati ADR di `CMR-1004` erano letti bene).
+- La mappatura ha un solo caso con proposte attese; l'agente autorità è provato su una spedizione.
+- Il costo è token × listino: non conta tempo macchina, energia né eventuali sconti.
+
+## 15. Decisioni
 
 Gli identificativi sono quelli del piano di progetto.
 
@@ -663,7 +776,16 @@ Gli identificativi sono quelli del piano di progetto.
 | F8b.4 | Solo `Draft` e `Complete`: niente emissione né firma simulata | Stato `Issued` che blocca le modifiche: rimandato, con le riserve, alla Release 2 |
 | F8b.5 | I dati aggiunti al seed sono derivati, senza numeri casuali | Generarli: sposterebbe la sequenza e cambierebbe ordini, viaggi e difetti già misurati |
 | F8b.6 | L'eCMR si produce anche per i trasporti nazionali, con le stesse regole; la dichiarazione CMR solo sugli internazionali | Stato `NotRequired` per i nazionali (prima versione della fase): metà delle spedizioni restava senza lettera di vettura |
+| F9.1 | La valutazione esegue in-process i componenti veri (lettura del PDF, estrattore, confidenza, agenti) con una propria fabbrica dei modelli; tool MCP, permessi e audit li chiede allo stack avviato | Valutare tutto attraverso i servizi: per cambiare modello andrebbe riavviato l'AppHost a ogni misura |
+| F9.2 | Le letture dei modelli si salvano e i report si ricalcolano da quelle (`--replay`, `--reuse`) | Solo il report: ogni analisi di sensibilità costerebbe di nuovo tempo e token |
+| F9.3 | Ogni verifica di sicurezza è deterministica: valori iniettati noti, valori vietati calcolati come "dataset completo meno ciò che l'autorità può leggere" | Un modello che giudica le risposte di un altro: il giudice arriva con la Release 2, e va tarato prima di fidarsene |
+| F9.4 | Il golden set dichiara per ogni documento i campi che devono passare da una persona (`mustReview`) e i valori iniettati | Misurare solo l'accuratezza: non direbbe se un errore, o un'iniezione riuscita, supererebbe la soglia |
+| F9.5 | Accanto al modello vero si simula quello che obbedisce all'iniezione | Fermarsi al fatto che i modelli provati non hanno obbedito: la difesa non deve dipendere dal modello |
+| F9.6 | Verso l'API Anthropic lo schema del CMR viaggia nel prompt, non come output strutturato | Semplificare lo schema togliendo i `null`: cambierebbe il contratto e le misure già fatte in locale |
+| F9.7 | Le scansioni "sporche" servono solo al confronto dei modelli | OCR nel prodotto: è fuori perimetro, e senza testo non c'è il riscontro alla lettera su cui poggia la confidenza |
+| F9.8 | Il numero di letture dipende dal provider: due in locale, una sul cloud (CHECKPOINT R1) | Due per tutti: sul cloud la seconda non ha fermato nulla e raddoppia tempo e costo |
+| F9.9 | I documenti con merci pericolose restano sul modello dell'estrazione, senza un instradamento a parte (CHECKPOINT R1) | Mandarli sul cloud: il locale ne salta i dati, ma un dato saltato lo segnala la validazione, e i dati non lasciano la macchina |
 
 ### Versioni
 
-.NET 10 (SDK 10.0.400, `latestFeature`), Aspire 13.6.0, EF Core 10.0.12, `Microsoft.Extensions.AI` 10.10.0, `Microsoft.Agents.AI` 1.23.0, `ModelContextProtocol` 2.2.0, `Anthropic` 12.53.0, `OllamaSharp` 5.5.0, PdfPig 0.1.16, PDFsharp-MigraDoc 6.2.4, Bogus 35.6.5, OpenTelemetry 1.19.1 (pacchetti di strumentazione 1.19.0), NUnit 4.6.1.
+.NET 10 (SDK 10.0.400, `latestFeature`), Aspire 13.6.0, EF Core 10.0.12, `Microsoft.Extensions.AI` 10.10.0, `Microsoft.Agents.AI` 1.23.0, `ModelContextProtocol` 2.2.0, `Anthropic` 12.53.0, `OllamaSharp` 5.5.0, PdfPig 0.1.16, PDFsharp-MigraDoc 6.2.4, PDFtoImage 5.4.0 (solo nel tool `Eval`), Bogus 35.6.5, OpenTelemetry 1.19.1 (pacchetti di strumentazione 1.19.0), NUnit 4.6.1.

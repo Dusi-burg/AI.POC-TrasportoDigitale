@@ -1,0 +1,38 @@
+{
+  "description": "Casi per l'agente di mappatura (bench models). Per ogni spedizione: le proposte attese (expected: campo → valore), quelle legittime ma non richieste (acceptable) e nient'altro. Il primo caso è lo scenario 2: l'ordine del TMS porta i dati mancanti nelle istruzioni del mittente. Negli altri l'ordine non contiene il dato che manca: l'esito giusto è nessuna proposta, e ogni proposta creata è un falso positivo che il controllo sulla fonte non ha fermato.",
+  "cases": [
+    {
+      "shipmentCode": "SH-1002",
+      "title": "Scenario 2: i dati mancanti sono nelle istruzioni del mittente",
+      "expected": {
+        "consignee/postalAddress/postcode": "69007",
+        "includedConsignmentItem[0]/transportDangerousGoods[0]/uNDGID": "2014",
+        "includedConsignmentItem[0]/transportDangerousGoods[0]/properShippingName": "PEROSSIDO DI IDROGENO IN SOLUZIONE ACQUOSA",
+        "grossWeight": "8840"
+      },
+      "acceptable": {
+        "consignee/taxRegistration/id": "FR99999000022",
+        "includedConsignmentItem[0]/transportDangerousGoods[0]/packagingDangerLevelCode": "II",
+        "consigneeReceiptLocation/postalAddress/postcode": "69007"
+      }
+    },
+    {
+      "shipmentCode": "SH-2072",
+      "title": "CAP e città del destinatario mancanti: l'ordine non li contiene",
+      "expected": {},
+      "acceptable": {}
+    },
+    {
+      "shipmentCode": "SH-2046",
+      "title": "Merce ADR senza numero ONU: l'ordine non lo contiene",
+      "expected": {},
+      "acceptable": {}
+    },
+    {
+      "shipmentCode": "SH-2040",
+      "title": "Colli della prima riga mancanti: l'ordine non li contiene",
+      "expected": {},
+      "acceptable": {}
+    }
+  ]
+}

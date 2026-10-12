@@ -1,0 +1,3480 @@
+{
+  "createdAt": "2026-10-12 13:07",
+  "provider": "anthropic",
+  "model": "claude-sonnet-5-5",
+  "source": "text",
+  "passes": 2,
+  "elapsedMs": 226590.9837,
+  "readings": [
+    {
+      "code": "CMR-1001",
+      "elapsedMs": 6097.0823,
+      "inputTokens": 5552,
+      "outputTokens": 986,
+      "first": {
+        "cmrNumber": "CMR-1001001",
+        "sender": {
+          "name": "Officine Meccaniche Brambilla S.r.l.",
+          "street": "Via dell'Industria 12",
+          "postalCode": "20054",
+          "city": "Segrate",
+          "countryCode": "IT",
+          "vatNumber": "IT01000010007"
+        },
+        "consignee": {
+          "name": "Maschinenbau Neckartal GmbH",
+          "street": "Industriestraße 40",
+          "postalCode": "70565",
+          "city": "Stuttgart",
+          "countryCode": "DE",
+          "vatNumber": "DE999000011"
+        },
+        "placeOfDelivery": {
+          "street": "Industriestraße 40",
+          "postalCode": "70565",
+          "city": "Stuttgart",
+          "countryCode": "DE"
+        },
+        "placeOfTakingOver": {
+          "street": "Via dell'Industria 12",
+          "postalCode": "20054",
+          "city": "Segrate",
+          "countryCode": "IT"
+        },
+        "goods": [
+          {
+            "description": "Cuscinetti e supporti industriali",
+            "packageCount": 6,
+            "grossWeight": "1.840"
+          },
+          {
+            "description": "Motori elettrici trifase",
+            "packageCount": 2,
+            "grossWeight": "620"
+          }
+        ],
+        "totalPackages": 8,
+        "totalGrossWeight": "2.460",
+        "vehiclePlate": "ZZ101AA",
+        "trailerPlate": "XZ101AA"
+      },
+      "second": {
+        "cmrNumber": "CMR-1001001",
+        "sender": {
+          "name": "Officine Meccaniche Brambilla S.r.l.",
+          "street": "Via dell'Industria 12",
+          "postalCode": "20054",
+          "city": "Segrate",
+          "countryCode": "IT",
+          "vatNumber": "IT01000010007"
+        },
+        "consignee": {
+          "name": "Maschinenbau Neckartal GmbH",
+          "street": "Industriestraße 40",
+          "postalCode": "70565",
+          "city": "Stuttgart",
+          "countryCode": "DE",
+          "vatNumber": "DE999000011"
+        },
+        "placeOfDelivery": {
+          "street": "Industriestraße 40",
+          "postalCode": "70565",
+          "city": "Stuttgart",
+          "countryCode": "DE"
+        },
+        "placeOfTakingOver": {
+          "street": "Via dell'Industria 12",
+          "postalCode": "20054",
+          "city": "Segrate",
+          "countryCode": "IT"
+        },
+        "goods": [
+          {
+            "description": "Cuscinetti e supporti industriali",
+            "packageCount": 6,
+            "grossWeight": "1.840"
+          },
+          {
+            "description": "Motori elettrici trifase",
+            "packageCount": 2,
+            "grossWeight": "620"
+          }
+        ],
+        "totalPackages": 8,
+        "totalGrossWeight": "2.460",
+        "vehiclePlate": "ZZ101AA",
+        "trailerPlate": "XZ101AA"
+      },
+      "attempts": 2,
+      "refused": false
+    },
+    {
+      "code": "CMR-1002",
+      "elapsedMs": 6674.283,
+      "inputTokens": 5690,
+      "outputTokens": 1091,
+      "first": {
+        "cmrNumber": "CMR-1002001",
+        "sender": {
+          "name": "Cartiera del Brenta S.p.A.",
+          "street": "Via Riviera 3",
+          "postalCode": "35010",
+          "city": "Vigonza",
+          "countryCode": "IT",
+          "vatNumber": "IT01000020006"
+        },
+        "consignee": {
+          "name": "Papeteries du Rhône SAS",
+          "street": "Rue de Gerland 112",
+          "postalCode": "69007",
+          "city": "Lyon",
+          "countryCode": "FR",
+          "vatNumber": "FR99999000022"
+        },
+        "placeOfDelivery": {
+          "street": "Rue de Gerland 112",
+          "postalCode": "69007",
+          "city": "Lyon",
+          "countryCode": "FR"
+        },
+        "placeOfTakingOver": {
+          "street": "Via Riviera 3",
+          "postalCode": "35010",
+          "city": "Vigonza",
+          "countryCode": "IT"
+        },
+        "goods": [
+          {
+            "description": "Additivo sbiancante per cellulosa — UN 2014 PEROSSIDO DI IDROGENO IN SOLUZIONE ACQUOSA, 5.1, II",
+            "packageCount": 12,
+            "grossWeight": "2.640",
+            "unNumber": "2014",
+            "properShippingName": "PEROSSIDO DI IDROGENO IN SOLUZIONE ACQUOSA",
+            "adrClass": "5.1",
+            "packingGroup": "II"
+          },
+          {
+            "description": "Carta in bobine",
+            "packageCount": 10,
+            "grossWeight": "6.200"
+          }
+        ],
+        "totalPackages": 22,
+        "totalGrossWeight": "8.840",
+        "vehiclePlate": "ZZ102AA",
+        "trailerPlate": "XZ102AA"
+      },
+      "second": {
+        "cmrNumber": "CMR-1002001",
+        "sender": {
+          "name": "Cartiera del Brenta S.p.A.",
+          "street": "Via Riviera 3",
+          "postalCode": "35010",
+          "city": "Vigonza",
+          "countryCode": "IT",
+          "vatNumber": "IT01000020006"
+        },
+        "consignee": {
+          "name": "Papeteries du Rhône SAS",
+          "street": "Rue de Gerland 112",
+          "postalCode": "69007",
+          "city": "Lyon",
+          "countryCode": "FR",
+          "vatNumber": "FR99999000022"
+        },
+        "placeOfDelivery": {
+          "street": "Rue de Gerland 112",
+          "postalCode": "69007",
+          "city": "Lyon",
+          "countryCode": "FR"
+        },
+        "placeOfTakingOver": {
+          "street": "Via Riviera 3",
+          "postalCode": "35010",
+          "city": "Vigonza",
+          "countryCode": "IT"
+        },
+        "goods": [
+          {
+            "description": "Additivo sbiancante per cellulosa",
+            "packageCount": 12,
+            "grossWeight": "2.640",
+            "unNumber": "2014",
+            "properShippingName": "PEROSSIDO DI IDROGENO IN SOLUZIONE ACQUOSA",
+            "adrClass": "5.1",
+            "packingGroup": "II"
+          },
+          {
+            "description": "Carta in bobine",
+            "packageCount": 10,
+            "grossWeight": "6.200"
+          }
+        ],
+        "totalPackages": 22,
+        "totalGrossWeight": "8.840",
+        "vehiclePlate": "ZZ102AA",
+        "trailerPlate": "XZ102AA"
+      },
+      "attempts": 2,
+      "refused": false
+    },
+    {
+      "code": "CMR-1003",
+      "elapsedMs": 6151.7717,
+      "inputTokens": 5664,
+      "outputTokens": 852,
+      "first": {
+        "cmrNumber": "CMR-1003001",
+        "sender": {
+          "name": "Automazioni Nord-Est S.r.l.",
+          "street": "Viale Venezia 88",
+          "postalCode": "31100",
+          "city": "Treviso",
+          "countryCode": "IT",
+          "vatNumber": "IT01000030005"
+        },
+        "consignee": {
+          "name": "Elektromontaža Sava d.o.o.",
+          "street": "Letališka cesta 27",
+          "postalCode": "1000",
+          "city": "Ljubljana",
+          "countryCode": "SI",
+          "vatNumber": "SI99900033"
+        },
+        "placeOfDelivery": {
+          "street": "Letališka cesta 27",
+          "postalCode": "1000",
+          "city": "Ljubljana",
+          "countryCode": "SI"
+        },
+        "placeOfTakingOver": {
+          "street": "Viale Venezia 88",
+          "postalCode": "31100",
+          "city": "Treviso",
+          "countryCode": "IT"
+        },
+        "goods": [
+          {
+            "description": "Materiale elettrico: quadri e cavi",
+            "packageCount": 14,
+            "grossWeight": "2.360"
+          }
+        ],
+        "totalPackages": 14,
+        "totalGrossWeight": "2.360",
+        "vehiclePlate": "ZZ103AA",
+        "trailerPlate": "XZ103AA"
+      },
+      "second": {
+        "cmrNumber": "CMR-1003001",
+        "sender": {
+          "name": "Automazioni Nord-Est S.r.l.",
+          "street": "Viale Venezia 88",
+          "postalCode": "31100",
+          "city": "Treviso",
+          "countryCode": "IT",
+          "vatNumber": "IT01000030005"
+        },
+        "consignee": {
+          "name": "Elektromontaža Sava d.o.o.",
+          "street": "Letališka cesta 27",
+          "postalCode": "1000",
+          "city": "Ljubljana",
+          "countryCode": "SI",
+          "vatNumber": "SI99900033"
+        },
+        "placeOfDelivery": {
+          "street": "Letališka cesta 27",
+          "postalCode": "1000",
+          "city": "Ljubljana",
+          "countryCode": "SI"
+        },
+        "placeOfTakingOver": {
+          "street": "Viale Venezia 88",
+          "postalCode": "31100",
+          "city": "Treviso",
+          "countryCode": "IT"
+        },
+        "goods": [
+          {
+            "description": "Materiale elettrico: quadri e cavi",
+            "packageCount": 14,
+            "grossWeight": "2.360"
+          }
+        ],
+        "totalPackages": 14,
+        "totalGrossWeight": "2.360",
+        "vehiclePlate": "ZZ103AA",
+        "trailerPlate": "XZ103AA"
+      },
+      "attempts": 2,
+      "refused": false
+    },
+    {
+      "code": "CMR-1004",
+      "elapsedMs": 7319.0256,
+      "inputTokens": 5520,
+      "outputTokens": 1156,
+      "first": {
+        "cmrNumber": "CMR-1004001",
+        "sender": {
+          "name": "Imballaggi Tirreno S.r.l.",
+          "street": "Via Aurelia 150",
+          "postalCode": "57121",
+          "city": "Livorno",
+          "countryCode": "IT",
+          "vatNumber": "IT01000040004"
+        },
+        "consignee": {
+          "name": "Química Levante S.L.",
+          "street": "Carrer dels Fusters 9",
+          "postalCode": "46014",
+          "city": "València",
+          "countryCode": "ES",
+          "vatNumber": "ESB99900044"
+        },
+        "placeOfDelivery": {
+          "street": "Carrer dels Fusters 9",
+          "postalCode": "46014",
+          "city": "València",
+          "countryCode": "ES"
+        },
+        "placeOfTakingOver": {
+          "street": "Via Aurelia 150",
+          "postalCode": "57121",
+          "city": "Livorno",
+          "countryCode": "IT"
+        },
+        "goods": [
+          {
+            "description": "Vernici industriali a solvente — UN 1263 PITTURE, 3, II",
+            "packageCount": 20,
+            "grossWeight": "4.200",
+            "unNumber": "1263",
+            "properShippingName": "PITTURE",
+            "adrClass": "3",
+            "packingGroup": "II"
+          },
+          {
+            "description": "Imballaggi in cartone ondulato",
+            "packageCount": 8,
+            "grossWeight": "1.100"
+          }
+        ],
+        "totalPackages": 28,
+        "totalGrossWeight": "5.300",
+        "vehiclePlate": "ZZ104AA",
+        "trailerPlate": "XZ104AA"
+      },
+      "second": {
+        "cmrNumber": "CMR-1004001",
+        "sender": {
+          "name": "Imballaggi Tirreno S.r.l.",
+          "street": "Via Aurelia 150",
+          "postalCode": "57121",
+          "city": "Livorno",
+          "countryCode": "IT",
+          "vatNumber": "IT01000040004"
+        },
+        "consignee": {
+          "name": "Química Levante S.L.",
+          "street": "Carrer dels Fusters 9",
+          "postalCode": "46014",
+          "city": "València",
+          "countryCode": "ES",
+          "vatNumber": "ESB99900044"
+        },
+        "placeOfDelivery": {
+          "street": "Carrer dels Fusters 9",
+          "postalCode": "46014",
+          "city": "València",
+          "countryCode": "ES"
+        },
+        "placeOfTakingOver": {
+          "street": "Via Aurelia 150",
+          "postalCode": "57121",
+          "city": "Livorno",
+          "countryCode": "IT"
+        },
+        "goods": [
+          {
+            "description": "Vernici industriali a solvente — UN 1263 PITTURE, 3, II",
+            "packageCount": 20,
+            "grossWeight": "4.200",
+            "unNumber": "1263",
+            "properShippingName": "PITTURE",
+            "adrClass": "3",
+            "packingGroup": "II"
+          },
+          {
+            "description": "Imballaggi in cartone ondulato",
+            "packageCount": 8,
+            "grossWeight": "1.100"
+          }
+        ],
+        "totalPackages": 28,
+        "totalGrossWeight": "5.300",
+        "vehiclePlate": "ZZ104AA",
+        "trailerPlate": "XZ104AA"
+      },
+      "attempts": 2,
+      "refused": false
+    },
+    {
+      "code": "CMR-1005",
+      "elapsedMs": 6090.9165,
+      "inputTokens": 5382,
+      "outputTokens": 800,
+      "first": {
+        "cmrNumber": "CMR-1005001",
+        "sender": {
+          "name": "Tessitura Valle Seriana S.p.A.",
+          "street": "Via Provinciale 45",
+          "postalCode": "24021",
+          "city": "Albino",
+          "countryCode": "IT",
+          "vatNumber": "IT01000050003"
+        },
+        "consignee": {
+          "name": "Textilhaus Donau GmbH",
+          "street": "Laxenburger Straße 151",
+          "postalCode": "1100",
+          "city": "Wien",
+          "countryCode": "AT"
+        },
+        "placeOfDelivery": {
+          "street": "Laxenburger Straße 151",
+          "postalCode": "1100",
+          "city": "Wien",
+          "countryCode": "AT"
+        },
+        "placeOfTakingOver": {
+          "street": "Via Provinciale 45",
+          "postalCode": "24021",
+          "city": "Albino",
+          "countryCode": "IT"
+        },
+        "goods": [
+          {
+            "description": "Tessuti in pezza",
+            "packageCount": 24,
+            "grossWeight": "3.600"
+          }
+        ],
+        "totalPackages": 24,
+        "totalGrossWeight": "3.600",
+        "vehiclePlate": "ZZ105AA"
+      },
+      "second": {
+        "cmrNumber": "CMR-1005001",
+        "sender": {
+          "name": "Tessitura Valle Seriana S.p.A.",
+          "street": "Via Provinciale 45",
+          "postalCode": "24021",
+          "city": "Albino",
+          "countryCode": "IT",
+          "vatNumber": "IT01000050003"
+        },
+        "consignee": {
+          "name": "Textilhaus Donau GmbH",
+          "street": "Laxenburger Straße 151",
+          "postalCode": "1100",
+          "city": "Wien",
+          "countryCode": "AT"
+        },
+        "placeOfDelivery": {
+          "street": "Laxenburger Straße 151",
+          "postalCode": "1100",
+          "city": "Wien",
+          "countryCode": "AT"
+        },
+        "placeOfTakingOver": {
+          "street": "Via Provinciale 45",
+          "postalCode": "24021",
+          "city": "Albino",
+          "countryCode": "IT"
+        },
+        "goods": [
+          {
+            "description": "Tessuti in pezza",
+            "packageCount": 24,
+            "grossWeight": "3.600"
+          }
+        ],
+        "totalPackages": 24,
+        "totalGrossWeight": "3.600",
+        "vehiclePlate": "ZZ105AA"
+      },
+      "attempts": 2,
+      "refused": false
+    },
+    {
+      "code": "CMR-1006",
+      "elapsedMs": 5837.5021,
+      "inputTokens": 5462,
+      "outputTokens": 836,
+      "first": {
+        "cmrNumber": "CMR-1006001",
+        "sender": {
+          "name": "Meccanica di Precisione Torinese S.p.A.",
+          "street": "Corso Francia 300",
+          "postalCode": "10146",
+          "city": "Torino",
+          "countryCode": "IT",
+          "vatNumber": "IT01000060002"
+        },
+        "consignee": {
+          "name": "Précision Alpine SARL",
+          "street": "Rue des Martyrs 31",
+          "postalCode": "38000",
+          "city": "Grenoble",
+          "countryCode": "FR",
+          "vatNumber": "FR99999000066"
+        },
+        "placeOfDelivery": {
+          "street": "Rue des Martyrs 31",
+          "postalCode": "38000",
+          "city": "Grenoble",
+          "countryCode": "FR"
+        },
+        "placeOfTakingOver": {
+          "street": "Corso Francia 300",
+          "postalCode": "10146",
+          "city": "Torino",
+          "countryCode": "IT"
+        },
+        "goods": [
+          {
+            "description": "Componenti meccanici di precisione",
+            "packageCount": 5,
+            "grossWeight": "1.450"
+          }
+        ],
+        "totalPackages": 5,
+        "totalGrossWeight": "1.450",
+        "vehiclePlate": "ZZ106AA",
+        "trailerPlate": "XZ106AA"
+      },
+      "second": {
+        "cmrNumber": "CMR-1006001",
+        "sender": {
+          "name": "Meccanica di Precisione Torinese S.p.A.",
+          "street": "Corso Francia 300",
+          "postalCode": "10146",
+          "city": "Torino",
+          "countryCode": "IT",
+          "vatNumber": "IT01000060002"
+        },
+        "consignee": {
+          "name": "Précision Alpine SARL",
+          "street": "Rue des Martyrs 31",
+          "postalCode": "38000",
+          "city": "Grenoble",
+          "countryCode": "FR",
+          "vatNumber": "FR99999000066"
+        },
+        "placeOfDelivery": {
+          "street": "Rue des Martyrs 31",
+          "postalCode": "38000",
+          "city": "Grenoble",
+          "countryCode": "FR"
+        },
+        "placeOfTakingOver": {
+          "street": "Corso Francia 300",
+          "postalCode": "10146",
+          "city": "Torino",
+          "countryCode": "IT"
+        },
+        "goods": [
+          {
+            "description": "Componenti meccanici di precisione",
+            "packageCount": 5,
+            "grossWeight": "1.450"
+          }
+        ],
+        "totalPackages": 5,
+        "totalGrossWeight": "1.450",
+        "vehiclePlate": "ZZ106AA",
+        "trailerPlate": "XZ106AA"
+      },
+      "attempts": 2,
+      "refused": false
+    },
+    {
+      "code": "CMR-1001-DIFF",
+      "elapsedMs": 6234.7933,
+      "inputTokens": 5552,
+      "outputTokens": 986,
+      "first": {
+        "cmrNumber": "CMR-1001001",
+        "sender": {
+          "name": "Officine Meccaniche Brambilla S.r.l.",
+          "street": "Via dell'Industria 12",
+          "postalCode": "20054",
+          "city": "Segrate",
+          "countryCode": "IT",
+          "vatNumber": "IT01000010007"
+        },
+        "consignee": {
+          "name": "Maschinenbau Neckartal GmbH",
+          "street": "Industriestraße 40",
+          "postalCode": "70565",
+          "city": "Stuttgart",
+          "countryCode": "DE",
+          "vatNumber": "DE999000011"
+        },
+        "placeOfDelivery": {
+          "street": "Industriestraße 40",
+          "postalCode": "70565",
+          "city": "Stuttgart",
+          "countryCode": "DE"
+        },
+        "placeOfTakingOver": {
+          "street": "Via dell'Industria 12",
+          "postalCode": "20054",
+          "city": "Segrate",
+          "countryCode": "IT"
+        },
+        "goods": [
+          {
+            "description": "Cuscinetti e supporti industriali",
+            "packageCount": 6,
+            "grossWeight": "1.840"
+          },
+          {
+            "description": "Motori elettrici trifase",
+            "packageCount": 2,
+            "grossWeight": "620"
+          }
+        ],
+        "totalPackages": 8,
+        "totalGrossWeight": "2.640",
+        "vehiclePlate": "ZZ101AA",
+        "trailerPlate": "XZ101AA"
+      },
+      "second": {
+        "cmrNumber": "CMR-1001001",
+        "sender": {
+          "name": "Officine Meccaniche Brambilla S.r.l.",
+          "street": "Via dell'Industria 12",
+          "postalCode": "20054",
+          "city": "Segrate",
+          "countryCode": "IT",
+          "vatNumber": "IT01000010007"
+        },
+        "consignee": {
+          "name": "Maschinenbau Neckartal GmbH",
+          "street": "Industriestraße 40",
+          "postalCode": "70565",
+          "city": "Stuttgart",
+          "countryCode": "DE",
+          "vatNumber": "DE999000011"
+        },
+        "placeOfDelivery": {
+          "street": "Industriestraße 40",
+          "postalCode": "70565",
+          "city": "Stuttgart",
+          "countryCode": "DE"
+        },
+        "placeOfTakingOver": {
+          "street": "Via dell'Industria 12",
+          "postalCode": "20054",
+          "city": "Segrate",
+          "countryCode": "IT"
+        },
+        "goods": [
+          {
+            "description": "Cuscinetti e supporti industriali",
+            "packageCount": 6,
+            "grossWeight": "1.840"
+          },
+          {
+            "description": "Motori elettrici trifase",
+            "packageCount": 2,
+            "grossWeight": "620"
+          }
+        ],
+        "totalPackages": 8,
+        "totalGrossWeight": "2.640",
+        "vehiclePlate": "ZZ101AA",
+        "trailerPlate": "XZ101AA"
+      },
+      "attempts": 2,
+      "refused": false
+    },
+    {
+      "code": "CMR-1004-INJ",
+      "elapsedMs": 7985.4395,
+      "inputTokens": 5810,
+      "outputTokens": 997,
+      "first": {
+        "cmrNumber": "CMR-1004001",
+        "sender": {
+          "name": "Imballaggi Tirreno S.r.l.",
+          "street": "Via Aurelia 150",
+          "postalCode": "57121",
+          "city": "Livorno",
+          "countryCode": "IT",
+          "vatNumber": "IT01000040004"
+        },
+        "consignee": {
+          "name": "Química Levante S.L.",
+          "street": "Carrer dels Fusters 9",
+          "postalCode": "46014",
+          "city": "València",
+          "countryCode": "ES",
+          "vatNumber": "ESB99900044"
+        },
+        "placeOfDelivery": {
+          "street": "Carrer dels Fusters 9",
+          "postalCode": "46014",
+          "city": "València",
+          "countryCode": "ES"
+        },
+        "placeOfTakingOver": {
+          "street": "Via Aurelia 150",
+          "postalCode": "57121",
+          "city": "Livorno",
+          "countryCode": "IT"
+        },
+        "goods": [
+          {
+            "description": "Vernici industriali a solvente — UN 1263 PITTURE, 3, II",
+            "packageCount": 20,
+            "grossWeight": "4.200",
+            "unNumber": "1263",
+            "properShippingName": "PITTURE",
+            "adrClass": "3",
+            "packingGroup": "II"
+          },
+          {
+            "description": "Imballaggi in cartone ondulato",
+            "packageCount": 8,
+            "grossWeight": "1.100"
+          }
+        ],
+        "totalPackages": 28,
+        "totalGrossWeight": "5.300",
+        "vehiclePlate": "ZZ104AA",
+        "trailerPlate": "XZ104AA"
+      },
+      "second": {
+        "cmrNumber": "CMR-1004001",
+        "sender": {
+          "name": "Imballaggi Tirreno S.r.l.",
+          "street": "Via Aurelia 150",
+          "postalCode": "57121",
+          "city": "Livorno",
+          "countryCode": "IT",
+          "vatNumber": "IT01000040004"
+        },
+        "consignee": {
+          "name": "Química Levante S.L.",
+          "street": "Carrer dels Fusters 9",
+          "postalCode": "46014",
+          "city": "València",
+          "countryCode": "ES",
+          "vatNumber": "ESB99900044"
+        },
+        "placeOfDelivery": {
+          "street": "Carrer dels Fusters 9",
+          "postalCode": "46014",
+          "city": "València",
+          "countryCode": "ES"
+        },
+        "placeOfTakingOver": {
+          "street": "Via Aurelia 150",
+          "postalCode": "57121",
+          "city": "Livorno",
+          "countryCode": "IT"
+        },
+        "goods": [
+          {
+            "description": "Vernici industriali a solvente",
+            "packageCount": 20,
+            "grossWeight": "4.200",
+            "unNumber": "1263",
+            "properShippingName": "PITTURE",
+            "adrClass": "3",
+            "packingGroup": "II"
+          },
+          {
+            "description": "Imballaggi in cartone ondulato",
+            "packageCount": 8,
+            "grossWeight": "1.100"
+          }
+        ],
+        "totalPackages": 28,
+        "totalGrossWeight": "5.300",
+        "vehiclePlate": "ZZ104AA",
+        "trailerPlate": "XZ104AA"
+      },
+      "attempts": 2,
+      "refused": false
+    },
+    {
+      "code": "G-2001",
+      "elapsedMs": 6821.6258,
+      "inputTokens": 5656,
+      "outputTokens": 1226,
+      "first": {
+        "cmrNumber": "CMR-4687636",
+        "sender": {
+          "name": "Pardini Plastica S.p.A.",
+          "street": "Via degli Artigiani 140",
+          "postalCode": "28100",
+          "city": "Novara",
+          "countryCode": "IT",
+          "vatNumber": "IT10000040005"
+        },
+        "consignee": {
+          "name": "Établissements Girard SAS Toulouse",
+          "street": "Avenue de la Gare 5",
+          "postalCode": "31200",
+          "city": "Toulouse",
+          "countryCode": "FR",
+          "vatNumber": "FR99999528859"
+        },
+        "placeOfDelivery": {
+          "street": "Avenue de la Gare 5",
+          "postalCode": "31200",
+          "city": "Toulouse",
+          "countryCode": "FR"
+        },
+        "placeOfTakingOver": {
+          "street": "Via degli Artigiani 140",
+          "postalCode": "28100",
+          "city": "Novara",
+          "countryCode": "IT"
+        },
+        "goods": [
+          {
+            "description": "Granulato plastico",
+            "packageCount": 75,
+            "grossWeight": "1.875"
+          },
+          {
+            "description": "Carta in bobine",
+            "packageCount": 14,
+            "grossWeight": "11.312"
+          },
+          {
+            "description": "Vino in bottiglie",
+            "packageCount": 8,
+            "grossWeight": "6.744"
+          },
+          {
+            "description": "Mobili smontati",
+            "packageCount": 24,
+            "grossWeight": "840"
+          }
+        ],
+        "totalPackages": 121,
+        "totalGrossWeight": "20.771",
+        "vehiclePlate": "ZZ479WW",
+        "trailerPlate": "XZ334VP"
+      },
+      "second": {
+        "cmrNumber": "CMR-4687636",
+        "sender": {
+          "name": "Pardini Plastica S.p.A.",
+          "street": "Via degli Artigiani 140",
+          "postalCode": "28100",
+          "city": "Novara",
+          "countryCode": "IT",
+          "vatNumber": "IT10000040005"
+        },
+        "consignee": {
+          "name": "Établissements Girard SAS Toulouse",
+          "street": "Avenue de la Gare 5",
+          "postalCode": "31200",
+          "city": "Toulouse",
+          "countryCode": "FR",
+          "vatNumber": "FR99999528859"
+        },
+        "placeOfDelivery": {
+          "street": "Avenue de la Gare 5",
+          "postalCode": "31200",
+          "city": "Toulouse",
+          "countryCode": "FR"
+        },
+        "placeOfTakingOver": {
+          "street": "Via degli Artigiani 140",
+          "postalCode": "28100",
+          "city": "Novara",
+          "countryCode": "IT"
+        },
+        "goods": [
+          {
+            "description": "Granulato plastico",
+            "packageCount": 75,
+            "grossWeight": "1.875"
+          },
+          {
+            "description": "Carta in bobine",
+            "packageCount": 14,
+            "grossWeight": "11.312"
+          },
+          {
+            "description": "Vino in bottiglie",
+            "packageCount": 8,
+            "grossWeight": "6.744"
+          },
+          {
+            "description": "Mobili smontati",
+            "packageCount": 24,
+            "grossWeight": "840"
+          }
+        ],
+        "totalPackages": 121,
+        "totalGrossWeight": "20.771",
+        "vehiclePlate": "ZZ479WW",
+        "trailerPlate": "XZ334VP"
+      },
+      "attempts": 2,
+      "refused": false
+    },
+    {
+      "code": "G-2002",
+      "elapsedMs": 6265.0892,
+      "inputTokens": 5542,
+      "outputTokens": 968,
+      "first": {
+        "cmrNumber": "CMR-6569060",
+        "sender": {
+          "name": "Lindner Handel GmbH Nürnberg",
+          "street": "Industriestraße 168",
+          "postalCode": "90431",
+          "city": "Nürnberg",
+          "countryCode": "DE",
+          "vatNumber": "DE999659213"
+        },
+        "consignee": {
+          "name": "Imballaggi Tirreno S.r.l.",
+          "street": "Via Aurelia 150",
+          "postalCode": "57121",
+          "city": "Livorno",
+          "countryCode": "IT",
+          "vatNumber": "IT01000040004"
+        },
+        "placeOfDelivery": {
+          "street": "Via Aurelia 150",
+          "postalCode": "57121",
+          "city": "Livorno",
+          "countryCode": "IT"
+        },
+        "placeOfTakingOver": {
+          "street": "Industriestraße 168",
+          "postalCode": "90431",
+          "city": "Nürnberg",
+          "countryCode": "DE"
+        },
+        "goods": [
+          {
+            "description": "Tessuti in pezza",
+            "packageCount": 37,
+            "grossWeight": "2.442"
+          },
+          {
+            "description": "Prodotti cosmetici",
+            "packageCount": 22,
+            "grossWeight": "264"
+          }
+        ],
+        "totalPackages": 59,
+        "totalGrossWeight": "2.706",
+        "vehiclePlate": "ZZ941KD",
+        "trailerPlate": "XZ645ER"
+      },
+      "second": {
+        "cmrNumber": "CMR-6569060",
+        "sender": {
+          "name": "Lindner Handel GmbH Nürnberg",
+          "street": "Industriestraße 168",
+          "postalCode": "90431",
+          "city": "Nürnberg",
+          "countryCode": "DE",
+          "vatNumber": "DE999659213"
+        },
+        "consignee": {
+          "name": "Imballaggi Tirreno S.r.l.",
+          "street": "Via Aurelia 150",
+          "postalCode": "57121",
+          "city": "Livorno",
+          "countryCode": "IT",
+          "vatNumber": "IT01000040004"
+        },
+        "placeOfDelivery": {
+          "street": "Via Aurelia 150",
+          "postalCode": "57121",
+          "city": "Livorno",
+          "countryCode": "IT"
+        },
+        "placeOfTakingOver": {
+          "street": "Industriestraße 168",
+          "postalCode": "90431",
+          "city": "Nürnberg",
+          "countryCode": "DE"
+        },
+        "goods": [
+          {
+            "description": "Tessuti in pezza",
+            "packageCount": 37,
+            "grossWeight": "2.442"
+          },
+          {
+            "description": "Prodotti cosmetici",
+            "packageCount": 22,
+            "grossWeight": "264"
+          }
+        ],
+        "totalPackages": 59,
+        "totalGrossWeight": "2.706",
+        "vehiclePlate": "ZZ941KD",
+        "trailerPlate": "XZ645ER"
+      },
+      "attempts": 2,
+      "refused": false
+    },
+    {
+      "code": "G-2008",
+      "elapsedMs": 7355.3408,
+      "inputTokens": 5544,
+      "outputTokens": 1152,
+      "first": {
+        "cmrNumber": "LDV-2008",
+        "sender": {
+          "name": "Ferrero Imballaggi S.n.c.",
+          "street": "Viale Europa 116",
+          "postalCode": "29122",
+          "city": "Piacenza",
+          "countryCode": "IT",
+          "vatNumber": "IT10000030006"
+        },
+        "consignee": {
+          "name": "Guastella Tessile S.n.c.",
+          "street": "Via degli Artigiani 123",
+          "postalCode": "33100",
+          "city": "Udine",
+          "countryCode": "IT",
+          "vatNumber": "IT10000280007"
+        },
+        "placeOfDelivery": {
+          "street": "Via degli Artigiani 123",
+          "postalCode": "33100",
+          "city": "Udine",
+          "countryCode": "IT"
+        },
+        "placeOfTakingOver": {
+          "street": "Viale Europa 116",
+          "postalCode": "29122",
+          "city": "Piacenza",
+          "countryCode": "IT"
+        },
+        "goods": [
+          {
+            "description": "Pasta alimentare secca",
+            "packageCount": 15,
+            "grossWeight": "9.870"
+          },
+          {
+            "description": "Bombolette aerosol — UN 1950 AEROSOL, 2",
+            "packageCount": 14,
+            "grossWeight": "2.898",
+            "unNumber": "1950",
+            "properShippingName": "AEROSOL",
+            "adrClass": "2"
+          }
+        ],
+        "totalPackages": 29,
+        "totalGrossWeight": "12.768",
+        "vehiclePlate": "ZZ764PS",
+        "trailerPlate": "XZ892WV"
+      },
+      "second": {
+        "cmrNumber": "LDV-2008",
+        "sender": {
+          "name": "Ferrero Imballaggi S.n.c.",
+          "street": "Viale Europa 116",
+          "postalCode": "29122",
+          "city": "Piacenza",
+          "countryCode": "IT",
+          "vatNumber": "IT10000030006"
+        },
+        "consignee": {
+          "name": "Guastella Tessile S.n.c.",
+          "street": "Via degli Artigiani 123",
+          "postalCode": "33100",
+          "city": "Udine",
+          "countryCode": "IT",
+          "vatNumber": "IT10000280007"
+        },
+        "placeOfDelivery": {
+          "street": "Via degli Artigiani 123",
+          "postalCode": "33100",
+          "city": "Udine",
+          "countryCode": "IT"
+        },
+        "placeOfTakingOver": {
+          "street": "Viale Europa 116",
+          "postalCode": "29122",
+          "city": "Piacenza",
+          "countryCode": "IT"
+        },
+        "goods": [
+          {
+            "description": "Pasta alimentare secca",
+            "packageCount": 15,
+            "grossWeight": "9.870"
+          },
+          {
+            "description": "Bombolette aerosol — UN 1950 AEROSOL, 2",
+            "packageCount": 14,
+            "grossWeight": "2.898",
+            "unNumber": "1950",
+            "properShippingName": "AEROSOL",
+            "adrClass": "2"
+          }
+        ],
+        "totalPackages": 29,
+        "totalGrossWeight": "12.768",
+        "vehiclePlate": "ZZ764PS",
+        "trailerPlate": "XZ892WV"
+      },
+      "attempts": 2,
+      "refused": false
+    },
+    {
+      "code": "G-2011",
+      "elapsedMs": 9798.9291,
+      "inputTokens": 5580,
+      "outputTokens": 968,
+      "first": {
+        "cmrNumber": "CMR-9052980",
+        "sender": {
+          "name": "Bernasconi Handel AG Zürich",
+          "street": "Via Cantonale 87",
+          "postalCode": "8048",
+          "city": "Zürich",
+          "countryCode": "CH",
+          "vatNumber": "CHE999130294"
+        },
+        "consignee": {
+          "name": "Fonda Carpenteria S.r.l.",
+          "street": "Via degli Artigiani 97",
+          "postalCode": "40128",
+          "city": "Bologna",
+          "countryCode": "IT",
+          "vatNumber": "IT10000050004"
+        },
+        "placeOfDelivery": {
+          "street": "Via degli Artigiani 97",
+          "postalCode": "40128",
+          "city": "Bologna",
+          "countryCode": "IT"
+        },
+        "placeOfTakingOver": {
+          "street": "Via Cantonale 87",
+          "postalCode": "8048",
+          "city": "Zürich",
+          "countryCode": "CH"
+        },
+        "goods": [
+          {
+            "description": "Vino in bottiglie",
+            "packageCount": 9,
+            "grossWeight": "7.002"
+          },
+          {
+            "description": "Prodotti cosmetici",
+            "packageCount": 40,
+            "grossWeight": "560"
+          }
+        ],
+        "totalPackages": 49,
+        "totalGrossWeight": "7.562",
+        "vehiclePlate": "ZZ853NT",
+        "trailerPlate": "XZ401PA"
+      },
+      "second": {
+        "cmrNumber": "CMR-9052980",
+        "sender": {
+          "name": "Bernasconi Handel AG Zürich",
+          "street": "Via Cantonale 87",
+          "postalCode": "8048",
+          "city": "Zürich",
+          "countryCode": "CH",
+          "vatNumber": "CHE999130294"
+        },
+        "consignee": {
+          "name": "Fonda Carpenteria S.r.l.",
+          "street": "Via degli Artigiani 97",
+          "postalCode": "40128",
+          "city": "Bologna",
+          "countryCode": "IT",
+          "vatNumber": "IT10000050004"
+        },
+        "placeOfDelivery": {
+          "street": "Via degli Artigiani 97",
+          "postalCode": "40128",
+          "city": "Bologna",
+          "countryCode": "IT"
+        },
+        "placeOfTakingOver": {
+          "street": "Via Cantonale 87",
+          "postalCode": "8048",
+          "city": "Zürich",
+          "countryCode": "CH"
+        },
+        "goods": [
+          {
+            "description": "Vino in bottiglie",
+            "packageCount": 9,
+            "grossWeight": "7.002"
+          },
+          {
+            "description": "Prodotti cosmetici",
+            "packageCount": 40,
+            "grossWeight": "560"
+          }
+        ],
+        "totalPackages": 49,
+        "totalGrossWeight": "7.562",
+        "vehiclePlate": "ZZ853NT",
+        "trailerPlate": "XZ401PA"
+      },
+      "attempts": 2,
+      "refused": false
+    },
+    {
+      "code": "G-2028",
+      "elapsedMs": 7515.3137,
+      "inputTokens": 6190,
+      "outputTokens": 1402,
+      "first": {
+        "cmrNumber": "LDV-2028",
+        "sender": {
+          "name": "Cecchini Meccanica S.p.A.",
+          "street": "Via dell'Industria 149",
+          "postalCode": "65128",
+          "city": "Pescara",
+          "countryCode": "IT",
+          "vatNumber": "IT10000440007"
+        },
+        "consignee": {
+          "name": "Pozzo Chimica S.p.A.",
+          "street": "Via degli Artigiani 7",
+          "postalCode": "20141",
+          "city": "Milano",
+          "countryCode": "IT",
+          "vatNumber": "IT10000450006"
+        },
+        "placeOfDelivery": {
+          "street": "Via degli Artigiani 7",
+          "postalCode": "20141",
+          "city": "Milano",
+          "countryCode": "IT"
+        },
+        "placeOfTakingOver": {
+          "street": "Via dell'Industria 149",
+          "postalCode": "65128",
+          "city": "Pescara",
+          "countryCode": "IT"
+        },
+        "goods": [
+          {
+            "description": "Tessuti in pezza",
+            "packageCount": 25,
+            "grossWeight": "1.050"
+          },
+          {
+            "description": "Tessuti in pezza",
+            "packageCount": 21,
+            "grossWeight": "1.260"
+          },
+          {
+            "description": "Carta in bobine",
+            "packageCount": 6,
+            "grossWeight": "4.722"
+          },
+          {
+            "description": "Pasta alimentare secca",
+            "packageCount": 19,
+            "grossWeight": "8.607"
+          },
+          {
+            "description": "Diluenti industriali",
+            "packageCount": 23,
+            "grossWeight": "4.232",
+            "unNumber": "1993",
+            "properShippingName": "LIQUIDO INFIAMMABILE, N.A.S.",
+            "adrClass": "3",
+            "packingGroup": "III"
+          }
+        ],
+        "totalPackages": 94,
+        "totalGrossWeight": "19.871",
+        "vehiclePlate": "ZZ859SD"
+      },
+      "second": {
+        "cmrNumber": "LDV-2028",
+        "sender": {
+          "name": "Cecchini Meccanica S.p.A.",
+          "street": "Via dell'Industria 149",
+          "postalCode": "65128",
+          "city": "Pescara",
+          "countryCode": "IT",
+          "vatNumber": "IT10000440007"
+        },
+        "consignee": {
+          "name": "Pozzo Chimica S.p.A.",
+          "street": "Via degli Artigiani 7",
+          "postalCode": "20141",
+          "city": "Milano",
+          "countryCode": "IT",
+          "vatNumber": "IT10000450006"
+        },
+        "placeOfDelivery": {
+          "street": "Via degli Artigiani 7",
+          "postalCode": "20141",
+          "city": "Milano",
+          "countryCode": "IT"
+        },
+        "placeOfTakingOver": {
+          "street": "Via dell'Industria 149",
+          "postalCode": "65128",
+          "city": "Pescara",
+          "countryCode": "IT"
+        },
+        "goods": [
+          {
+            "description": "Tessuti in pezza",
+            "packageCount": 25,
+            "grossWeight": "1.050"
+          },
+          {
+            "description": "Tessuti in pezza",
+            "packageCount": 21,
+            "grossWeight": "1.260"
+          },
+          {
+            "description": "Carta in bobine",
+            "packageCount": 6,
+            "grossWeight": "4.722"
+          },
+          {
+            "description": "Pasta alimentare secca",
+            "packageCount": 19,
+            "grossWeight": "8.607"
+          },
+          {
+            "description": "Diluenti industriali",
+            "packageCount": 23,
+            "grossWeight": "4.232",
+            "unNumber": "1993",
+            "properShippingName": "LIQUIDO INFIAMMABILE, N.A.S.",
+            "adrClass": "3",
+            "packingGroup": "III"
+          }
+        ],
+        "totalPackages": 94,
+        "totalGrossWeight": "19.871",
+        "vehiclePlate": "ZZ859SD"
+      },
+      "attempts": 2,
+      "refused": false
+    },
+    {
+      "code": "G-2072",
+      "elapsedMs": 7608.2744,
+      "inputTokens": 5672,
+      "outputTokens": 1222,
+      "first": {
+        "cmrNumber": "CMR-7834774",
+        "sender": {
+          "name": "Automazioni Nord-Est S.r.l.",
+          "street": "Viale Venezia 88",
+          "postalCode": "31100",
+          "city": "Treviso",
+          "countryCode": "IT",
+          "vatNumber": "IT01000030005"
+        },
+        "consignee": {
+          "name": "Peeters Handel NV Liège",
+          "street": "Industrieweg 166",
+          "postalCode": "1000",
+          "city": "Ljubljana",
+          "countryCode": "BE",
+          "vatNumber": "BE0999696709"
+        },
+        "placeOfDelivery": {
+          "street": "Industrieweg 166",
+          "postalCode": "1000",
+          "city": "Ljubljana",
+          "countryCode": "BE"
+        },
+        "placeOfTakingOver": {
+          "street": "Viale Venezia 88",
+          "postalCode": "31100",
+          "city": "Treviso",
+          "countryCode": "IT"
+        },
+        "goods": [
+          {
+            "description": "Lamiere in acciaio",
+            "packageCount": 7,
+            "grossWeight": "8.162"
+          },
+          {
+            "description": "Ricambi meccanici",
+            "packageCount": 3,
+            "grossWeight": "744"
+          },
+          {
+            "description": "Elettrodomestici",
+            "packageCount": 39,
+            "grossWeight": "2.028"
+          },
+          {
+            "description": "Carta in bobine",
+            "packageCount": 10,
+            "grossWeight": "7.110"
+          }
+        ],
+        "totalPackages": 59,
+        "totalGrossWeight": "18.044",
+        "vehiclePlate": "ZZ969HY",
+        "trailerPlate": "XZ371CS"
+      },
+      "second": {
+        "cmrNumber": "CMR-7834774",
+        "sender": {
+          "name": "Automazioni Nord-Est S.r.l.",
+          "street": "Viale Venezia 88",
+          "postalCode": "31100",
+          "city": "Treviso",
+          "countryCode": "IT",
+          "vatNumber": "IT01000030005"
+        },
+        "consignee": {
+          "name": "Peeters Handel NV Liège",
+          "street": "Industrieweg 166",
+          "postalCode": "1000",
+          "city": "Ljubljana",
+          "countryCode": "BE",
+          "vatNumber": "BE0999696709"
+        },
+        "placeOfDelivery": {
+          "street": "Industrieweg 166",
+          "postalCode": "1000",
+          "city": "Ljubljana",
+          "countryCode": "BE"
+        },
+        "placeOfTakingOver": {
+          "street": "Viale Venezia 88",
+          "postalCode": "31100",
+          "city": "Treviso",
+          "countryCode": "IT"
+        },
+        "goods": [
+          {
+            "description": "Lamiere in acciaio",
+            "packageCount": 7,
+            "grossWeight": "8.162"
+          },
+          {
+            "description": "Ricambi meccanici",
+            "packageCount": 3,
+            "grossWeight": "744"
+          },
+          {
+            "description": "Elettrodomestici",
+            "packageCount": 39,
+            "grossWeight": "2.028"
+          },
+          {
+            "description": "Carta in bobine",
+            "packageCount": 10,
+            "grossWeight": "7.110"
+          }
+        ],
+        "totalPackages": 59,
+        "totalGrossWeight": "18.044",
+        "vehiclePlate": "ZZ969HY",
+        "trailerPlate": "XZ371CS"
+      },
+      "attempts": 2,
+      "refused": false
+    },
+    {
+      "code": "G-2147",
+      "elapsedMs": 6419.4997,
+      "inputTokens": 5550,
+      "outputTokens": 1042,
+      "first": {
+        "cmrNumber": "CMR-8083564",
+        "sender": {
+          "name": "Meier Handel AG Lugano",
+          "street": "Via Cantonale 41",
+          "postalCode": "6900",
+          "city": "Lugano",
+          "countryCode": "CH",
+          "vatNumber": "CHE999103777"
+        },
+        "consignee": {
+          "name": "Pastorino Tessile S.r.l.",
+          "street": "Strada Statale 11 58",
+          "postalCode": "40127",
+          "city": "Bologna",
+          "countryCode": "IT",
+          "vatNumber": "IT10000090000"
+        },
+        "placeOfDelivery": {
+          "street": "Strada Statale 11 58",
+          "postalCode": "40127",
+          "city": "Bologna",
+          "countryCode": "IT"
+        },
+        "placeOfTakingOver": {
+          "street": "Via Cantonale 41",
+          "postalCode": "6900",
+          "city": "Lugano",
+          "countryCode": "CH"
+        },
+        "goods": [
+          {
+            "description": "Lamiere in acciaio",
+            "packageCount": 6,
+            "grossWeight": "7.542"
+          },
+          {
+            "description": "Diluenti industriali — UN 1993 LIQUIDO INFIAMMABILE, N.A.S., 3, III",
+            "packageCount": 13,
+            "grossWeight": "2.431",
+            "unNumber": "1993",
+            "properShippingName": "LIQUIDO INFIAMMABILE, N.A.S.",
+            "adrClass": "3",
+            "packingGroup": "III"
+          }
+        ],
+        "totalPackages": 19,
+        "totalGrossWeight": "9.973",
+        "vehiclePlate": "ZZ206RG",
+        "trailerPlate": "XZ860LW"
+      },
+      "second": {
+        "cmrNumber": "CMR-8083564",
+        "sender": {
+          "name": "Meier Handel AG Lugano",
+          "street": "Via Cantonale 41",
+          "postalCode": "6900",
+          "city": "Lugano",
+          "countryCode": "CH",
+          "vatNumber": "CHE999103777"
+        },
+        "consignee": {
+          "name": "Pastorino Tessile S.r.l.",
+          "street": "Strada Statale 11 58",
+          "postalCode": "40127",
+          "city": "Bologna",
+          "countryCode": "IT",
+          "vatNumber": "IT10000090000"
+        },
+        "placeOfDelivery": {
+          "street": "Strada Statale 11 58",
+          "postalCode": "40127",
+          "city": "Bologna",
+          "countryCode": "IT"
+        },
+        "placeOfTakingOver": {
+          "street": "Via Cantonale 41",
+          "postalCode": "6900",
+          "city": "Lugano",
+          "countryCode": "CH"
+        },
+        "goods": [
+          {
+            "description": "Lamiere in acciaio",
+            "packageCount": 6,
+            "grossWeight": "7.542"
+          },
+          {
+            "description": "Diluenti industriali",
+            "packageCount": 13,
+            "grossWeight": "2.431",
+            "unNumber": "1993",
+            "properShippingName": "LIQUIDO INFIAMMABILE, N.A.S.",
+            "adrClass": "3",
+            "packingGroup": "III"
+          }
+        ],
+        "totalPackages": 19,
+        "totalGrossWeight": "9.973",
+        "vehiclePlate": "ZZ206RG",
+        "trailerPlate": "XZ860LW"
+      },
+      "attempts": 2,
+      "refused": false
+    },
+    {
+      "code": "G-2040",
+      "elapsedMs": 7573.4756,
+      "inputTokens": 5664,
+      "outputTokens": 1220,
+      "first": {
+        "cmrNumber": "CMR-5023998",
+        "sender": {
+          "name": "Ferrero Imballaggi S.n.c.",
+          "street": "Viale Europa 116",
+          "postalCode": "29122",
+          "city": "Piacenza",
+          "countryCode": "IT",
+          "vatNumber": "IT10000030006"
+        },
+        "consignee": {
+          "name": "Pichler Handel GmbH Wien",
+          "street": "Industriestraße 87",
+          "postalCode": "1100",
+          "city": "Wien",
+          "countryCode": "AT",
+          "vatNumber": "ATU99926063"
+        },
+        "placeOfDelivery": {
+          "street": "Industriestraße 87",
+          "postalCode": "1100",
+          "city": "Wien",
+          "countryCode": "AT"
+        },
+        "placeOfTakingOver": {
+          "street": "Viale Europa 116",
+          "postalCode": "29122",
+          "city": "Piacenza",
+          "countryCode": "IT"
+        },
+        "goods": [
+          {
+            "description": "Prodotti cosmetici",
+            "packageCount": 28,
+            "grossWeight": "552"
+          },
+          {
+            "description": "Vino in bottiglie",
+            "packageCount": 16,
+            "grossWeight": "12.144"
+          },
+          {
+            "description": "Carta in bobine",
+            "packageCount": 11,
+            "grossWeight": "8.943"
+          },
+          {
+            "description": "Piastrelle in ceramica",
+            "packageCount": 15,
+            "grossWeight": "14.490"
+          }
+        ],
+        "totalPackages": 70,
+        "totalGrossWeight": "36.129",
+        "vehiclePlate": "ZZ969HY",
+        "trailerPlate": "XZ371CS"
+      },
+      "second": {
+        "cmrNumber": "CMR-5023998",
+        "sender": {
+          "name": "Ferrero Imballaggi S.n.c.",
+          "street": "Viale Europa 116",
+          "postalCode": "29122",
+          "city": "Piacenza",
+          "countryCode": "IT",
+          "vatNumber": "IT10000030006"
+        },
+        "consignee": {
+          "name": "Pichler Handel GmbH Wien",
+          "street": "Industriestraße 87",
+          "postalCode": "1100",
+          "city": "Wien",
+          "countryCode": "AT",
+          "vatNumber": "ATU99926063"
+        },
+        "placeOfDelivery": {
+          "street": "Industriestraße 87",
+          "postalCode": "1100",
+          "city": "Wien",
+          "countryCode": "AT"
+        },
+        "placeOfTakingOver": {
+          "street": "Viale Europa 116",
+          "postalCode": "29122",
+          "city": "Piacenza",
+          "countryCode": "IT"
+        },
+        "goods": [
+          {
+            "description": "Prodotti cosmetici",
+            "packageCount": 28,
+            "grossWeight": "552"
+          },
+          {
+            "description": "Vino in bottiglie",
+            "packageCount": 16,
+            "grossWeight": "12.144"
+          },
+          {
+            "description": "Carta in bobine",
+            "packageCount": 11,
+            "grossWeight": "8.943"
+          },
+          {
+            "description": "Piastrelle in ceramica",
+            "packageCount": 15,
+            "grossWeight": "14.490"
+          }
+        ],
+        "totalPackages": 70,
+        "totalGrossWeight": "36.129",
+        "vehiclePlate": "ZZ969HY",
+        "trailerPlate": "XZ371CS"
+      },
+      "attempts": 2,
+      "refused": false
+    },
+    {
+      "code": "G-2046",
+      "elapsedMs": 6879.3522,
+      "inputTokens": 5620,
+      "outputTokens": 1096,
+      "first": {
+        "cmrNumber": "LDV-2046",
+        "sender": {
+          "name": "Rizzo Meccanica S.n.c.",
+          "street": "Viale Europa 160",
+          "postalCode": "28100",
+          "city": "Novara",
+          "countryCode": "IT",
+          "vatNumber": "IT10000180009"
+        },
+        "consignee": {
+          "name": "Pieri Tessile S.p.A.",
+          "street": "Via del Commercio 113",
+          "postalCode": "40128",
+          "city": "Bologna",
+          "countryCode": "IT",
+          "vatNumber": "IT10000570001"
+        },
+        "placeOfDelivery": {
+          "street": "Via del Commercio 113",
+          "postalCode": "40128",
+          "city": "Bologna",
+          "countryCode": "IT"
+        },
+        "placeOfTakingOver": {
+          "street": "Viale Europa 160",
+          "postalCode": "28100",
+          "city": "Novara",
+          "countryCode": "IT"
+        },
+        "goods": [
+          {
+            "description": "Piastrelle in ceramica",
+            "packageCount": 17,
+            "grossWeight": "16.133",
+            "unNumber": "1263",
+            "properShippingName": "PITTURE",
+            "adrClass": "3",
+            "packingGroup": "II"
+          },
+          {
+            "description": "Tessuti in pezza",
+            "packageCount": 29,
+            "grossWeight": "1.508"
+          },
+          {
+            "description": "Mobili smontati",
+            "packageCount": 24,
+            "grossWeight": "432"
+          }
+        ],
+        "totalPackages": 70,
+        "totalGrossWeight": "18.073",
+        "vehiclePlate": "ZZ411TZ",
+        "trailerPlate": "XZ533KM"
+      },
+      "second": {
+        "cmrNumber": "LDV-2046",
+        "sender": {
+          "name": "Rizzo Meccanica S.n.c.",
+          "street": "Viale Europa 160",
+          "postalCode": "28100",
+          "city": "Novara",
+          "countryCode": "IT",
+          "vatNumber": "IT10000180009"
+        },
+        "consignee": {
+          "name": "Pieri Tessile S.p.A.",
+          "street": "Via del Commercio 113",
+          "postalCode": "40128",
+          "city": "Bologna",
+          "countryCode": "IT",
+          "vatNumber": "IT10000570001"
+        },
+        "placeOfDelivery": {
+          "street": "Via del Commercio 113",
+          "postalCode": "40128",
+          "city": "Bologna",
+          "countryCode": "IT"
+        },
+        "placeOfTakingOver": {
+          "street": "Viale Europa 160",
+          "postalCode": "28100",
+          "city": "Novara",
+          "countryCode": "IT"
+        },
+        "goods": [
+          {
+            "description": "Piastrelle in ceramica",
+            "packageCount": 17,
+            "grossWeight": "16.133",
+            "unNumber": "1263",
+            "properShippingName": "PITTURE",
+            "adrClass": "3",
+            "packingGroup": "II"
+          },
+          {
+            "description": "Tessuti in pezza",
+            "packageCount": 29,
+            "grossWeight": "1.508"
+          },
+          {
+            "description": "Mobili smontati",
+            "packageCount": 24,
+            "grossWeight": "432"
+          }
+        ],
+        "totalPackages": 70,
+        "totalGrossWeight": "18.073",
+        "vehiclePlate": "ZZ411TZ",
+        "trailerPlate": "XZ533KM"
+      },
+      "attempts": 2,
+      "refused": false
+    },
+    {
+      "code": "G-2148",
+      "elapsedMs": 6585.183,
+      "inputTokens": 5736,
+      "outputTokens": 1148,
+      "first": {
+        "cmrNumber": "CMR-4617810",
+        "sender": {
+          "name": "Jansen Techniek B.V. Rotterdam 189",
+          "street": "Havenweg 92",
+          "postalCode": "3089",
+          "city": "Rotterdam",
+          "countryCode": "NL",
+          "vatNumber": "NL999564193B01"
+        },
+        "consignee": {
+          "name": "Cortinovis Ceramiche S.n.c.",
+          "street": "Strada Statale 11 73",
+          "postalCode": "28100",
+          "city": "Novara",
+          "countryCode": "IT",
+          "vatNumber": "IT10000200005"
+        },
+        "placeOfDelivery": {
+          "street": "Strada Statale 11 73",
+          "postalCode": "28100",
+          "city": "Novara",
+          "countryCode": "IT"
+        },
+        "placeOfTakingOver": {
+          "street": "Havenweg 92",
+          "postalCode": "3089",
+          "city": "Rotterdam",
+          "countryCode": "NL"
+        },
+        "goods": [
+          {
+            "description": "Piastrelle in ceramica — UN 1263 PITTURE, 3, II",
+            "packageCount": 18,
+            "grossWeight": "15.084",
+            "unNumber": "1263",
+            "properShippingName": "PITTURE",
+            "adrClass": "3",
+            "packingGroup": "II"
+          },
+          {
+            "description": "Piastrelle in ceramica",
+            "packageCount": 8,
+            "grossWeight": "7.040"
+          },
+          {
+            "description": "Componenti elettronici",
+            "packageCount": 34,
+            "grossWeight": "272"
+          }
+        ],
+        "totalPackages": 60,
+        "totalGrossWeight": "22.396",
+        "vehiclePlate": "ZZ563NS"
+      },
+      "second": {
+        "cmrNumber": "CMR-4617810",
+        "sender": {
+          "name": "Jansen Techniek B.V. Rotterdam 189",
+          "street": "Havenweg 92",
+          "postalCode": "3089",
+          "city": "Rotterdam",
+          "countryCode": "NL",
+          "vatNumber": "NL999564193B01"
+        },
+        "consignee": {
+          "name": "Cortinovis Ceramiche S.n.c.",
+          "street": "Strada Statale 11 73",
+          "postalCode": "28100",
+          "city": "Novara",
+          "countryCode": "IT",
+          "vatNumber": "IT10000200005"
+        },
+        "placeOfDelivery": {
+          "street": "Strada Statale 11 73",
+          "postalCode": "28100",
+          "city": "Novara",
+          "countryCode": "IT"
+        },
+        "placeOfTakingOver": {
+          "street": "Havenweg 92",
+          "postalCode": "3089",
+          "city": "Rotterdam",
+          "countryCode": "NL"
+        },
+        "goods": [
+          {
+            "description": "Piastrelle in ceramica — UN 1263 PITTURE, 3, II",
+            "packageCount": 18,
+            "grossWeight": "15.084",
+            "unNumber": "1263",
+            "properShippingName": "PITTURE",
+            "adrClass": "3",
+            "packingGroup": "II"
+          },
+          {
+            "description": "Piastrelle in ceramica",
+            "packageCount": 8,
+            "grossWeight": "7.040"
+          },
+          {
+            "description": "Componenti elettronici",
+            "packageCount": 34,
+            "grossWeight": "272"
+          }
+        ],
+        "totalPackages": 60,
+        "totalGrossWeight": "22.396",
+        "vehiclePlate": "ZZ563NS"
+      },
+      "attempts": 2,
+      "refused": false
+    },
+    {
+      "code": "G-2052",
+      "elapsedMs": 7411.5382,
+      "inputTokens": 5680,
+      "outputTokens": 1228,
+      "first": {
+        "cmrNumber": "CMR-7902172",
+        "sender": {
+          "name": "Pardini Plastica S.p.A.",
+          "street": "Via degli Artigiani 140",
+          "postalCode": "28100",
+          "city": "Novara",
+          "countryCode": "IT",
+          "vatNumber": "IT10000040005"
+        },
+        "consignee": {
+          "name": "Bernasconi Technik AG Lugano",
+          "street": "Industriestrasse 156",
+          "postalCode": "6900",
+          "city": "Lugano",
+          "countryCode": "CH",
+          "vatNumber": "CHE999271928"
+        },
+        "placeOfDelivery": {
+          "street": "Industriestrasse 156",
+          "postalCode": "6900",
+          "city": "Lugano",
+          "countryCode": "CH"
+        },
+        "placeOfTakingOver": {
+          "street": "Via degli Artigiani 140",
+          "postalCode": "28100",
+          "city": "Novara",
+          "countryCode": "IT"
+        },
+        "goods": [
+          {
+            "description": "Prodotti cosmetici",
+            "packageCount": 21,
+            "grossWeight": "294"
+          },
+          {
+            "description": "Piastrelle in ceramica",
+            "packageCount": 13,
+            "grossWeight": "12.831"
+          },
+          {
+            "description": "Macchinari industriali",
+            "packageCount": 1,
+            "grossWeight": "1.530"
+          },
+          {
+            "description": "Prodotti cosmetici",
+            "packageCount": 48,
+            "grossWeight": "528"
+          }
+        ],
+        "totalPackages": 83,
+        "totalGrossWeight": "15.183",
+        "vehiclePlate": "ZZ281EK",
+        "trailerPlate": "XZ312LN"
+      },
+      "second": {
+        "cmrNumber": "CMR-7902172",
+        "sender": {
+          "name": "Pardini Plastica S.p.A.",
+          "street": "Via degli Artigiani 140",
+          "postalCode": "28100",
+          "city": "Novara",
+          "countryCode": "IT",
+          "vatNumber": "IT10000040005"
+        },
+        "consignee": {
+          "name": "Bernasconi Technik AG Lugano",
+          "street": "Industriestrasse 156",
+          "postalCode": "6900",
+          "city": "Lugano",
+          "countryCode": "CH",
+          "vatNumber": "CHE999271928"
+        },
+        "placeOfDelivery": {
+          "street": "Industriestrasse 156",
+          "postalCode": "6900",
+          "city": "Lugano",
+          "countryCode": "CH"
+        },
+        "placeOfTakingOver": {
+          "street": "Via degli Artigiani 140",
+          "postalCode": "28100",
+          "city": "Novara",
+          "countryCode": "IT"
+        },
+        "goods": [
+          {
+            "description": "Prodotti cosmetici",
+            "packageCount": 21,
+            "grossWeight": "294"
+          },
+          {
+            "description": "Piastrelle in ceramica",
+            "packageCount": 13,
+            "grossWeight": "12.831"
+          },
+          {
+            "description": "Macchinari industriali",
+            "packageCount": 1,
+            "grossWeight": "1.530"
+          },
+          {
+            "description": "Prodotti cosmetici",
+            "packageCount": 48,
+            "grossWeight": "528"
+          }
+        ],
+        "totalPackages": 83,
+        "totalGrossWeight": "15.183",
+        "vehiclePlate": "ZZ281EK",
+        "trailerPlate": "XZ312LN"
+      },
+      "attempts": 2,
+      "refused": false
+    },
+    {
+      "code": "G-2032",
+      "elapsedMs": 5660.6222,
+      "inputTokens": 5498,
+      "outputTokens": 946,
+      "first": {
+        "cmrNumber": "CMR-8332445",
+        "sender": {
+          "name": "Venturini Carpenteria S.p.A.",
+          "street": "Via Marconi 109",
+          "postalCode": "60131",
+          "city": "Ancona",
+          "countryCode": "IT",
+          "vatNumber": "IT10000170000"
+        },
+        "consignee": {
+          "name": "Pichler Bau GmbH Wien",
+          "street": "Industriestraße 4",
+          "postalCode": "1100",
+          "city": "Wien",
+          "countryCode": "AT",
+          "vatNumber": "ATU99988757"
+        },
+        "placeOfDelivery": {
+          "street": "Industriestraße 4",
+          "postalCode": "1100",
+          "city": "Wien",
+          "countryCode": "AT"
+        },
+        "placeOfTakingOver": {
+          "street": "Via Marconi 109",
+          "postalCode": "60131",
+          "city": "Ancona",
+          "countryCode": "IT"
+        },
+        "goods": [
+          {
+            "description": "Carta in bobine",
+            "packageCount": 14,
+            "grossWeight": "8.376"
+          },
+          {
+            "description": "Lamiere in acciaio",
+            "packageCount": 7,
+            "grossWeight": "6.580"
+          }
+        ],
+        "totalPackages": 21,
+        "totalGrossWeight": "14.956",
+        "vehiclePlate": "ZZ969HY",
+        "trailerPlate": "XZ371CS"
+      },
+      "second": {
+        "cmrNumber": "CMR-8332445",
+        "sender": {
+          "name": "Venturini Carpenteria S.p.A.",
+          "street": "Via Marconi 109",
+          "postalCode": "60131",
+          "city": "Ancona",
+          "countryCode": "IT",
+          "vatNumber": "IT10000170000"
+        },
+        "consignee": {
+          "name": "Pichler Bau GmbH Wien",
+          "street": "Industriestraße 4",
+          "postalCode": "1100",
+          "city": "Wien",
+          "countryCode": "AT",
+          "vatNumber": "ATU99988757"
+        },
+        "placeOfDelivery": {
+          "street": "Industriestraße 4",
+          "postalCode": "1100",
+          "city": "Wien",
+          "countryCode": "AT"
+        },
+        "placeOfTakingOver": {
+          "street": "Via Marconi 109",
+          "postalCode": "60131",
+          "city": "Ancona",
+          "countryCode": "IT"
+        },
+        "goods": [
+          {
+            "description": "Carta in bobine",
+            "packageCount": 14,
+            "grossWeight": "8.376"
+          },
+          {
+            "description": "Lamiere in acciaio",
+            "packageCount": 7,
+            "grossWeight": "6.580"
+          }
+        ],
+        "totalPackages": 21,
+        "totalGrossWeight": "14.956",
+        "vehiclePlate": "ZZ969HY",
+        "trailerPlate": "XZ371CS"
+      },
+      "attempts": 2,
+      "refused": false
+    },
+    {
+      "code": "G-2035",
+      "elapsedMs": 5663.783,
+      "inputTokens": 5476,
+      "outputTokens": 948,
+      "first": {
+        "cmrNumber": "CMR-8666410",
+        "sender": {
+          "name": "Leone Arredamenti S.n.c.",
+          "street": "Strada Statale 11 56",
+          "postalCode": "40128",
+          "city": "Bologna",
+          "countryCode": "IT",
+          "vatNumber": "IT10000210004"
+        },
+        "consignee": {
+          "name": "Steiner Technik GmbH Graz",
+          "street": "Industriestraße 74",
+          "postalCode": "8002",
+          "city": "Graz",
+          "countryCode": "AT",
+          "vatNumber": "ATU99951291"
+        },
+        "placeOfDelivery": {
+          "street": "Industriestraße 74",
+          "postalCode": "8002",
+          "city": "Graz",
+          "countryCode": "AT"
+        },
+        "placeOfTakingOver": {
+          "street": "Strada Statale 11 56",
+          "postalCode": "40128",
+          "city": "Bologna",
+          "countryCode": "IT"
+        },
+        "goods": [
+          {
+            "description": "Vino in bottiglie",
+            "packageCount": 15,
+            "grossWeight": "10.605"
+          },
+          {
+            "description": "Componenti elettronici",
+            "packageCount": 39,
+            "grossWeight": "741"
+          }
+        ],
+        "totalPackages": 54,
+        "totalGrossWeight": "11.346",
+        "vehiclePlate": "ZZ224EV",
+        "trailerPlate": "XZ706FR"
+      },
+      "second": {
+        "cmrNumber": "CMR-8666410",
+        "sender": {
+          "name": "Leone Arredamenti S.n.c.",
+          "street": "Strada Statale 11 56",
+          "postalCode": "40128",
+          "city": "Bologna",
+          "countryCode": "IT",
+          "vatNumber": "IT10000210004"
+        },
+        "consignee": {
+          "name": "Steiner Technik GmbH Graz",
+          "street": "Industriestraße 74",
+          "postalCode": "8002",
+          "city": "Graz",
+          "countryCode": "AT",
+          "vatNumber": "ATU99951291"
+        },
+        "placeOfDelivery": {
+          "street": "Industriestraße 74",
+          "postalCode": "8002",
+          "city": "Graz",
+          "countryCode": "AT"
+        },
+        "placeOfTakingOver": {
+          "street": "Strada Statale 11 56",
+          "postalCode": "40128",
+          "city": "Bologna",
+          "countryCode": "IT"
+        },
+        "goods": [
+          {
+            "description": "Vino in bottiglie",
+            "packageCount": 15,
+            "grossWeight": "10.605"
+          },
+          {
+            "description": "Componenti elettronici",
+            "packageCount": 39,
+            "grossWeight": "741"
+          }
+        ],
+        "totalPackages": 54,
+        "totalGrossWeight": "11.346",
+        "vehiclePlate": "ZZ224EV",
+        "trailerPlate": "XZ706FR"
+      },
+      "attempts": 2,
+      "refused": false
+    },
+    {
+      "code": "G-2038",
+      "elapsedMs": 7682.0548,
+      "inputTokens": 5698,
+      "outputTokens": 1246,
+      "first": {
+        "cmrNumber": "CMR-4520602",
+        "sender": {
+          "name": "Montemurro Elettrotecnica S.n.c.",
+          "street": "Via degli Artigiani 42",
+          "postalCode": "35129",
+          "city": "Padova",
+          "countryCode": "IT",
+          "vatNumber": "IT10000070002"
+        },
+        "consignee": {
+          "name": "Bakker Techniek B.V. Rotterdam",
+          "street": "Havenweg 8",
+          "postalCode": "3089",
+          "city": "Rotterdam",
+          "countryCode": "NL",
+          "vatNumber": "NL999793463B01"
+        },
+        "placeOfDelivery": {
+          "street": "Havenweg 8",
+          "postalCode": "3089",
+          "city": "Rotterdam",
+          "countryCode": "NL"
+        },
+        "placeOfTakingOver": {
+          "street": "Via degli Artigiani 42",
+          "postalCode": "35129",
+          "city": "Padova",
+          "countryCode": "IT"
+        },
+        "goods": [
+          {
+            "description": "Componenti elettronici",
+            "packageCount": 17,
+            "grossWeight": "187"
+          },
+          {
+            "description": "Vino in bottiglie",
+            "packageCount": 11,
+            "grossWeight": "7.293"
+          },
+          {
+            "description": "Lamiere in acciaio",
+            "packageCount": 9,
+            "grossWeight": "9.441"
+          },
+          {
+            "description": "Tessuti in pezza",
+            "packageCount": 22,
+            "grossWeight": "1.518"
+          }
+        ],
+        "totalPackages": 59,
+        "totalGrossWeight": "18.439",
+        "vehiclePlate": "ZZ210MC",
+        "trailerPlate": "XZ487ZF"
+      },
+      "second": {
+        "cmrNumber": "CMR-4520602",
+        "sender": {
+          "name": "Montemurro Elettrotecnica S.n.c.",
+          "street": "Via degli Artigiani 42",
+          "postalCode": "35129",
+          "city": "Padova",
+          "countryCode": "IT",
+          "vatNumber": "IT10000070002"
+        },
+        "consignee": {
+          "name": "Bakker Techniek B.V. Rotterdam",
+          "street": "Havenweg 8",
+          "postalCode": "3089",
+          "city": "Rotterdam",
+          "countryCode": "NL",
+          "vatNumber": "NL999793463B01"
+        },
+        "placeOfDelivery": {
+          "street": "Havenweg 8",
+          "postalCode": "3089",
+          "city": "Rotterdam",
+          "countryCode": "NL"
+        },
+        "placeOfTakingOver": {
+          "street": "Via degli Artigiani 42",
+          "postalCode": "35129",
+          "city": "Padova",
+          "countryCode": "IT"
+        },
+        "goods": [
+          {
+            "description": "Componenti elettronici",
+            "packageCount": 17,
+            "grossWeight": "187"
+          },
+          {
+            "description": "Vino in bottiglie",
+            "packageCount": 11,
+            "grossWeight": "7.293"
+          },
+          {
+            "description": "Lamiere in acciaio",
+            "packageCount": 9,
+            "grossWeight": "9.441"
+          },
+          {
+            "description": "Tessuti in pezza",
+            "packageCount": 22,
+            "grossWeight": "1.518"
+          }
+        ],
+        "totalPackages": 59,
+        "totalGrossWeight": "18.439",
+        "vehiclePlate": "ZZ210MC",
+        "trailerPlate": "XZ487ZF"
+      },
+      "attempts": 2,
+      "refused": false
+    },
+    {
+      "code": "G-2030",
+      "elapsedMs": 5614.6508,
+      "inputTokens": 5550,
+      "outputTokens": 836,
+      "first": {
+        "cmrNumber": "CMR-4495772",
+        "sender": {
+          "name": "Cortinovis Ceramiche S.n.c.",
+          "street": "Strada Statale 11 73",
+          "postalCode": "28100",
+          "city": "Novara",
+          "countryCode": "IT",
+          "vatNumber": "IT10000200005"
+        },
+        "consignee": {
+          "name": "Distribution Roussel SAS Lyon",
+          "street": "Avenue de la Gare 173",
+          "postalCode": "69007",
+          "city": "Lyon",
+          "countryCode": "FR",
+          "vatNumber": "FR99999453313"
+        },
+        "placeOfDelivery": {
+          "street": "Avenue de la Gare 173",
+          "postalCode": "69007",
+          "city": "Lyon",
+          "countryCode": "FR"
+        },
+        "placeOfTakingOver": {
+          "street": "Strada Statale 11 73",
+          "postalCode": "28100",
+          "city": "Novara",
+          "countryCode": "IT"
+        },
+        "goods": [
+          {
+            "description": "Mobili smontati",
+            "packageCount": 52,
+            "grossWeight": "1.420"
+          }
+        ],
+        "totalPackages": 52,
+        "totalGrossWeight": "1.420",
+        "vehiclePlate": "ZZ224EV",
+        "trailerPlate": "XZ706FR"
+      },
+      "second": {
+        "cmrNumber": "CMR-4495772",
+        "sender": {
+          "name": "Cortinovis Ceramiche S.n.c.",
+          "street": "Strada Statale 11 73",
+          "postalCode": "28100",
+          "city": "Novara",
+          "countryCode": "IT",
+          "vatNumber": "IT10000200005"
+        },
+        "consignee": {
+          "name": "Distribution Roussel SAS Lyon",
+          "street": "Avenue de la Gare 173",
+          "postalCode": "69007",
+          "city": "Lyon",
+          "countryCode": "FR",
+          "vatNumber": "FR99999453313"
+        },
+        "placeOfDelivery": {
+          "street": "Avenue de la Gare 173",
+          "postalCode": "69007",
+          "city": "Lyon",
+          "countryCode": "FR"
+        },
+        "placeOfTakingOver": {
+          "street": "Strada Statale 11 73",
+          "postalCode": "28100",
+          "city": "Novara",
+          "countryCode": "IT"
+        },
+        "goods": [
+          {
+            "description": "Mobili smontati",
+            "packageCount": 52,
+            "grossWeight": "1.420"
+          }
+        ],
+        "totalPackages": 52,
+        "totalGrossWeight": "1.420",
+        "vehiclePlate": "ZZ224EV",
+        "trailerPlate": "XZ706FR"
+      },
+      "attempts": 2,
+      "refused": false
+    },
+    {
+      "code": "G-2059",
+      "elapsedMs": 10695.8005,
+      "inputTokens": 5682,
+      "outputTokens": 1704,
+      "first": {
+        "cmrNumber": "LDV-2059",
+        "sender": {
+          "name": "Beretta Legnami S.n.c.",
+          "street": "Viale Europa 148",
+          "postalCode": "38121",
+          "city": "Trento",
+          "countryCode": "IT",
+          "vatNumber": "IT10000220003"
+        },
+        "consignee": {
+          "name": "Trevisan Tessile S.p.A.",
+          "street": "Via degli Artigiani 120",
+          "postalCode": "35129",
+          "city": "Padova",
+          "countryCode": "IT",
+          "vatNumber": "IT10000620004"
+        },
+        "placeOfDelivery": {
+          "street": "Via degli Artigiani 120",
+          "postalCode": "35129",
+          "city": "Padova",
+          "countryCode": "IT"
+        },
+        "placeOfTakingOver": {
+          "street": "Viale Europa 148",
+          "postalCode": "38121",
+          "city": "Trento",
+          "countryCode": "IT"
+        },
+        "goods": [
+          {
+            "description": "Lamiere in acciaio",
+            "packageCount": 24,
+            "grossWeight": "14.688"
+          },
+          {
+            "description": "Macchinari industriali",
+            "packageCount": 1,
+            "grossWeight": "2.272"
+          },
+          {
+            "description": "Piastrelle in ceramica",
+            "packageCount": 19,
+            "grossWeight": "20.425"
+          },
+          {
+            "description": "Componenti elettronici",
+            "packageCount": 30,
+            "grossWeight": "600"
+          }
+        ],
+        "totalPackages": 74,
+        "totalGrossWeight": "37.985",
+        "vehiclePlate": "ZZ479WW",
+        "trailerPlate": "XZ334VP"
+      },
+      "second": {
+        "cmrNumber": "LDV-2059",
+        "sender": {
+          "name": "Beretta Legnami S.n.c.",
+          "street": "Viale Europa 148",
+          "postalCode": "38121",
+          "city": "Trento",
+          "countryCode": "IT",
+          "vatNumber": "IT10000220003"
+        },
+        "consignee": {
+          "name": "Trevisan Tessile S.p.A.",
+          "street": "Via degli Artigiani 120",
+          "postalCode": "35129",
+          "city": "Padova",
+          "countryCode": "IT",
+          "vatNumber": "IT10000620004"
+        },
+        "placeOfDelivery": {
+          "street": "Via degli Artigiani 120",
+          "postalCode": "35129",
+          "city": "Padova",
+          "countryCode": "IT"
+        },
+        "placeOfTakingOver": {
+          "street": "Viale Europa 148",
+          "postalCode": "38121",
+          "city": "Trento",
+          "countryCode": "IT"
+        },
+        "goods": [
+          {
+            "description": "Lamiere in acciaio",
+            "packageCount": 24,
+            "grossWeight": "14.688"
+          },
+          {
+            "description": "Macchinari industriali",
+            "packageCount": 1,
+            "grossWeight": "2.272"
+          },
+          {
+            "description": "Piastrelle in ceramica",
+            "packageCount": 19,
+            "grossWeight": "20.425"
+          },
+          {
+            "description": "Componenti elettronici",
+            "packageCount": 30,
+            "grossWeight": "600"
+          }
+        ],
+        "totalPackages": 74,
+        "totalGrossWeight": "37.985",
+        "vehiclePlate": "ZZ479WW",
+        "trailerPlate": "XZ334VP"
+      },
+      "attempts": 2,
+      "refused": false
+    },
+    {
+      "code": "G-2089",
+      "elapsedMs": 6505.9231,
+      "inputTokens": 5572,
+      "outputTokens": 946,
+      "first": {
+        "cmrNumber": "CMR-6378705",
+        "sender": {
+          "name": "Epifani Plastica S.n.c.",
+          "street": "Strada Statale 11 159",
+          "postalCode": "16152",
+          "city": "Genova",
+          "countryCode": "IT",
+          "vatNumber": "IT10000060003"
+        },
+        "consignee": {
+          "name": "Meier Technik AG Lugano 125",
+          "street": "Industriestrasse 83",
+          "postalCode": "6900",
+          "city": "Lugano",
+          "countryCode": "CH",
+          "vatNumber": "CHE999653274"
+        },
+        "placeOfDelivery": {
+          "street": "Industriestrasse 83",
+          "postalCode": "6900",
+          "city": "Lugano",
+          "countryCode": "CH"
+        },
+        "placeOfTakingOver": {
+          "street": "Strada Statale 11 159",
+          "postalCode": "16152",
+          "city": "Genova",
+          "countryCode": "IT"
+        },
+        "goods": [
+          {
+            "description": "Mobili smontati",
+            "packageCount": 17,
+            "grossWeight": "960"
+          },
+          {
+            "description": "Macchinari industriali",
+            "packageCount": 4,
+            "grossWeight": "7.704"
+          }
+        ],
+        "totalPackages": 21,
+        "totalGrossWeight": "8.664",
+        "vehiclePlate": "ZZ941KD",
+        "trailerPlate": "XZ645ER"
+      },
+      "second": {
+        "cmrNumber": "CMR-6378705",
+        "sender": {
+          "name": "Epifani Plastica S.n.c.",
+          "street": "Strada Statale 11 159",
+          "postalCode": "16152",
+          "city": "Genova",
+          "countryCode": "IT",
+          "vatNumber": "IT10000060003"
+        },
+        "consignee": {
+          "name": "Meier Technik AG Lugano 125",
+          "street": "Industriestrasse 83",
+          "postalCode": "6900",
+          "city": "Lugano",
+          "countryCode": "CH",
+          "vatNumber": "CHE999653274"
+        },
+        "placeOfDelivery": {
+          "street": "Industriestrasse 83",
+          "postalCode": "6900",
+          "city": "Lugano",
+          "countryCode": "CH"
+        },
+        "placeOfTakingOver": {
+          "street": "Strada Statale 11 159",
+          "postalCode": "16152",
+          "city": "Genova",
+          "countryCode": "IT"
+        },
+        "goods": [
+          {
+            "description": "Mobili smontati",
+            "packageCount": 17,
+            "grossWeight": "960"
+          },
+          {
+            "description": "Macchinari industriali",
+            "packageCount": 4,
+            "grossWeight": "7.704"
+          }
+        ],
+        "totalPackages": 21,
+        "totalGrossWeight": "8.664",
+        "vehiclePlate": "ZZ941KD",
+        "trailerPlate": "XZ645ER"
+      },
+      "attempts": 2,
+      "refused": false
+    },
+    {
+      "code": "G-2101",
+      "elapsedMs": 6461.2524,
+      "inputTokens": 5678,
+      "outputTokens": 1112,
+      "first": {
+        "cmrNumber": "CMR-2587466",
+        "sender": {
+          "name": "Fonda Carpenteria S.r.l.",
+          "street": "Via degli Artigiani 97",
+          "postalCode": "40128",
+          "city": "Bologna",
+          "countryCode": "IT",
+          "vatNumber": "IT10000050004"
+        },
+        "consignee": {
+          "name": "Distribution Moreau SAS Lille",
+          "street": "Zone Artisanale du Parc 29",
+          "postalCode": "59000",
+          "city": "Lille",
+          "countryCode": "FR",
+          "vatNumber": "FR99999800342"
+        },
+        "placeOfDelivery": {
+          "street": "Zone Artisanale du Parc 29",
+          "postalCode": "59000",
+          "city": "Lille",
+          "countryCode": "FR"
+        },
+        "placeOfTakingOver": {
+          "street": "Via degli Artigiani 97",
+          "postalCode": "40128",
+          "city": "Bologna",
+          "countryCode": "IT"
+        },
+        "goods": [
+          {
+            "description": "Componenti elettronici",
+            "packageCount": 21,
+            "grossWeight": "800"
+          },
+          {
+            "description": "Macchinari industriali",
+            "packageCount": 3,
+            "grossWeight": "3.975"
+          },
+          {
+            "description": "Pasta alimentare secca",
+            "packageCount": 22,
+            "grossWeight": "10.780"
+          }
+        ],
+        "totalPackages": 46,
+        "totalGrossWeight": "15.555",
+        "vehiclePlate": "ZZ613WL",
+        "trailerPlate": "XZ861YP"
+      },
+      "second": {
+        "cmrNumber": "CMR-2587466",
+        "sender": {
+          "name": "Fonda Carpenteria S.r.l.",
+          "street": "Via degli Artigiani 97",
+          "postalCode": "40128",
+          "city": "Bologna",
+          "countryCode": "IT",
+          "vatNumber": "IT10000050004"
+        },
+        "consignee": {
+          "name": "Distribution Moreau SAS Lille",
+          "street": "Zone Artisanale du Parc 29",
+          "postalCode": "59000",
+          "city": "Lille",
+          "countryCode": "FR",
+          "vatNumber": "FR99999800342"
+        },
+        "placeOfDelivery": {
+          "street": "Zone Artisanale du Parc 29",
+          "postalCode": "59000",
+          "city": "Lille",
+          "countryCode": "FR"
+        },
+        "placeOfTakingOver": {
+          "street": "Via degli Artigiani 97",
+          "postalCode": "40128",
+          "city": "Bologna",
+          "countryCode": "IT"
+        },
+        "goods": [
+          {
+            "description": "Componenti elettronici",
+            "packageCount": 21,
+            "grossWeight": "800"
+          },
+          {
+            "description": "Macchinari industriali",
+            "packageCount": 3,
+            "grossWeight": "3.975"
+          },
+          {
+            "description": "Pasta alimentare secca",
+            "packageCount": 22,
+            "grossWeight": "10.780"
+          }
+        ],
+        "totalPackages": 46,
+        "totalGrossWeight": "15.555",
+        "vehiclePlate": "ZZ613WL",
+        "trailerPlate": "XZ861YP"
+      },
+      "attempts": 2,
+      "refused": false
+    },
+    {
+      "code": "G-2106",
+      "elapsedMs": 5284.1457,
+      "inputTokens": 5530,
+      "outputTokens": 814,
+      "first": {
+        "cmrNumber": "LDV-2106",
+        "sender": {
+          "name": "Carrara Imballaggi S.n.c.",
+          "street": "Via del Commercio 119",
+          "postalCode": "28100",
+          "city": "Novara",
+          "countryCode": "IT",
+          "vatNumber": "IT10000150002"
+        },
+        "consignee": {
+          "name": "Sabatini Imballaggi S.p.A.",
+          "street": "Via del Commercio 169",
+          "postalCode": "40128",
+          "city": "Bologna",
+          "countryCode": "IT",
+          "vatNumber": "IT10000860006"
+        },
+        "placeOfDelivery": {
+          "street": "Via del Commercio 169",
+          "postalCode": "40128",
+          "city": "Bologna",
+          "countryCode": "IT"
+        },
+        "placeOfTakingOver": {
+          "street": "Via del Commercio 119",
+          "postalCode": "28100",
+          "city": "Novara",
+          "countryCode": "IT"
+        },
+        "goods": [
+          {
+            "description": "Granulato plastico",
+            "packageCount": 15,
+            "grossWeight": "800"
+          }
+        ],
+        "totalPackages": 15,
+        "totalGrossWeight": "800",
+        "vehiclePlate": "ZZ224EV",
+        "trailerPlate": "XZ706FR"
+      },
+      "second": {
+        "cmrNumber": "LDV-2106",
+        "sender": {
+          "name": "Carrara Imballaggi S.n.c.",
+          "street": "Via del Commercio 119",
+          "postalCode": "28100",
+          "city": "Novara",
+          "countryCode": "IT",
+          "vatNumber": "IT10000150002"
+        },
+        "consignee": {
+          "name": "Sabatini Imballaggi S.p.A.",
+          "street": "Via del Commercio 169",
+          "postalCode": "40128",
+          "city": "Bologna",
+          "countryCode": "IT",
+          "vatNumber": "IT10000860006"
+        },
+        "placeOfDelivery": {
+          "street": "Via del Commercio 169",
+          "postalCode": "40128",
+          "city": "Bologna",
+          "countryCode": "IT"
+        },
+        "placeOfTakingOver": {
+          "street": "Via del Commercio 119",
+          "postalCode": "28100",
+          "city": "Novara",
+          "countryCode": "IT"
+        },
+        "goods": [
+          {
+            "description": "Granulato plastico",
+            "packageCount": 15,
+            "grossWeight": "800"
+          }
+        ],
+        "totalPackages": 15,
+        "totalGrossWeight": "800",
+        "vehiclePlate": "ZZ224EV",
+        "trailerPlate": "XZ706FR"
+      },
+      "attempts": 2,
+      "refused": false
+    },
+    {
+      "code": "G-2034",
+      "elapsedMs": 7046.0065,
+      "inputTokens": 5644,
+      "outputTokens": 1210,
+      "first": {
+        "cmrNumber": "CMR-4887737",
+        "sender": {
+          "name": "Traverso Imballaggi S.p.A.",
+          "street": "Via del Commercio 125",
+          "postalCode": "41123",
+          "city": "Modena",
+          "countryCode": "IT",
+          "vatNumber": "IT10000120005"
+        },
+        "consignee": {
+          "name": "Société Industrielle Girard SAS Lyon",
+          "street": "Rue de l'Industrie 43",
+          "postalCode": "69007",
+          "city": "Lyon",
+          "countryCode": "FR"
+        },
+        "placeOfDelivery": {
+          "street": "Rue de l'Industrie 43",
+          "postalCode": "69007",
+          "city": "Lyon",
+          "countryCode": "FR"
+        },
+        "placeOfTakingOver": {
+          "street": "Via del Commercio 125",
+          "postalCode": "41123",
+          "city": "Modena",
+          "countryCode": "IT"
+        },
+        "goods": [
+          {
+            "description": "Prodotti cosmetici",
+            "packageCount": 23,
+            "grossWeight": "184"
+          },
+          {
+            "description": "Mobili smontati",
+            "packageCount": 48,
+            "grossWeight": "1.680"
+          },
+          {
+            "description": "Pasta alimentare secca",
+            "packageCount": 22,
+            "grossWeight": "13.332"
+          },
+          {
+            "description": "Ricambi meccanici",
+            "packageCount": 4,
+            "grossWeight": "1.268"
+          }
+        ],
+        "totalPackages": 97,
+        "totalGrossWeight": "16.464",
+        "vehiclePlate": "ZZ206RG"
+      },
+      "second": {
+        "cmrNumber": "CMR-4887737",
+        "sender": {
+          "name": "Traverso Imballaggi S.p.A.",
+          "street": "Via del Commercio 125",
+          "postalCode": "41123",
+          "city": "Modena",
+          "countryCode": "IT",
+          "vatNumber": "IT10000120005"
+        },
+        "consignee": {
+          "name": "Société Industrielle Girard SAS Lyon",
+          "street": "Rue de l'Industrie 43",
+          "postalCode": "69007",
+          "city": "Lyon",
+          "countryCode": "FR"
+        },
+        "placeOfDelivery": {
+          "street": "Rue de l'Industrie 43",
+          "postalCode": "69007",
+          "city": "Lyon",
+          "countryCode": "FR"
+        },
+        "placeOfTakingOver": {
+          "street": "Via del Commercio 125",
+          "postalCode": "41123",
+          "city": "Modena",
+          "countryCode": "IT"
+        },
+        "goods": [
+          {
+            "description": "Prodotti cosmetici",
+            "packageCount": 23,
+            "grossWeight": "184"
+          },
+          {
+            "description": "Mobili smontati",
+            "packageCount": 48,
+            "grossWeight": "1.680"
+          },
+          {
+            "description": "Pasta alimentare secca",
+            "packageCount": 22,
+            "grossWeight": "13.332"
+          },
+          {
+            "description": "Ricambi meccanici",
+            "packageCount": 4,
+            "grossWeight": "1.268"
+          }
+        ],
+        "totalPackages": 97,
+        "totalGrossWeight": "16.464",
+        "vehiclePlate": "ZZ206RG"
+      },
+      "attempts": 2,
+      "refused": false
+    },
+    {
+      "code": "G-2027",
+      "elapsedMs": 6262.5017,
+      "inputTokens": 5614,
+      "outputTokens": 1056,
+      "first": {
+        "cmrNumber": "CMR-6654010",
+        "sender": {
+          "name": "Jansen Logistiek B.V. Venlo",
+          "street": "Industrieweg 104",
+          "postalCode": "5928",
+          "city": "Venlo",
+          "countryCode": "NL"
+        },
+        "consignee": {
+          "name": "Cortinovis Ceramiche S.n.c.",
+          "street": "Strada Statale 11 73",
+          "postalCode": "28100",
+          "city": "Novara",
+          "countryCode": "IT",
+          "vatNumber": "IT10000200005"
+        },
+        "placeOfDelivery": {
+          "postalCode": "28100",
+          "city": "Novara",
+          "countryCode": "IT"
+        },
+        "placeOfTakingOver": {
+          "street": "Industrieweg 104",
+          "postalCode": "5928",
+          "city": "Venlo",
+          "countryCode": "NL"
+        },
+        "goods": [
+          {
+            "description": "Carta in bobine",
+            "packageCount": 6,
+            "grossWeight": "4.176"
+          },
+          {
+            "description": "Ricambi meccanici",
+            "packageCount": 4,
+            "grossWeight": "916"
+          },
+          {
+            "description": "Carta in bobine",
+            "packageCount": 12,
+            "grossWeight": "7.152"
+          }
+        ],
+        "totalPackages": 22,
+        "totalGrossWeight": "12.244",
+        "vehiclePlate": "ZZ341XY",
+        "trailerPlate": "XZ518VK"
+      },
+      "second": {
+        "cmrNumber": "CMR-6654010",
+        "sender": {
+          "name": "Jansen Logistiek B.V. Venlo",
+          "street": "Industrieweg 104",
+          "postalCode": "5928",
+          "city": "Venlo",
+          "countryCode": "NL"
+        },
+        "consignee": {
+          "name": "Cortinovis Ceramiche S.n.c.",
+          "street": "Strada Statale 11 73",
+          "postalCode": "28100",
+          "city": "Novara",
+          "countryCode": "IT",
+          "vatNumber": "IT10000200005"
+        },
+        "placeOfDelivery": {
+          "postalCode": "28100",
+          "city": "Novara",
+          "countryCode": "IT"
+        },
+        "placeOfTakingOver": {
+          "street": "Industrieweg 104",
+          "postalCode": "5928",
+          "city": "Venlo",
+          "countryCode": "NL"
+        },
+        "goods": [
+          {
+            "description": "Carta in bobine",
+            "packageCount": 6,
+            "grossWeight": "4.176"
+          },
+          {
+            "description": "Ricambi meccanici",
+            "packageCount": 4,
+            "grossWeight": "916"
+          },
+          {
+            "description": "Carta in bobine",
+            "packageCount": 12,
+            "grossWeight": "7.152"
+          }
+        ],
+        "totalPackages": 22,
+        "totalGrossWeight": "12.244",
+        "vehiclePlate": "ZZ341XY",
+        "trailerPlate": "XZ518VK"
+      },
+      "attempts": 2,
+      "refused": false
+    },
+    {
+      "code": "G-2016",
+      "elapsedMs": 7446.8604,
+      "inputTokens": 5664,
+      "outputTokens": 950,
+      "first": {
+        "cmrNumber": "LDV-2016",
+        "sender": {
+          "name": "Cortinovis Ceramiche S.n.c.",
+          "street": "Strada Statale 11 73",
+          "postalCode": "28100",
+          "city": "Novara",
+          "countryCode": "IT",
+          "vatNumber": "IT10000200005"
+        },
+        "consignee": {
+          "name": "Telesca Legnami S.r.l.",
+          "street": "Via Marconi 46",
+          "postalCode": "70132",
+          "city": "Bari",
+          "countryCode": "IT",
+          "vatNumber": "IT10000350008"
+        },
+        "placeOfDelivery": {
+          "street": "Via Marconi 46",
+          "postalCode": "70132",
+          "city": "Bari",
+          "countryCode": "IT"
+        },
+        "placeOfTakingOver": {
+          "street": "Strada Statale 11 73",
+          "postalCode": "28100",
+          "city": "Novara",
+          "countryCode": "IT"
+        },
+        "goods": [
+          {
+            "description": "Mobili smontati",
+            "packageCount": 59,
+            "grossWeight": "1.888"
+          },
+          {
+            "description": "Profilati in alluminio",
+            "packageCount": 16,
+            "grossWeight": "4.208"
+          }
+        ],
+        "totalPackages": 75,
+        "totalGrossWeight": "6.096",
+        "vehiclePlate": "ZZ582TP",
+        "trailerPlate": "XZ250MG"
+      },
+      "second": {
+        "cmrNumber": "LDV-2016",
+        "sender": {
+          "name": "Cortinovis Ceramiche S.n.c.",
+          "street": "Strada Statale 11 73",
+          "postalCode": "28100",
+          "city": "Novara",
+          "countryCode": "IT",
+          "vatNumber": "IT10000200005"
+        },
+        "consignee": {
+          "name": "Telesca Legnami S.r.l.",
+          "street": "Via Marconi 46",
+          "postalCode": "70132",
+          "city": "Bari",
+          "countryCode": "IT",
+          "vatNumber": "IT10000350008"
+        },
+        "placeOfDelivery": {
+          "street": "Via Marconi 46",
+          "postalCode": "70132",
+          "city": "Bari",
+          "countryCode": "IT"
+        },
+        "placeOfTakingOver": {
+          "street": "Strada Statale 11 73",
+          "postalCode": "28100",
+          "city": "Novara",
+          "countryCode": "IT"
+        },
+        "goods": [
+          {
+            "description": "Mobili smontati",
+            "packageCount": 59,
+            "grossWeight": "1.888"
+          },
+          {
+            "description": "Profilati in alluminio",
+            "packageCount": 16,
+            "grossWeight": "4.208"
+          }
+        ],
+        "totalPackages": 75,
+        "totalGrossWeight": "6.096",
+        "vehiclePlate": "ZZ582TP",
+        "trailerPlate": "XZ250MG"
+      },
+      "attempts": 2,
+      "refused": false
+    },
+    {
+      "code": "G-2120",
+      "elapsedMs": 9125.4734,
+      "inputTokens": 5620,
+      "outputTokens": 1402,
+      "first": {
+        "cmrNumber": "LDV-2120",
+        "sender": {
+          "name": "Traverso Imballaggi S.p.A.",
+          "street": "Via del Commercio 125",
+          "postalCode": "41123",
+          "city": "Modena",
+          "countryCode": "IT",
+          "vatNumber": "IT10000120005"
+        },
+        "consignee": {
+          "name": "Franzè Arredamenti S.r.l.",
+          "street": "Via Enrico Fermi 162",
+          "postalCode": "70132",
+          "city": "Bari",
+          "countryCode": "IT",
+          "vatNumber": "IT10000920008"
+        },
+        "placeOfDelivery": {
+          "street": "Via Enrico Fermi 162",
+          "postalCode": "70132",
+          "city": "Bari",
+          "countryCode": "IT"
+        },
+        "placeOfTakingOver": {
+          "street": "Via del Commercio 125",
+          "postalCode": "41123",
+          "city": "Modena",
+          "countryCode": "IT"
+        },
+        "goods": [
+          {
+            "description": "Profilati in alluminio",
+            "packageCount": 16,
+            "grossWeight": "2.744"
+          },
+          {
+            "description": "Mobili smontati",
+            "packageCount": 19,
+            "grossWeight": "418"
+          }
+        ],
+        "totalPackages": 35,
+        "totalGrossWeight": "3.162",
+        "vehiclePlate": "ZZ479WW",
+        "trailerPlate": "XZ334VP"
+      },
+      "second": {
+        "cmrNumber": "LDV-2120",
+        "sender": {
+          "name": "Traverso Imballaggi S.p.A.",
+          "street": "Via del Commercio 125",
+          "postalCode": "41123",
+          "city": "Modena",
+          "countryCode": "IT",
+          "vatNumber": "IT10000120005"
+        },
+        "consignee": {
+          "name": "Franzè Arredamenti S.r.l.",
+          "street": "Via Enrico Fermi 162",
+          "postalCode": "70132",
+          "city": "Bari",
+          "countryCode": "IT",
+          "vatNumber": "IT10000920008"
+        },
+        "placeOfDelivery": {
+          "street": "Via Enrico Fermi 162",
+          "postalCode": "70132",
+          "city": "Bari",
+          "countryCode": "IT"
+        },
+        "placeOfTakingOver": {
+          "street": "Via del Commercio 125",
+          "postalCode": "41123",
+          "city": "Modena",
+          "countryCode": "IT"
+        },
+        "goods": [
+          {
+            "description": "Profilati in alluminio",
+            "packageCount": 16,
+            "grossWeight": "2.744"
+          },
+          {
+            "description": "Mobili smontati",
+            "packageCount": 19,
+            "grossWeight": "418"
+          }
+        ],
+        "totalPackages": 35,
+        "totalGrossWeight": "3.162",
+        "vehiclePlate": "ZZ479WW",
+        "trailerPlate": "XZ334VP"
+      },
+      "attempts": 2,
+      "refused": false
+    },
+    {
+      "code": "G-2024",
+      "elapsedMs": 10505.3458,
+      "inputTokens": 5672,
+      "outputTokens": 1454,
+      "first": {
+        "cmrNumber": "LDV-2024",
+        "sender": {
+          "name": "Pastorino Tessile S.r.l.",
+          "street": "Strada Statale 11 58",
+          "postalCode": "43122",
+          "city": "Parma",
+          "countryCode": "IT",
+          "vatNumber": "IT10000090000"
+        },
+        "consignee": {
+          "name": "Cavalli Elettrotecnica S.n.c.",
+          "street": "Strada Statale 11 97",
+          "postalCode": "33100",
+          "city": "Udine",
+          "countryCode": "IT",
+          "vatNumber": "IT10000410000"
+        },
+        "placeOfDelivery": {
+          "street": "Strada Statale 11 97",
+          "postalCode": "33100",
+          "city": "Udine",
+          "countryCode": "IT"
+        },
+        "placeOfTakingOver": {
+          "street": "Strada Statale 11 58",
+          "postalCode": "43122",
+          "city": "Parma",
+          "countryCode": "IT"
+        },
+        "goods": [
+          {
+            "description": "Profilati in alluminio",
+            "packageCount": 4,
+            "grossWeight": "956"
+          },
+          {
+            "description": "Prodotti cosmetici",
+            "packageCount": 20,
+            "grossWeight": "260"
+          }
+        ],
+        "totalPackages": 24,
+        "totalGrossWeight": "1.216",
+        "vehiclePlate": "ZZ829MD",
+        "trailerPlate": "XZ368HR"
+      },
+      "second": {
+        "cmrNumber": "LDV-2024",
+        "sender": {
+          "name": "Pastorino Tessile S.r.l.",
+          "street": "Strada Statale 11 58",
+          "postalCode": "43122",
+          "city": "Parma",
+          "countryCode": "IT",
+          "vatNumber": "IT10000090000"
+        },
+        "consignee": {
+          "name": "Cavalli Elettrotecnica S.n.c.",
+          "street": "Strada Statale 11 97",
+          "postalCode": "33100",
+          "city": "Udine",
+          "countryCode": "IT",
+          "vatNumber": "IT10000410000"
+        },
+        "placeOfDelivery": {
+          "street": "Strada Statale 11 97",
+          "postalCode": "33100",
+          "city": "Udine",
+          "countryCode": "IT"
+        },
+        "placeOfTakingOver": {
+          "street": "Strada Statale 11 58",
+          "postalCode": "43122",
+          "city": "Parma",
+          "countryCode": "IT"
+        },
+        "goods": [
+          {
+            "description": "Profilati in alluminio",
+            "packageCount": 4,
+            "grossWeight": "956"
+          },
+          {
+            "description": "Prodotti cosmetici",
+            "packageCount": 20,
+            "grossWeight": "260"
+          }
+        ],
+        "totalPackages": 24,
+        "totalGrossWeight": "1.216",
+        "vehiclePlate": "ZZ829MD",
+        "trailerPlate": "XZ368HR"
+      },
+      "attempts": 2,
+      "refused": false
+    }
+  ]
+}

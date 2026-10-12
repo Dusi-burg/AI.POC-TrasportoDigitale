@@ -238,7 +238,11 @@ public class ExtractionAssessorTests
         Assert.That(defaults.IsValid(), Is.True);
         Assert.That((defaults.ReviewThreshold, defaults.Passes, defaults.AutoAccept), Is.EqualTo((0.80m, 2, false)));
         Assert.That((defaults.Weights.Literal, defaults.Weights.Format, defaults.Weights.Tms, defaults.Weights.Agreement, defaults.Weights.Annotation),
-            Is.EqualTo((0.35m, 0.15m, 0.30m, 0.20m, 0.30m)), "pesi confermati al CHECKPOINT 7; quello dell'annotazione è una proposta");
+            Is.EqualTo((0.35m, 0.15m, 0.30m, 0.20m, 0.30m)), "pesi confermati al CHECKPOINT 7; quello dell'annotazione al CHECKPOINT R1, dopo la misura");
+        Assert.That((defaults.PassesFor("ollama"), defaults.PassesFor("anthropic"), defaults.PassesFor("ANTHROPIC"), defaults.PassesFor("stub")), Is.EqualTo((2, 1, 1, 2)),
+            "due letture in locale, una sul cloud (CHECKPOINT R1); un provider senza numero proprio usa Passes");
+        Assert.That(new ExtractionOptions { PassesByProvider = { ["ollama"] = 3 } }.PassesFor("ollama"), Is.EqualTo(3));
+        Assert.That(new ExtractionOptions { PassesByProvider = { ["ollama"] = 4 } }.IsValid(), Is.False);
         Assert.That(new ExtractionOptions { ReviewThreshold = 1.2m }.IsValid(), Is.False);
         Assert.That(new ExtractionOptions { Passes = 0 }.IsValid(), Is.False);
         Assert.That(new ExtractionOptions { Weights = new ConfidenceWeights { Literal = 0, Format = 0, Tms = 0, Agreement = 0 } }.IsValid(), Is.False);

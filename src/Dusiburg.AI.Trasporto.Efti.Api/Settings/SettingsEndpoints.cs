@@ -25,7 +25,8 @@ internal static class SettingsEndpoints
                     [.. Enum.GetValues<ModelTask>().Select(task => ToView(task, ai))],
                     new ExtractionSettingsView(
                         options.Weights.Literal, options.Weights.Format, options.Weights.Tms, options.Weights.Agreement, options.Weights.Annotation,
-                        options.ReviewThreshold, options.Passes, options.AutoAccept),
+                        // Le letture dipendono dal provider: si mostrano quelle del modello che oggi fa l'estrazione.
+                        options.ReviewThreshold, options.PassesFor(ai.ProviderFor(ModelTask.Extraction)), options.AutoAccept),
                     platform.Value.GateRetentionMinutes));
             })
             .RequireOperation(Operation.SettingsRead);

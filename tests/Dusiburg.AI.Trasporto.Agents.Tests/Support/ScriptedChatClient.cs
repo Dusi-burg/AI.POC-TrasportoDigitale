@@ -67,7 +67,8 @@ internal sealed class ScriptedChatClient(params Func<IReadOnlyList<ChatMessage>,
 }
 
 /// <summary>Fabbrica dei modelli che restituisce sempre il modello a copione, qualunque sia il compito.</summary>
-internal sealed class ScriptedChatClientFactory(IChatClient chatClient) : IChatClientFactory
+/// <param name="provider">Il provider che il modello dichiara: di norma <c>stub</c>; uno vero per provare ciò che dipende dal provider.</param>
+internal sealed class ScriptedChatClientFactory(IChatClient chatClient, string provider = "stub") : IChatClientFactory
 {
     public List<ModelTask> Tasks { get; } = [];
 
@@ -75,6 +76,6 @@ internal sealed class ScriptedChatClientFactory(IChatClient chatClient) : IChatC
     {
         Tasks.Add(task);
 
-        return new ChatModel(chatClient, task, "stub", "scripted", new ChatOptions());
+        return new ChatModel(chatClient, task, provider, "scripted", new ChatOptions());
     }
 }

@@ -56,9 +56,14 @@ public sealed partial class CmrExtractor(IChatClientFactory models, ILogger<CmrE
 
     private const string Retry = "Your last reply was not valid JSON for the schema. Reply only with the JSON object.";
 
-    public async Task<CmrExtractionRun> ExtractAsync(string documentText, int passes, CancellationToken cancellationToken)
+    public Task<CmrExtractionRun> ExtractAsync(string documentText, int passes, CancellationToken cancellationToken) =>
+        ExtractAsync(documentText, _ => passes, cancellationToken);
+
+    /// <param name="passesFor">Quante letture fare, dato il provider del modello che leggerà: lo sa solo chi sceglie il modello.</param>
+    public async Task<CmrExtractionRun> ExtractAsync(string documentText, Func<string, int> passesFor, CancellationToken cancellationToken)
     {
         using ChatModel model = models.Create(ModelTask.Extraction);
+        int passes = passesFor(model.Provider);
 
         long started = Stopwatch.GetTimestamp();
         var usage = new UsageDetails();
@@ -103,7 +108,7 @@ public sealed partial class CmrExtractor(IChatClientFactory models, ILogger<CmrE
         for (int attempt = 1; attempt <= MaxAttempts; attempt++)
         {
             ChatResponse<CmrExtraction> response = await model.ChatClient.GetResponseAsync<CmrExtraction>(
-                messages, TrasportoJson.Options, options, useJsonSchemaResponseFormat: true, cancellationToken);
+                messages, TrasportoJson.Options, options, UsesNativeSchema(model.Provider), cancellationToken);
 
             onResponse(response);
             raw = response.Text;
@@ -128,18 +133,53 @@ public sealed partial class CmrExtractor(IChatClientFactory models, ILogger<CmrE
         return new CmrExtractionPass(null, raw, MaxAttempts, Refused: false);
     }
 
-    private static bool TryRead(ChatResponse<CmrExtraction> response, out CmrExtraction? extraction)
+    /// <summary>
+    /// Ollama vincola la risposta allo schema JSON del tipo. L'API Anthropic rifiuta questo schema come output strutturato
+    /// ("compiled grammar is too large": ogni casella è facoltativa, e i campi che ammettono <c>null</c> sono troppi): lì lo
+    /// schema viaggia nel prompt e la risposta si controlla qui, con lo stesso nuovo tentativo se non è un JSON valido. Trovato
+    /// dalla misura della Fase 9.
+    /// </summary>
+    public static bool UsesNativeSchema(string provider) => provider != ModelProviders.Anthropic;
+
+    /// <summary>
+    /// Legge l'estrazione dalla risposta. Un modello che riceve lo schema nel prompt incornicia volentieri il JSON
+    /// (<c>```json … ```</c>) o lo fa precedere da una frase: in quel caso si legge l'oggetto che c'è dentro.
+    /// </summary>
+    public static bool TryRead(ChatResponse<CmrExtraction> response, out CmrExtraction? extraction)
     {
         try
         {
-            return response.TryGetResult(out extraction) && extraction is not null;
+            if (response.TryGetResult(out extraction) && extraction is not null)
+            {
+                return true;
+            }
         }
         catch (JsonException)
         {
-            extraction = null;
-
-            return false;
+            // Si prova sotto con il solo oggetto.
         }
+
+        string text = response.Text;
+        int start = text.IndexOf('{', StringComparison.Ordinal);
+        int end = text.LastIndexOf('}');
+
+        if (start >= 0 && end > start)
+        {
+            try
+            {
+                extraction = JsonSerializer.Deserialize<CmrExtraction>(text[start..(end + 1)], TrasportoJson.Options);
+
+                return extraction is not null;
+            }
+            catch (JsonException)
+            {
+                // Non è un JSON dello schema: vale come risposta non valida.
+            }
+        }
+
+        extraction = null;
+
+        return false;
     }
 
     /// <summary>Il documento non può chiudere da sé il proprio delimitatore.</summary>

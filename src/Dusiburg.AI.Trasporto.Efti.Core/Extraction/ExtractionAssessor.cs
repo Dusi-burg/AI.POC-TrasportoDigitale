@@ -28,14 +28,24 @@ public sealed class ExtractionOptions
     /// <summary>Sotto questa confidenza un campo va nella coda di revisione.</summary>
     public decimal ReviewThreshold { get; set; } = 0.80m;
 
-    /// <summary>Letture del documento: la seconda serve solo al segnale di accordo.</summary>
+    /// <summary>Letture del documento: la seconda serve solo al segnale di accordo. Vale per i provider senza un numero proprio.</summary>
     public int Passes { get; set; } = 2;
+
+    /// <summary>
+    /// Letture per provider del modello (<c>Extraction:PassesByProvider:&lt;provider&gt;</c>), al posto di <see cref="Passes"/>.
+    /// Il default viene dalla misura della Fase 9: con il modello locale la seconda lettura ferma valori sbagliati, con i modelli
+    /// cloud non ha cambiato nulla e raddoppia tempo e token. Quindi due letture in locale, una sul cloud.
+    /// </summary>
+    public Dictionary<string, int> PassesByProvider { get; set; } = new(StringComparer.OrdinalIgnoreCase) { ["anthropic"] = 1 };
 
     /// <summary>Con <c>true</c> una proposta sopra soglia viene accettata subito. Spenta di default.</summary>
     public bool AutoAccept { get; set; }
 
+    /// <summary>Quante letture fare con il modello di quel provider.</summary>
+    public int PassesFor(string provider) => PassesByProvider.GetValueOrDefault(provider, Passes);
+
     public bool IsValid() =>
-        ReviewThreshold is >= 0 and <= 1 && Passes is >= 1 and <= 3
+        ReviewThreshold is >= 0 and <= 1 && Passes is >= 1 and <= 3 && PassesByProvider.Values.All(passes => passes is >= 1 and <= 3)
         && Weights.Literal >= 0 && Weights.Format >= 0 && Weights.Tms >= 0 && Weights.Agreement >= 0 && Weights.Annotation >= 0
         && Weights.Literal + Weights.Format + Weights.Tms + Weights.Agreement > 0;
 }

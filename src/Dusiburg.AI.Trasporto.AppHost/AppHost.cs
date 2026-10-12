@@ -54,6 +54,9 @@ eftiApi.WithEnvironment("Efti__SimulatedControlTime", builder.Configuration["Eft
 // Estrazione dai CMR: soglia sotto cui un campo va in revisione (default del codice: 0,80) e accettazione automatica delle
 // proposte sopra soglia (default: spenta).
 eftiApi.WithConfigurationEnvironment(builder, "EXTRACTION_REVIEW_THRESHOLD", "EXTRACTION_AUTO_ACCEPT");
+
+// Letture del documento per provider del modello (default del codice: due in locale, una sul cloud; misura della Fase 9).
+eftiApi.WithConfigurationEnvironment(builder, "Extraction__PassesByProvider__ollama", "Extraction__PassesByProvider__anthropic");
 agents.WithConfigurationEnvironment(builder, modelSettings);
 
 // Ollama (G9) non è un container: è quello installato sul PC. Se all'avvio non risponde, l'AppHost lo avvia come propria

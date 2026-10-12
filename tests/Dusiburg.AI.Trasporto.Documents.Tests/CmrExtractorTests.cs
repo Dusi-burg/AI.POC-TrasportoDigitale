@@ -72,6 +72,37 @@ public class CmrExtractorTests
     }
 
     [Test]
+    public async Task Extract_CloudModel_GetsTheSchemaInThePrompt_AndAFencedAnswerIsReadAtOnce()
+    {
+        //SETUP
+        // L'API Anthropic rifiuta lo schema del CMR come output strutturato (troppi campi facoltativi): niente formato vincolato,
+        // e la risposta arriva incorniciata.
+        var chat = new ScriptedChatClient(Text($"Ecco l'estrazione:\n```json\n{ValidJson}\n```"));
+
+        //SUT
+        CmrExtractionRun run = await Extractor(new ScriptedChatClientFactory(chat, ModelProviders.Anthropic)).ExtractAsync(DocumentText, passes: 1, CancellationToken);
+
+        Assert.That((run.Passes[0].Attempts, run.Primary?.TotalPackages, run.Primary?.Sender?.Name), Is.EqualTo((1, (int?)8, "Officine Meccaniche Brambilla S.r.l.")));
+        Assert.That(chat.Options[0]!.ResponseFormat, Is.Not.InstanceOf<ChatResponseFormatJson>().Or.Property(nameof(ChatResponseFormatJson.Schema)).Null, "nessuno schema vincolato verso il cloud");
+        Assert.That(string.Join('\n', chat.Requests[0].Select(m => m.Text)), Does.Contain("totalGrossWeight"), "lo schema viaggia nel prompt");
+        Assert.That((CmrExtractor.UsesNativeSchema(ModelProviders.Ollama), CmrExtractor.UsesNativeSchema(ModelProviders.Anthropic)), Is.EqualTo((true, false)));
+    }
+
+    [TestCase("ollama", 2)]
+    [TestCase("anthropic", 1)]
+    public async Task Extract_PassesDependOnTheProviderOfTheModel(string provider, int expectedReadings)
+    {
+        //SETUP
+        var chat = new ScriptedChatClient(Text(ValidJson), Text(ValidJson));
+        Func<string, int> passesFor = p => p == ModelProviders.Anthropic ? 1 : 2;
+
+        //SUT
+        CmrExtractionRun run = await Extractor(new ScriptedChatClientFactory(chat, provider)).ExtractAsync(DocumentText, passesFor, CancellationToken);
+
+        Assert.That((run.Passes.Count, chat.RequestCount, run.Provider), Is.EqualTo((expectedReadings, expectedReadings, provider)));
+    }
+
+    [Test]
     public async Task Extract_NeverValidJson_GivesNoExtractionAndSkipsTheSecondPass()
     {
         //SETUP

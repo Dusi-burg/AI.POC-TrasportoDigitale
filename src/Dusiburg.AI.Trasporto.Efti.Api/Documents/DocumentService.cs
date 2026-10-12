@@ -52,7 +52,7 @@ public sealed class DocumentService(
         PdfText pdf = ReadText(content);
         string text = pdf.Text;
         ExtractionOptions options = extractionOptions.Value;
-        CmrExtractionRun run = await extractor.ExtractAsync(text, options.Passes, cancellationToken);
+        CmrExtractionRun run = await extractor.ExtractAsync(text, options.PassesFor, cancellationToken);
 
         if (run.Primary is not { } primary)
         {
