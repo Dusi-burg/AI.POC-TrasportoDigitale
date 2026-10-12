@@ -25,6 +25,7 @@ public class AuthorizationPolicyTests
     [TestCase(Operation.DocumentUpload, AccessScope.AllShipments, AccessScope.Denied, AccessScope.Denied, AccessScope.Denied)]
     [TestCase(Operation.DocumentList, AccessScope.AllShipments, AccessScope.Denied, AccessScope.Denied, AccessScope.AllShipments)]
     [TestCase(Operation.DocumentRead, AccessScope.AllShipments, AccessScope.Denied, AccessScope.Denied, AccessScope.AllShipments)]
+    [TestCase(Operation.DocumentDownload, AccessScope.AllShipments, AccessScope.Denied, AccessScope.Denied, AccessScope.AllShipments)]
     [TestCase(Operation.ReviewQueueRead, AccessScope.AllShipments, AccessScope.Denied, AccessScope.Denied, AccessScope.AllShipments)]
     [TestCase(Operation.ReviewDecide, AccessScope.AllShipments, AccessScope.Denied, AccessScope.Denied, AccessScope.Denied)]
     [TestCase(Operation.SettingsRead, AccessScope.Settings, AccessScope.Denied, AccessScope.Denied, AccessScope.Settings)]

@@ -435,6 +435,7 @@ public class AccessControlTests
         Operation.DocumentUpload => UploadAsync(apiKey, DemoCmrFiles.CorrectReading("CMR-1001")),
         Operation.DocumentList => SendAsync(apiKey, HttpMethod.Get, "/api/shipments/SH-1001/documents"),
         Operation.DocumentRead => SendAsync(apiKey, HttpMethod.Get, $"/api/documents/{_documentId}"),
+        Operation.DocumentDownload => SendAsync(apiKey, HttpMethod.Get, $"/api/documents/{_documentId}/file"),
         Operation.ReviewQueueRead => SendAsync(apiKey, HttpMethod.Get, "/api/review-tasks"),
         Operation.ReviewDecide => DecideAFreshReviewTaskAsync(apiKey),
         Operation.SettingsRead => SendAsync(apiKey, HttpMethod.Get, "/api/settings"),

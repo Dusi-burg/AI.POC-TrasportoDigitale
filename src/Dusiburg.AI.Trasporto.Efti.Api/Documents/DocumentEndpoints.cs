@@ -18,6 +18,9 @@ internal static class DocumentEndpoints
     /// <summary>Nome del campo del modulo multipart che porta il file.</summary>
     public const string FileField = "file";
 
+    /// <summary>Si caricano solo PDF: è il tipo con cui il file torna a chi lo chiede.</summary>
+    public const string PdfContentType = "application/pdf";
+
     public static RouteGroupBuilder MapDocumentEndpoints(this RouteGroupBuilder api)
     {
         // Il caricamento arriva da un client che porta la chiave di ruolo nell'intestazione, non da un modulo del browser con
@@ -31,6 +34,9 @@ internal static class DocumentEndpoints
 
         api.MapGet("/documents/{id}", GetAsync)
             .RequireOperation(Operation.DocumentRead, http => http.RouteValue("id"));
+
+        api.MapGet("/documents/{id}/file", GetFileAsync)
+            .RequireOperation(Operation.DocumentDownload, http => http.RouteValue("id"));
 
         api.MapGet("/review-tasks", ListReviewTasksAsync)
             .RequireOperation(Operation.ReviewQueueRead);
@@ -114,6 +120,26 @@ internal static class DocumentEndpoints
         note.ShipmentCode = document.Document.ShipmentCode;
 
         return TypedResults.Ok(document);
+    }
+
+    /// <summary>
+    /// Il PDF così com'è stato caricato: chi conferma un campo in revisione deve poter guardare il documento vero, non solo il
+    /// testo che ne è stato letto.
+    /// </summary>
+    private static async Task<Results<FileContentHttpResult, ProblemHttpResult>> GetFileAsync(
+        int id, DocumentService service, AuditNote note, CancellationToken cancellationToken)
+    {
+        DocumentFile? file = await service.FindFileAsync(id, cancellationToken);
+
+        if (file is null)
+        {
+            return ApiProblems.NotFound($"Documento {id} non trovato.");
+        }
+
+        note.ShipmentCode = file.ShipmentCode;
+        note.Detail = Shorten($"{file.FileName}, {file.Content.Length} byte");
+
+        return TypedResults.File(file.Content, PdfContentType, file.FileName);
     }
 
     private static async Task<Results<Ok<IReadOnlyList<ReviewTaskView>>, ProblemHttpResult>> ListReviewTasksAsync(

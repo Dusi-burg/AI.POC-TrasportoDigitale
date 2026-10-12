@@ -74,6 +74,18 @@ public sealed class EftiApiClient(HttpClient http)
     public Task<DocumentDetailView> GetDocumentAsync(int documentId, CancellationToken cancellationToken) =>
         GetAsync<DocumentDetailView>($"api/documents/{documentId}", cancellationToken);
 
+    /// <summary>Il file originale di un documento, con il nome con cui è stato caricato.</summary>
+    public async Task<(byte[] Content, string FileName)> GetDocumentFileAsync(int documentId, CancellationToken cancellationToken)
+    {
+        using HttpResponseMessage response = await http.GetAsync($"api/documents/{documentId}/file", cancellationToken);
+
+        await ApiProblemException.ThrowIfErrorAsync(response, cancellationToken);
+
+        string? fileName = response.Content.Headers.ContentDisposition is { } disposition ? disposition.FileNameStar ?? disposition.FileName?.Trim('"') : null;
+
+        return (await response.Content.ReadAsByteArrayAsync(cancellationToken), fileName ?? $"documento-{documentId}.pdf");
+    }
+
     public Task<List<ReviewTaskView>> ListReviewTasksAsync(string? status, string? shipmentCode, CancellationToken cancellationToken) =>
         GetAsync<List<ReviewTaskView>>(Query("api/review-tasks", ("status", status), ("shipmentCode", shipmentCode)), cancellationToken);
 

@@ -525,6 +525,8 @@ Limiti dichiarati: il riconoscimento vale per annotazioni che sono testo del PDF
 
 `POST /api/review-tasks/{id}/decision`: `Confirmed`, eventualmente con un valore corretto, oppure `Rejected`. La conferma è una decisione umana completa: crea la proposta e la accetta, quindi nasce la versione successiva del dataset. Con `EXTRACTION_AUTO_ACCEPT=true` una proposta sopra soglia viene accettata subito, e la nota della decisione dice quale regola ha deciso; è spenta di default.
 
+**Il documento vero accanto ai campi.** Chi conferma un valore deve poterlo guardare sul PDF, non solo nel testo che ne è stato letto: `GET /api/documents/{id}/file` restituisce il file così com'è stato caricato (operazione `DocumentDownload`, per `Dispatcher` e `Admin`, registrata nell'audit). Nella Web si apre in un'altra scheda dalla pagina del documento e da ogni riga della coda di revisione.
+
 ### 11.3 CMR sintetici e prima misura
 
 Otto documenti in `data/cmr`, generati dal catalogo demo con `Eval -- cmr`, ciascuno con la sua verità di riferimento (`data/cmr/README.md`): tre impaginazioni, caselle vuote, valori ambigui, annotazioni a mano, un valore diverso dal TMS e un tentativo di prompt injection.
@@ -554,8 +556,8 @@ La Web (Razor Pages, `:5306`) rende eseguibili dal browser gli scenari 1–4. **
 |---|---|---|
 | `/Shipments` | elenco con stato del dataset, filtri, "Importa dal TMS" | `Dispatcher`, `ClaimsManager`, `Admin` |
 | `/Shipments/Details/{code}` | soggetti, righe, problemi, dataset JSON, download dell'XML; **eCMR** (stato proprio, indicazioni mancanti, JSON, download dell'XML UN/CEFACT); agente di mappatura; proposte da decidere; documenti e caricamento del CMR; accessi dell'autorità | — |
-| `/Documents/Details/{id}` | campi estratti con i cinque segnali, confidenza rispetto alla soglia, note a mano, testo letto | — |
-| `/Documents/Review` | coda di revisione: conferma (con valore corretto facoltativo) o rifiuto | `Dispatcher`, `Admin` |
+| `/Documents/Details/{id}` | **PDF originale da aprire o scaricare**, campi estratti con i cinque segnali, confidenza rispetto alla soglia, note a mano, testo letto | — |
+| `/Documents/Review` | coda di revisione: conferma (con valore corretto facoltativo) o rifiuto; da ogni riga si apre il PDF originale | `Dispatcher`, `Admin` |
 | `/Authority` | targa → UIL e identificatori → sottoinsieme `EU03`/`EU05a`, con un riepilogo in parole (etichette in italiano, numeri all'italiana) e il JSON eFTI sotto come dettaglio; domanda all'agente autorità | `Authority` |
 | `/Audit` | eventi filtrabili, link alla traccia nel dashboard | `Admin` |
 | `/Demo` | i sei ordini demo, gli scenari, la spedizione che ne è nata, i CMR sintetici | `Dispatcher`, `ClaimsManager`, `Admin` |

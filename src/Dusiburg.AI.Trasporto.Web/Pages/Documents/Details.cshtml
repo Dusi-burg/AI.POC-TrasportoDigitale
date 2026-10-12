@@ -24,6 +24,12 @@
         @document.Document.Fields campi: @document.Document.Matching coincidono con la spedizione, @document.Document.Proposed proposte, @document.Document.InReview in revisione.
     </p>
 
+    <p>
+        <a class="btn btn-primary btn-sm" asp-page-handler="File" asp-route-id="@Model.Id" target="_blank" rel="noopener" id="open-pdf">Apri il PDF originale</a>
+        <a class="btn btn-outline-secondary btn-sm" asp-page-handler="File" asp-route-id="@Model.Id" asp-route-download="true" id="download-pdf">Scarica il PDF</a>
+        <span class="text-muted small ms-2">Ciò che segue è quello che il modello ha letto: prima di confermare un valore, guardalo sul documento vero.</span>
+    </p>
+
     @if (document.Annotations.Count > 0)
     {
         <div class="alert alert-info" id="annotations">

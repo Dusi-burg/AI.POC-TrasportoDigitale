@@ -35,6 +35,7 @@ Ogni cella dice **su che cosa** vale il permesso; una cella vuota è un rifiuto.
 | `DocumentUpload` | tutte le spedizioni | — | — | — |
 | `DocumentList` | tutte le spedizioni | — | — | tutte le spedizioni |
 | `DocumentRead` | tutte le spedizioni | — | — | tutte le spedizioni |
+| `DocumentDownload` | tutte le spedizioni | — | — | tutte le spedizioni |
 | `ReviewQueueRead` | tutte le spedizioni | — | — | tutte le spedizioni |
 | `ReviewDecide` | tutte le spedizioni | — | — | — |
 | `SettingsRead` | configurazione | — | — | configurazione |
@@ -62,6 +63,7 @@ Ogni cella dice **su che cosa** vale il permesso; una cella vuota è un rifiuto.
 | `DocumentUpload` | scrittura | `POST /api/shipments/{code}/documents` | Caricare il CMR in PDF di una spedizione ed estrarne i campi: l'estrazione lascia proposte e voci di revisione, non modifica il dataset. |
 | `DocumentList` | lettura | `GET /api/shipments/{code}/documents` | Elencare i documenti caricati su una spedizione. |
 | `DocumentRead` | lettura | `GET /api/documents/{id}` | Leggere un documento: testo letto, campi estratti, segnali e confidenza. |
+| `DocumentDownload` | lettura | `GET /api/documents/{id}/file` | Scaricare il file originale di un documento caricato: chi rivede un campo deve poter guardare il documento vero, non solo il testo letto. |
 | `ReviewQueueRead` | lettura | `GET /api/review-tasks` | Leggere la coda di revisione dei campi estratti sotto soglia. |
 | `ReviewDecide` | scrittura | `POST /api/review-tasks/{id}/decision` | Confermare, correggere o rifiutare un campo in revisione: la conferma crea una nuova versione del dataset. È un'azione umana. |
 | `SettingsRead` | lettura | `GET /api/settings` | Vedere la configurazione in vigore: modello per compito, pesi e soglia dell'estrazione, permanenza sul gate. Le manopole si cambiano sull'AppHost. |

@@ -31,6 +31,41 @@ public class OtherPageTests
     }
 
     [Test]
+    public async Task Document_OffersTheOriginalPdf_ToOpenAndToDownload()
+    {
+        //SETUP
+        byte[] pdf = "%PDF-1.7 documento di prova"u8.ToArray();
+        await using WebTestHost host = WebTestHost.Start(new PreparedApi()
+            .Get("/api/documents/5", TestData.Document())
+            .File("/api/documents/5/file", pdf, "application/pdf", "CMR-1003.pdf"));
+
+        //SUT
+        string page = await host.Client.GetStringAsync("/Documents/Details/5", CancellationToken);
+        using HttpResponseMessage opened = await host.Client.GetAsync("/Documents/Details/5?handler=File", CancellationToken);
+        using HttpResponseMessage downloaded = await host.Client.GetAsync("/Documents/Details/5?handler=File&download=true", CancellationToken);
+
+        Assert.That(page, Does.Contain("id=\"open-pdf\"").And.Contain("id=\"download-pdf\"").And.Contain("/Documents/Details/5?handler=File"));
+        Assert.That(await opened.Content.ReadAsByteArrayAsync(CancellationToken), Is.EqualTo(pdf), "il file passa dalla Web così com'è");
+        Assert.That((opened.Content.Headers.ContentType?.MediaType, opened.Content.Headers.ContentDisposition), Is.EqualTo(("application/pdf", (object?)null)), "senza nome di download il browser lo apre in una scheda");
+        Assert.That(downloaded.Content.Headers.ContentDisposition?.FileName?.Trim('"'), Is.EqualTo("CMR-1003.pdf"));
+        Assert.That(host.Api.CallsTo("/api/documents/5/file").Select(call => call.ApiKey), Has.All.Not.Null, "il file si chiede con la chiave del ruolo scelto");
+    }
+
+    [Test]
+    public async Task Document_FileRefusedByTheApi_ComesBackToThePageWithTheMessage()
+    {
+        //SETUP
+        await using WebTestHost host = WebTestHost.Start(new PreparedApi()
+            .Get("/api/documents/5", TestData.Document())
+            .Problem(HttpMethod.Get, "/api/documents/5/file", System.Net.HttpStatusCode.Forbidden, "Operazione non consentita", "Il ruolo non può scaricare i documenti."));
+
+        //SUT
+        string page = await host.Client.GetStringAsync("/Documents/Details/5?handler=File", CancellationToken);
+
+        Assert.That(page, Does.Contain("Il ruolo non può scaricare i documenti.").And.Contain("id=\"extraction-summary\""), "il rifiuto si legge nella pagina del documento");
+    }
+
+    [Test]
     public async Task Review_ListsPendingTasks_WithTheDecisionForm()
     {
         //SETUP
@@ -41,6 +76,7 @@ public class OtherPageTests
 
         Assert.That(host.Api.CallsTo("/api/review-tasks").Single().Query, Is.EqualTo("?status=Pending&shipmentCode=SH-1003"), "di default le voci in attesa");
         Assert.That(page, Does.Contain("data-task=\"3\"").And.Contain("Peso lordo").And.Contain("href=\"/Documents/Details/5\">CMR-1003.pdf</a>"));
+        Assert.That(page, Does.Contain("href=\"/Documents/Details/5?handler=File\"").And.Contain("Apri il PDF originale"), "dalla coda si apre il documento vero");
         Assert.That(page, Does.Contain("name=\"value\"").And.Contain("name=\"decision\" value=\"Confirmed\"").And.Contain("name=\"decision\" value=\"Rejected\""));
     }
 

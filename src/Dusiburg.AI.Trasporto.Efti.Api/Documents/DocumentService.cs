@@ -17,6 +17,9 @@ namespace Dusiburg.AI.Trasporto.Efti.Api.Documents;
 /// <summary>Il modello non ha restituito un'estrazione utilizzabile: il documento va riletto o trattato a mano.</summary>
 public sealed class ExtractionFailedException(string message) : Exception(message);
 
+/// <summary>Il file di un documento caricato, con la spedizione a cui appartiene.</summary>
+public sealed record DocumentFile(string FileName, byte[] Content, string ShipmentCode);
+
 /// <summary>
 /// Dal PDF caricato ai campi con la loro sorte. Il modello legge, <see cref="ExtractionAssessor"/> giudica, e qui si esegue ciò
 /// che il giudizio comporta: nulla, una proposta, una voce di revisione. Il dataset non si tocca: lo cambia la decisione su una
@@ -153,6 +156,14 @@ public sealed class DocumentService(
 
         return document is null ? null : ToDetail(document, document.Shipment.Code);
     }
+
+    /// <summary>Il file originale di un documento, così com'è stato caricato (lettura per chiave primaria); <c>null</c> se non esiste.</summary>
+    public async Task<DocumentFile?> FindFileAsync(int documentId, CancellationToken cancellationToken) =>
+        await db.Documents
+            .AsNoTracking()
+            .Where(d => d.Id == documentId)
+            .Select(d => new DocumentFile(d.FileName, d.Content, d.Shipment.Code))
+            .SingleOrDefaultAsync(cancellationToken);
 
     /// <summary>La coda di revisione, dalla voce più vecchia (indice su <c>ReviewStatusId</c>).</summary>
     public async Task<IReadOnlyList<ReviewTaskView>> ListReviewTasksAsync(ReviewStatus? status, string? shipmentCode, CancellationToken cancellationToken)

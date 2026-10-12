@@ -17,4 +17,24 @@ public sealed class DetailsModel(EftiApiClient api) : ApiPageModel
 
     public async Task OnGetAsync(CancellationToken cancellationToken) =>
         Document = await LoadAsync(() => api.GetDocumentAsync(Id, cancellationToken));
+
+    /// <summary>
+    /// Il PDF originale: il file viene dall'API, la Web lo passa al browser. Senza nome di download il browser lo apre in una
+    /// scheda, accanto ai campi da confermare; con <paramref name="download"/> lo salva.
+    /// </summary>
+    public async Task<IActionResult> OnGetFileAsync(bool download, CancellationToken cancellationToken)
+    {
+        try
+        {
+            (byte[] content, string fileName) = await api.GetDocumentFileAsync(Id, cancellationToken);
+
+            return download ? File(content, "application/pdf", fileName) : File(content, "application/pdf");
+        }
+        catch (Exception exception) when (Describe(exception) is { } message)
+        {
+            ActionError = message;
+
+            return RedirectToPage(new { Id });
+        }
+    }
 }

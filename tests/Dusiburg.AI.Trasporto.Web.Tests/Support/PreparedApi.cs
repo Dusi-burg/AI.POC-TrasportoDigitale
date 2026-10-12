@@ -52,6 +52,18 @@ internal sealed class PreparedApi : HttpMessageHandler
             return response;
         });
 
+    /// <summary>Un file binario con il suo nome, come lo restituisce un endpoint di download.</summary>
+    public PreparedApi File(string path, byte[] content, string mediaType, string fileName) =>
+        Respond(HttpMethod.Get, path, () =>
+        {
+            var response = new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent(content) };
+
+            response.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(mediaType);
+            response.Content.Headers.ContentDisposition = new System.Net.Http.Headers.ContentDispositionHeaderValue("attachment") { FileName = fileName };
+
+            return response;
+        });
+
     public PreparedApi Stream(string path, string sse) =>
         Respond(HttpMethod.Post, path, () => new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(sse, Encoding.UTF8, "text/event-stream") });
 

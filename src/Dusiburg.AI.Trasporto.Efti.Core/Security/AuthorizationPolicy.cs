@@ -34,6 +34,7 @@ public static class AuthorizationPolicy
         new(Operation.DocumentUpload, true, "POST /api/shipments/{code}/documents", "Caricare il CMR in PDF di una spedizione ed estrarne i campi: l'estrazione lascia proposte e voci di revisione, non modifica il dataset."),
         new(Operation.DocumentList, false, "GET /api/shipments/{code}/documents", "Elencare i documenti caricati su una spedizione."),
         new(Operation.DocumentRead, false, "GET /api/documents/{id}", "Leggere un documento: testo letto, campi estratti, segnali e confidenza."),
+        new(Operation.DocumentDownload, false, "GET /api/documents/{id}/file", "Scaricare il file originale di un documento caricato: chi rivede un campo deve poter guardare il documento vero, non solo il testo letto."),
         new(Operation.ReviewQueueRead, false, "GET /api/review-tasks", "Leggere la coda di revisione dei campi estratti sotto soglia."),
         new(Operation.ReviewDecide, true, "POST /api/review-tasks/{id}/decision", "Confermare, correggere o rifiutare un campo in revisione: la conferma crea una nuova versione del dataset. È un'azione umana."),
         new(Operation.SettingsRead, false, "GET /api/settings", "Vedere la configurazione in vigore: modello per compito, pesi e soglia dell'estrazione, permanenza sul gate. Le manopole si cambiano sull'AppHost."),
@@ -60,8 +61,8 @@ public static class AuthorizationPolicy
         .. Shipments(Role.Admin, Operation.FieldProposalRead),
 
         // Documenti e revisione: carica e decide l'ufficio traffico, Admin guarda.
-        .. Shipments(Role.Dispatcher, Operation.DocumentUpload, Operation.DocumentList, Operation.DocumentRead, Operation.ReviewQueueRead, Operation.ReviewDecide),
-        .. Shipments(Role.Admin, Operation.DocumentList, Operation.DocumentRead, Operation.ReviewQueueRead),
+        .. Shipments(Role.Dispatcher, Operation.DocumentUpload, Operation.DocumentList, Operation.DocumentRead, Operation.DocumentDownload, Operation.ReviewQueueRead, Operation.ReviewDecide),
+        .. Shipments(Role.Admin, Operation.DocumentList, Operation.DocumentRead, Operation.DocumentDownload, Operation.ReviewQueueRead),
 
         // L'autorità non elenca e non legge spedizioni: passa solo dal registro degli identificatori e dall'UIL (D7).
         new(Role.Authority, Operation.IdentifierSearch, AccessScope.IdentifierRegistry),

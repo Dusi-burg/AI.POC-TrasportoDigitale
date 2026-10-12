@@ -74,6 +74,28 @@ public class DocumentExtractionTests
     }
 
     [Test]
+    public async Task File_ReturnsThePdfExactlyAsUploaded_AndTheDownloadIsAudited()
+    {
+        //SETUP
+        _model.Reply(DemoCmrFiles.CorrectReading("CMR-1005"));
+        DocumentDetailView document = await UploadAsync("SH-1005", "CMR-1005");
+
+        //SUT
+        using HttpResponseMessage response = await _api.SendAsync(Role.Dispatcher, HttpMethod.Get, $"/api/documents/{document.Document.Id}/file", null, CancellationToken);
+        byte[] downloaded = await response.Content.ReadAsByteArrayAsync(CancellationToken);
+
+        AuditEvent audited = await _api.LastAuditEventAsync(CancellationToken);
+        using HttpResponseMessage unknown = await _api.SendAsync(Role.Dispatcher, HttpMethod.Get, "/api/documents/999999/file", null, CancellationToken);
+        using HttpResponseMessage authority = await _api.SendAsync(Role.Authority, HttpMethod.Get, $"/api/documents/{document.Document.Id}/file", null, CancellationToken);
+        Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+        Assert.That(downloaded, Is.EqualTo(DemoCmrFiles.Pdf("CMR-1005")), "chi rivede un campo guarda il documento vero, byte per byte");
+        Assert.That((response.Content.Headers.ContentType?.MediaType, response.Content.Headers.ContentDisposition?.FileName?.Trim('"')), Is.EqualTo(("application/pdf", "CMR-1005.pdf")));
+        Assert.That((audited.Operation, audited.ShipmentCode, audited.Outcome), Is.EqualTo((Operation.DocumentDownload, "SH-1005", AuditOutcome.Success)));
+        Assert.That(unknown.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        Assert.That(authority.StatusCode, Is.EqualTo(HttpStatusCode.Forbidden), "l'autorità non vede i documenti del vettore");
+    }
+
+    [Test]
     public async Task Upload_CmrWithWhatTheTmsLacks_ProposesItAndSendsTheConflictToReview()
     {
         //SETUP

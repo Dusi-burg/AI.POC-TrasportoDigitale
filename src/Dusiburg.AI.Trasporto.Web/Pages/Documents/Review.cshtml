@@ -43,7 +43,8 @@ else if (Model.Tasks.Count > 0)
 
                     <tr data-task="@task.Id">
                         <td><a asp-page="/Shipments/Details" asp-route-code="@task.ShipmentCode">@task.ShipmentCode</a></td>
-                        <td><a asp-page="/Documents/Details" asp-route-id="@task.DocumentId">@task.FileName</a>@(field.CmrBox is null ? "" : $" · casella {field.CmrBox}")</td>
+                        <td><a asp-page="/Documents/Details" asp-route-id="@task.DocumentId">@task.FileName</a>@(field.CmrBox is null ? "" : $" · casella {field.CmrBox}")
+                        <a class="badge text-bg-light border text-decoration-none ms-1" asp-page="/Documents/Details" asp-page-handler="File" asp-route-id="@task.DocumentId" target="_blank" rel="noopener" title="Apri il PDF originale in un'altra scheda">PDF</a></td>
                         <td>@field.Label<br /><code class="small">@field.FieldPath</code></td>
                         <td class="fw-semibold">@field.Value@if (field.Note is { } fieldNote) {<div class="small text-danger fw-normal">@fieldNote</div>}</td>
                         <td class="text-muted">@(field.CurrentValue ?? "—")</td>
