@@ -1,0 +1,78 @@
+@page
+@model Dusiburg.AI.Trasporto.Web.Pages.Shipments.IndexModel
+@{
+    ViewData["Title"] = "Spedizioni";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0">Spedizioni</h1>
+    @if (Model.CanImport)
+    {
+        <form method="post" asp-page-handler="Import">
+            <button type="submit" class="btn btn-primary" id="import" data-busy-text="Importazione…">Importa dal TMS</button>
+        </form>
+    }
+</div>
+<partial name="_Messages" model="Model" />
+
+<form method="get" class="row g-2 align-items-end mb-3" id="filters">
+    <div class="col-auto">
+        <label for="Status" class="form-label small mb-0">Stato del dataset</label>
+        <select name="Status" id="Status" class="form-select form-select-sm" onchange="this.form.submit()">
+            <option value="">tutti</option>
+            @foreach (DatasetStatus status in Enum.GetValues<DatasetStatus>())
+            {
+                <option value="@status" selected="@(Model.Status == status.ToString())">@Presentation.Label(status)</option>
+            }
+        </select>
+    </div>
+    <div class="col-auto">
+        <label for="Customer" class="form-label small mb-0">Mittente o destinatario</label>
+        <input name="Customer" id="Customer" value="@Model.Customer" class="form-control form-control-sm" />
+    </div>
+    <div class="col-auto">
+        <label for="From" class="form-label small mb-0">Presa in carico dal</label>
+        <input type="date" name="From" id="From" value="@Model.From" class="form-control form-control-sm" />
+    </div>
+    <div class="col-auto">
+        <label for="To" class="form-label small mb-0">al</label>
+        <input type="date" name="To" id="To" value="@Model.To" class="form-control form-control-sm" />
+    </div>
+    <div class="col-auto">
+        <button type="submit" class="btn btn-sm btn-outline-secondary">Filtra</button>
+        <a asp-page="/Shipments/Index" class="btn btn-sm btn-link">azzera</a>
+    </div>
+</form>
+
+@if (Model.Shipments.Count == 0 && Model.Errors.Count == 0)
+{
+    <p class="text-muted" id="empty">Nessuna spedizione. @(Model.CanImport ? "Importa gli ordini dal TMS per cominciare." : "L'importazione dal TMS la fa il ruolo Dispatcher.")</p>
+}
+else if (Model.Shipments.Count > 0)
+{
+    <p class="small text-muted">@Model.Shipments.Count spedizioni (al più 200, dalla più recente).</p>
+    <div class="table-responsive">
+        <table class="table table-sm table-hover align-middle" id="shipments">
+            <thead>
+                <tr><th>Spedizione</th><th>Dataset</th><th class="text-end">Errori</th><th class="text-end">Avvisi</th><th>Mittente</th><th>Destinatario</th><th>Da → a</th><th>Presa in carico</th><th>Mezzo</th><th>ADR</th></tr>
+            </thead>
+            <tbody>
+                @foreach (ShipmentSummaryView shipment in Model.Shipments)
+                {
+                    <tr>
+                        <td><a asp-page="/Shipments/Details" asp-route-code="@shipment.Code">@shipment.Code</a></td>
+                        <td><span class="badge @Presentation.BadgeClass(shipment.Status)">@Presentation.Label(shipment.Status)</span> <span class="small text-muted">v@(shipment.DatasetVersion)</span></td>
+                        <td class="text-end">@(shipment.Errors == 0 ? "—" : shipment.Errors)</td>
+                        <td class="text-end">@(shipment.Warnings == 0 ? "—" : shipment.Warnings)</td>
+                        <td>@shipment.ConsignorName</td>
+                        <td>@shipment.ConsigneeName</td>
+                        <td class="small">@shipment.PickupCity (@shipment.PickupCountryCode) → @shipment.DeliveryCity (@shipment.DeliveryCountryCode)</td>
+                        <td>@Presentation.Day(shipment.PickupDate)</td>
+                        <td>@(shipment.VehiclePlateNumber ?? "—")</td>
+                        <td>@(shipment.HasDangerousGoods ? "ADR" : "")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

@@ -21,8 +21,17 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Dusiburg.AI.Trasporto.Efti.Api\Dusiburg.AI.Trasporto.Efti.Api.csproj" />
+    <!-- TMS finto dei test di importazione: serve gli ordini del seed con le viste vere di Tms.Api -->
+    <ProjectReference Include="..\..\src\Dusiburg.AI.Trasporto.Tms.Api\Dusiburg.AI.Trasporto.Tms.Api.csproj" />
     <!-- Creazione dei database di test dal modello -->
     <ProjectReference Include="..\..\tools\Dusiburg.AI.Trasporto.DbInit\Dusiburg.AI.Trasporto.DbInit.csproj" />
+    <!-- Catalogo dei CMR sintetici: la lettura corretta di ogni documento, per il modello di estrazione dei test -->
+    <ProjectReference Include="..\..\tools\Dusiburg.AI.Trasporto.Eval\Dusiburg.AI.Trasporto.Eval.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- I CMR della demo, copiati accanto ai test -->
+    <Content Include="..\..\data\cmr\*.pdf" Link="data\cmr\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

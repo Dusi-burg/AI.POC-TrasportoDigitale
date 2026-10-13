@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns:clm65237TransportServiceCategoryCode="urn:un:unece:uncefact:codelist:standard:UNECE:TransportServiceCategoryCode:D24A"
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+    targetNamespace="urn:un:unece:uncefact:codelist:standard:UNECE:TransportServiceCategoryCode:D24A"
+    elementFormDefault="qualified"
+    version="5.1">
+  <xsd:simpleType name="TransportServiceCategoryCodeContentType">
+    <xsd:restriction base="xsd:token">
+      <xsd:enumeration value="2"/>
+      <xsd:enumeration value="12"/>
+      <xsd:enumeration value="14"/>
+      <xsd:enumeration value="16"/>
+      <xsd:enumeration value="22"/>
+      <xsd:enumeration value="23"/>
+      <xsd:enumeration value="24"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+</xsd:schema>

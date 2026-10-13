@@ -1,0 +1,41 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <!-- Runner NUnit su Microsoft.Testing.Platform, come impostato in global.json -->
+    <EnableNUnitRunner>true</EnableNUnitRunner>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Using Include="NUnit.Framework" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NUnit" />
+    <PackageReference Include="NUnit3TestAdapter" />
+    <PackageReference Include="NUnit.Analyzers" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Dusiburg.AI.Trasporto.Agents\Dusiburg.AI.Trasporto.Agents.csproj" />
+    <!-- Giro completo: efti-mcp ed Efti.Api vere in-process dietro gli agenti, con il modello a copione -->
+    <ProjectReference Include="..\..\src\Dusiburg.AI.Trasporto.Efti.Mcp\Dusiburg.AI.Trasporto.Efti.Mcp.csproj" />
+    <ProjectReference Include="..\..\src\Dusiburg.AI.Trasporto.Efti.Api\Dusiburg.AI.Trasporto.Efti.Api.csproj" />
+    <ProjectReference Include="..\..\src\Dusiburg.AI.Trasporto.Tms.Api\Dusiburg.AI.Trasporto.Tms.Api.csproj" />
+    <ProjectReference Include="..\..\tools\Dusiburg.AI.Trasporto.DbInit\Dusiburg.AI.Trasporto.DbInit.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Lo stesso host di prova di Efti.Api usato dai suoi test -->
+    <Compile Include="..\Dusiburg.AI.Trasporto.Efti.Api.Tests\Support\EftiApiTestHost.cs" Link="Support\EftiApi\EftiApiTestHost.cs" />
+    <Compile Include="..\Dusiburg.AI.Trasporto.Efti.Api.Tests\Support\FakeTmsHandler.cs" Link="Support\EftiApi\FakeTmsHandler.cs" />
+    <Compile Include="..\Dusiburg.AI.Trasporto.Efti.Api.Tests\Support\FixedTimeProvider.cs" Link="Support\EftiApi\FixedTimeProvider.cs" />
+    <Compile Include="..\Dusiburg.AI.Trasporto.Efti.Api.Tests\Support\TestApiKeys.cs" Link="Support\EftiApi\TestApiKeys.cs" />
+    <Compile Include="..\Dusiburg.AI.Trasporto.Efti.Mcp.Tests\Support\UpstreamHandler.cs" Link="Support\EftiMcp\UpstreamHandler.cs" />
+  </ItemGroup>
+
+</Project>

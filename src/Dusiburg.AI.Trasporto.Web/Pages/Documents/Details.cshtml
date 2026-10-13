@@ -1,0 +1,93 @@
+@page "{id:int}"
+@model Dusiburg.AI.Trasporto.Web.Pages.Documents.DetailsModel
+@{
+    ViewData["Title"] = Model.Document?.Document.FileName ?? "Documento";
+    DocumentDetailView? document = Model.Document;
+}
+
+<partial name="_Messages" model="Model" />
+
+@if (document is not null)
+{
+    ExtractionResultView extraction = document.Extraction;
+
+    <nav aria-label="breadcrumb"><ol class="breadcrumb small">
+        <li class="breadcrumb-item"><a asp-page="/Shipments/Index">Spedizioni</a></li>
+        <li class="breadcrumb-item"><a asp-page="/Shipments/Details" asp-route-code="@document.Document.ShipmentCode">@document.Document.ShipmentCode</a></li>
+        <li class="breadcrumb-item active">@document.Document.FileName</li>
+    </ol></nav>
+
+    <h1 class="h3">@document.Document.FileName</h1>
+    <p class="text-muted" id="extraction-summary">
+        Estratto da <code>@extraction.Provider/@extraction.Model</code> in @extraction.Passes letture, @Presentation.Seconds(extraction.ElapsedMs).
+        Soglia di revisione <strong>@Presentation.Number(extraction.Threshold)</strong>.
+        @document.Document.Fields campi: @document.Document.Matching coincidono con la spedizione, @document.Document.Proposed proposte, @document.Document.InReview in revisione.
+    </p>
+
+    <p>
+        <a class="btn btn-primary btn-sm" asp-page-handler="File" asp-route-id="@Model.Id" target="_blank" rel="noopener" id="open-pdf">Apri il PDF originale</a>
+        <a class="btn btn-outline-secondary btn-sm" asp-page-handler="File" asp-route-id="@Model.Id" asp-route-download="true" id="download-pdf">Scarica il PDF</a>
+        <span class="text-muted small ms-2">Ciò che segue è quello che il modello ha letto: prima di confermare un valore, guardalo sul documento vero.</span>
+    </p>
+
+    @if (document.Annotations.Count > 0)
+    {
+        <div class="alert alert-info" id="annotations">
+            <strong>Note a mano sul documento.</strong> Se riportano numeri, i campi numerici che quei numeri non confermano vanno in revisione.
+            <ul class="mb-0">
+                @foreach (string annotation in document.Annotations)
+                {
+                    <li><em>@annotation</em></li>
+                }
+            </ul>
+        </div>
+    }
+
+    <p class="small text-muted">
+        La confidenza la calcola il codice da segnali verificabili, non la dichiara il modello:
+        <strong>D</strong> scritto nel documento · <strong>F</strong> formato valido · <strong>T</strong> coincide con la spedizione ·
+        <strong>L</strong> le letture concordano · <strong>N</strong> confermato da una nota a mano. "–" = non applicabile.
+    </p>
+
+    <div class="table-responsive">
+        <table class="table table-sm align-middle" id="fields">
+            <thead>
+                <tr><th>Casella</th><th>Campo</th><th>Valore estratto</th><th>Nella spedizione</th><th class="text-center" title="Scritto nel documento">D</th><th class="text-center" title="Formato valido">F</th><th class="text-center" title="Coincide con la spedizione">T</th><th class="text-center" title="Le letture concordano">L</th><th class="text-center" title="Confermato da una nota a mano">N</th><th>Confidenza</th><th>Esito</th></tr>
+            </thead>
+            <tbody>
+                @foreach (ExtractionFieldView field in extraction.Fields)
+                {
+                    <tr class="@(field.Outcome == ExtractionFieldOutcome.InReview ? "table-warning" : "")" data-field="@field.FieldPath">
+                        <td>@(field.CmrBox ?? "—")</td>
+                        <td>@field.Label<br /><code class="small">@field.FieldPath</code></td>
+                        <td class="fw-semibold">@field.Value@if (field.Note is { } note) {<div class="small text-danger fw-normal">@note</div>}</td>
+                        <td class="text-muted">@(field.CurrentValue ?? "—")</td>
+                        <td class="text-center @Presentation.SignalClass(field.Signals.Literal)">@Presentation.Signal(field.Signals.Literal)</td>
+                        <td class="text-center @Presentation.SignalClass(field.Signals.Format)">@Presentation.Signal(field.Signals.Format)</td>
+                        <td class="text-center @Presentation.SignalClass(field.Signals.Tms)">@Presentation.Signal(field.Signals.Tms)</td>
+                        <td class="text-center @Presentation.SignalClass(field.Signals.Agreement)">@Presentation.Signal(field.Signals.Agreement)</td>
+                        <td class="text-center @Presentation.SignalClass(field.Signals.Annotation)">@Presentation.Signal(field.Signals.Annotation)</td>
+                        <td><span class="badge @Presentation.ConfidenceClass(field.Confidence, extraction.Threshold)">@Presentation.Number(field.Confidence)</span></td>
+                        <td>
+                            <span class="badge @Presentation.BadgeClass(field.Outcome)">@Presentation.Label(field.Outcome)</span>
+                            @if (field.Outcome == ExtractionFieldOutcome.InReview)
+                            {
+                                <a asp-page="/Documents/Review" asp-route-shipmentCode="@document.Document.ShipmentCode" class="small ms-1">rivedi</a>
+                            }
+                            else if (field.ProposalId is not null)
+                            {
+                                <a asp-page="/Shipments/Details" asp-route-code="@document.Document.ShipmentCode" asp-fragment="proposals" class="small ms-1">vedi</a>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <details class="mt-4">
+        <summary class="h5 d-inline-block">Testo letto dal PDF</summary>
+        <p class="small text-muted mt-2">È ciò che il modello ha visto. È un dato: se contiene frasi che sembrano istruzioni, il modello ha l'ordine di non seguirle, e un valore alterato contraddirebbe la spedizione.</p>
+        <pre class="bg-light border rounded p-3 small" id="document-text">@document.Text</pre>
+    </details>
+}

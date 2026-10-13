@@ -17,6 +17,8 @@
   <ItemGroup Label="Hosting">
     <PackageVersion Include="Microsoft.Extensions.Configuration" Version="10.0.12" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.12" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.0.12" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.UserSecrets" Version="10.0.12" />
   </ItemGroup>
 
   <ItemGroup Label="Mcp">
@@ -34,6 +36,15 @@
   <ItemGroup Label="Data">
     <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.12" />
     <PackageVersion Include="Aspire.Microsoft.EntityFrameworkCore.SqlServer" Version="13.6.0" />
+    <PackageVersion Include="Bogus" Version="35.6.5" />
+  </ItemGroup>
+
+  <ItemGroup Label="Pdf">
+    <!-- PdfPig legge il testo dei CMR (Apache-2.0); PDFsharp-MigraDoc genera quelli sintetici, solo nel tool Eval (MIT). -->
+    <PackageVersion Include="PdfPig" Version="0.1.16" />
+    <PackageVersion Include="PDFsharp-MigraDoc" Version="6.2.4" />
+    <!-- Rende i PDF come immagini per il confronto dei modelli sulla lettura da scansione (MIT; usa PDFium e SkiaSharp): solo nel tool Eval. -->
+    <PackageVersion Include="PDFtoImage" Version="5.4.0" />
   </ItemGroup>
 
   <ItemGroup Label="Test">

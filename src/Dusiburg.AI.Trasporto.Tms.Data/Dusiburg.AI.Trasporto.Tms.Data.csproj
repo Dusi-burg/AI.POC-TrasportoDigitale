@@ -4,10 +4,16 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" />
+    <!-- Dati sintetici a seed fisso (Seed/): servono a DbInit e a POST /dev/reset di Tms.Api -->
+    <PackageReference Include="Bogus" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Dusiburg.AI.Trasporto.Shared\Dusiburg.AI.Trasporto.Shared.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Dusiburg.AI.Trasporto.Tms.Api.Tests" />
   </ItemGroup>
 
 </Project>

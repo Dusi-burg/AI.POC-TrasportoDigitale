@@ -1,0 +1,302 @@
+@page "{code}"
+@using Dusiburg.AI.Trasporto.Web.Agents
+@using Dusiburg.AI.Trasporto.Web.Demo
+@model Dusiburg.AI.Trasporto.Web.Pages.Shipments.DetailsModel
+@{
+    ViewData["Title"] = Model.Code;
+    ShipmentDetailView? shipment = Model.Shipment;
+}
+
+<nav aria-label="breadcrumb"><ol class="breadcrumb small"><li class="breadcrumb-item"><a asp-page="/Shipments/Index">Spedizioni</a></li><li class="breadcrumb-item active">@Model.Code</li></ol></nav>
+<partial name="_Messages" model="Model" />
+
+@if (shipment is not null)
+{
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+        <h1 class="h3 mb-0">
+            @shipment.Shipment.Code
+            <span class="badge @Presentation.BadgeClass(shipment.Dataset.Status)" id="dataset-status">@Presentation.Label(shipment.Dataset.Status)</span>
+            <span class="small text-muted fs-6">dataset eFTI v@(shipment.Dataset.Version) · ordine @shipment.Shipment.TmsOrderCode</span>
+            @if (Model.Ecmr is { } ecmrStatus)
+            {
+                <span class="badge @Presentation.BadgeClass(ecmrStatus.Status)" id="ecmr-status">eCMR: @Presentation.Label(ecmrStatus.Status)</span>
+            }
+        </h1>
+        <div>
+            <a class="btn btn-outline-secondary btn-sm" asp-page-handler="Xml" asp-route-code="@Model.Code" id="download-xml">Scarica l'XML eFTI</a>
+            @if (Model.Ecmr is not null)
+            {
+                <a class="btn btn-outline-secondary btn-sm" asp-page-handler="EcmrXml" asp-route-code="@Model.Code" id="download-ecmr-xml">Scarica l'XML eCMR</a>
+            }
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        @foreach (ShipmentPartyView party in shipment.Parties)
+        {
+            <div class="col-md-4">
+                <div class="card h-100"><div class="card-body py-2">
+                    <div class="small text-muted">@party.Role</div>
+                    <div class="fw-semibold">@(party.Name ?? "—")</div>
+                    <div class="small">@party.Street<br />@party.PostalCode @party.City @(party.CountryCode is null ? "" : $"({party.CountryCode})")</div>
+                    <div class="small text-muted">P.IVA @(party.VatNumber ?? "—")</div>
+                </div></div>
+            </div>
+        }
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-5">
+            <h2 class="h5">Trasporto</h2>
+            <table class="table table-sm">
+                <tbody>
+                    <tr><th>Presa in carico</th><td>@shipment.Pickup.City (@shipment.Pickup.CountryCode) · @Presentation.Day(shipment.Shipment.PickupDate)</td></tr>
+                    <tr><th>Consegna</th><td>@shipment.Delivery.City (@shipment.Delivery.CountryCode) · @Presentation.Day(shipment.Shipment.DeliveryDate)</td></tr>
+                    <tr><th>Consegnata</th><td>@Presentation.Moment(shipment.DeliveredAt)</td></tr>
+                    <tr><th>Mezzo</th><td>@(shipment.Shipment.VehiclePlateNumber ?? "—") · rimorchio @(shipment.TrailerPlateNumber ?? "—")</td></tr>
+                    <tr><th>Lettera di vettura</th><td>@(shipment.CmrNumber ?? "—")</td></tr>
+                    <tr><th>Colli · peso lordo</th><td id="totals">@(shipment.TotalPackages?.ToString() ?? "—") · @Presentation.Kilograms(shipment.TotalGrossWeightKg)</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="col-md-7">
+            <h2 class="h5">Merce</h2>
+            <table class="table table-sm">
+                <thead><tr><th>#</th><th>Descrizione</th><th class="text-end">Colli</th><th class="text-end">Peso</th><th>ADR</th></tr></thead>
+                <tbody>
+                    @foreach (ConsignmentItemView item in shipment.Items)
+                    {
+                        <tr>
+                            <td>@item.SequenceNumber</td>
+                            <td>@item.Description</td>
+                            <td class="text-end">@(item.PackageCount?.ToString() ?? "—") @item.PackageType</td>
+                            <td class="text-end">@Presentation.Kilograms(item.GrossWeightKg)</td>
+                            <td class="small">@(item.IsDangerousGoods ? $"UN {item.UnNumber ?? "?"} {item.ProperShippingName ?? "?"}, classe {item.AdrClass ?? "?"}, GI {item.PackingGroup ?? "?"}" : "")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            @if (!string.IsNullOrWhiteSpace(shipment.SenderInstructions))
+            {
+                <p class="small"><span class="text-muted">Istruzioni del mittente:</span> @shipment.SenderInstructions</p>
+            }
+        </div>
+    </div>
+
+    <h2 class="h5">Problemi di validazione</h2>
+    @if (shipment.Issues.Count == 0)
+    {
+        <p class="text-success" id="no-issues">Nessun problema: il dataset supera tutte le regole.</p>
+    }
+    else
+    {
+        <table class="table table-sm align-middle" id="issues">
+            <thead><tr><th>Gravità</th><th>Regola</th><th>Campo</th><th>Messaggio</th></tr></thead>
+            <tbody>
+                @foreach (ValidationIssueView issue in shipment.Issues)
+                {
+                    <tr>
+                        <td><span class="badge @Presentation.BadgeClass(issue.Severity)">@Presentation.Label(issue.Severity)</span></td>
+                        <td><code>@issue.RuleCode</code></td>
+                        <td class="small"><code>@issue.FieldPath</code></td>
+                        <td>@issue.Message</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+
+    @if (Model.Ecmr is { } ecmr)
+    {
+        <h2 class="h5 mt-4">Lettera di vettura elettronica (eCMR)</h2>
+        <p class="small text-muted mb-2">Nasce dalla stessa spedizione del dataset eFTI, con regole e stato propri: il dataset eFTI è ciò che vede
+            l'autorità, l'eCMR è il contratto di trasporto. Schema UN/CEFACT @ecmr.SchemaVersion, documento v@(ecmr.Version).</p>
+        @if (ecmr.Issues.Count == 0)
+        {
+            <p class="text-success" id="ecmr-no-issues">Tutte le indicazioni della lettera di vettura sono presenti e l'XML è conforme allo schema.</p>
+        }
+        else
+        {
+            <table class="table table-sm align-middle" id="ecmr-issues">
+                <thead><tr><th>Gravità</th><th>Regola</th><th>Elemento eCMR</th><th>Messaggio</th></tr></thead>
+                <tbody>
+                    @foreach (ValidationIssueView issue in ecmr.Issues)
+                    {
+                        <tr>
+                            <td><span class="badge @Presentation.BadgeClass(issue.Severity)">@Presentation.Label(issue.Severity)</span></td>
+                            <td><code>@issue.RuleCode</code></td>
+                            <td class="small"><code>@issue.FieldPath</code></td>
+                            <td>@issue.Message</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    }
+
+    @if (Model.CanWork && shipment.Issues.Count > 0)
+    {
+        <div class="card mb-4" id="mapping-agent">
+            <div class="card-body">
+                <h2 class="h5 card-title">Agente di mappatura</h2>
+                <p class="card-text small text-muted">Legge i problemi e l'ordine nel TMS e lascia <strong>proposte</strong>: non modifica il dataset.
+                    Una proposta parte solo se il valore si ritrova nell'ordine. Agisce con il tuo ruolo.</p>
+                <form data-agent-stream="@AgentStreamEndpoints.MappingPath" data-agent-done="reload">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="shipmentCode" value="@Model.Code" />
+                    <button type="submit" class="btn btn-primary">Avvia l'agente</button>
+                    <span class="small text-muted ms-2" data-agent-time></span>
+                </form>
+                <ul class="list-unstyled small mt-3 mb-0" data-agent-steps></ul>
+                <div class="alert alert-danger mt-3 mb-0" role="alert" data-agent-error hidden></div>
+                <div class="mt-3" data-agent-result hidden></div>
+            </div>
+        </div>
+    }
+
+    @if (Model.CanSeeWork)
+    {
+        <h2 class="h5 mt-4">Proposte di completamento</h2>
+        @* Esito dell'ultimo run dell'agente: lo scrive lo script dopo il ricaricamento della pagina. *@
+        <div data-agent-saved-result hidden></div>
+        @if (Model.Proposals.Count == 0)
+        {
+            <p class="text-muted" id="no-proposals">Nessuna proposta.</p>
+        }
+        else
+        {
+            <table class="table table-sm align-middle" id="proposals">
+                <thead><tr><th>Campo</th><th>Valore proposto</th><th>Valore di allora</th><th>Fonte</th><th>Motivazione</th><th>Stato</th><th></th></tr></thead>
+                <tbody>
+                    @foreach (FieldProposalView proposal in Model.Proposals)
+                    {
+                        <tr>
+                            <td class="small"><code>@proposal.FieldPath</code></td>
+                            <td class="fw-semibold">@proposal.ProposedValue</td>
+                            <td class="text-muted">@(proposal.CurrentValue ?? "—")</td>
+                            <td class="small">@Presentation.Label(proposal.Source)<br /><span class="text-muted">@proposal.SourceReference</span></td>
+                            <td class="small">@proposal.Rationale<br /><span class="text-muted">@proposal.ProposedByName · @Presentation.Moment(proposal.ProposedAt)</span></td>
+                            <td>
+                                <span class="badge @Presentation.BadgeClass(proposal.Status)">@Presentation.Label(proposal.Status)</span>
+                                @if (proposal.Status != ProposalStatus.Pending)
+                                {
+                                    <div class="small text-muted">@proposal.DecidedByName@(proposal.ResultingDatasetVersion is { } version ? $" → v{version}" : "")<br />@proposal.DecisionNote</div>
+                                }
+                            </td>
+                            <td class="text-nowrap">
+                                @if (Model.CanWork && proposal.Status == ProposalStatus.Pending)
+                                {
+                                    <form method="post" asp-page-handler="Decide" asp-route-code="@Model.Code" class="d-inline">
+                                        <input type="hidden" name="proposalId" value="@proposal.Id" />
+                                        <button type="submit" name="decision" value="Accepted" class="btn btn-sm btn-success">Accetta</button>
+                                        <button type="submit" name="decision" value="Rejected" class="btn btn-sm btn-outline-secondary">Rifiuta</button>
+                                    </form>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+
+        <h2 class="h5 mt-4">Documenti</h2>
+        @if (Model.Documents.Count == 0)
+        {
+            <p class="text-muted" id="no-documents">Nessun documento caricato.</p>
+        }
+        else
+        {
+            <table class="table table-sm align-middle" id="documents">
+                <thead><tr><th>Documento</th><th>Caricato</th><th class="text-end">Campi</th><th class="text-end">Coincidono</th><th class="text-end">Proposte</th><th class="text-end">In revisione</th></tr></thead>
+                <tbody>
+                    @foreach (DocumentSummaryView document in Model.Documents)
+                    {
+                        <tr>
+                            <td><a asp-page="/Documents/Details" asp-route-id="@document.Id">@document.FileName</a></td>
+                            <td class="small">@document.UploadedByName · @Presentation.Moment(document.UploadedAt)</td>
+                            <td class="text-end">@document.Fields</td>
+                            <td class="text-end">@document.Matching</td>
+                            <td class="text-end">@document.Proposed</td>
+                            <td class="text-end">@document.InReview</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+
+        @if (Model.CanWork)
+        {
+            <div class="card mb-4" id="upload">
+                <div class="card-body">
+                    <h3 class="h6 card-title">Carica il CMR in PDF</h3>
+                    <p class="card-text small text-muted">Un modello estrae i campi; il codice ne calcola la confidenza. Sopra soglia diventano proposte, sotto soglia vanno in revisione:
+                        nulla entra nel dataset senza una tua decisione. Con il modello locale l'estrazione dura qualche decina di secondi.</p>
+                    <div class="d-flex flex-wrap gap-3 align-items-end">
+                        <form method="post" asp-page-handler="Upload" asp-route-code="@Model.Code" enctype="multipart/form-data" class="d-flex gap-2 align-items-end">
+                            <div>
+                                <label for="file" class="form-label small mb-0">File PDF (testo estraibile, fino a 2 MB)</label>
+                                <input type="file" name="file" id="file" accept="application/pdf" class="form-control form-control-sm" required />
+                            </div>
+                            <button type="submit" class="btn btn-sm btn-primary" data-busy-text="Estrazione in corso…">Carica ed estrai</button>
+                        </form>
+                        @foreach (string cmrCode in Model.DemoCmrCodes)
+                        {
+                            <form method="post" asp-page-handler="UploadDemo" asp-route-code="@Model.Code">
+                                <input type="hidden" name="cmrCode" value="@cmrCode" />
+                                <button type="submit" class="btn btn-sm btn-outline-primary" data-busy-text="Estrazione in corso…">Carica il CMR demo @cmrCode</button>
+                                <a class="small ms-1" href="@DemoCmrFiles.UrlFor(cmrCode)" target="_blank" rel="noopener">vedi</a>
+                            </form>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+
+        <h2 class="h5 mt-4">Accessi dell'autorità</h2>
+        @if (Model.AuthorityAccesses.Count == 0)
+        {
+            <p class="text-muted" id="no-accesses">Nessuna autorità ha consultato questa spedizione.</p>
+        }
+        else
+        {
+            <table class="table table-sm align-middle" id="authority-accesses">
+                <thead><tr><th>Quando</th><th>Chi</th><th>Operazione</th><th>Risorsa</th><th>Dettaglio</th><th>Traccia</th></tr></thead>
+                <tbody>
+                    @foreach (AuditEventView access in Model.AuthorityAccesses)
+                    {
+                        <tr>
+                            <td class="small">@Presentation.Moment(access.OccurredAt)</td>
+                            <td>@access.ActorName</td>
+                            <td><code>@access.Operation</code></td>
+                            <td class="small text-break">@access.Resource</td>
+                            <td>@access.Detail</td>
+                            <td>
+                                @if (Presentation.TraceUrl(Model.DashboardUrl, access.TraceId) is { } traceUrl)
+                                {
+                                    <a href="@traceUrl" target="_blank" rel="noopener" class="small">apri</a>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    }
+
+    <details class="mt-4">
+        <summary class="h5 d-inline-block">Dataset eFTI (JSON, v@(shipment.Dataset.Version), schema @shipment.Dataset.SchemaVersion)</summary>
+        <pre class="bg-light border rounded p-3 small mt-2" id="dataset-json">@Presentation.Json(shipment.Dataset.Json)</pre>
+    </details>
+
+    @if (Model.Ecmr is { } ecmrDocument)
+    {
+        <details class="mt-2">
+            <summary class="h5 d-inline-block">Documento eCMR (JSON, v@(ecmrDocument.Version), schema @ecmrDocument.SchemaVersion)</summary>
+            <pre class="bg-light border rounded p-3 small mt-2" id="ecmr-json">@Presentation.Json(ecmrDocument.Json)</pre>
+        </details>
+    }
+}
+
+@section Scripts {
+    <script src="~/js/agents.js" asp-append-version="true"></script>
+}

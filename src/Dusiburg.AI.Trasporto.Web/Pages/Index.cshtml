@@ -4,19 +4,16 @@
     ViewData["Title"] = "Stato";
 }
 
-<h1 class="h3 mb-3">Stato del sistema</h1>
-<p class="text-muted">SQL Server 2025, Ollama, modelli di chat e di embedding, chiave del modello cloud. Il database si crea da riga di
-    comando con <code>DbInit</code>.</p>
+<h1 class="h3 mb-3">Stato e configurazione</h1>
+<partial name="_Messages" model="Model" />
 
-@if (Model.Error is { } error)
-{
-    <div class="alert alert-danger">@error</div>
-}
+<h2 class="h5">Controlli di salute</h2>
+<p class="text-muted">SQL Server 2025, Ollama, modelli di chat e di embedding, chiave del modello cloud, schema eFTI, chiavi di ruolo.</p>
 
 @if (Model.Report is { } report)
 {
     <div class="table-responsive">
-        <table class="table table-sm align-middle">
+        <table class="table table-sm align-middle" id="health">
             <thead><tr><th>#</th><th>Controllo</th><th>Esito</th><th class="text-end">Durata</th><th>Dettaglio</th></tr></thead>
             <tbody>
                 @foreach (var check in report.Checks)
@@ -32,4 +29,42 @@
             </tbody>
         </table>
     </div>
+}
+
+@if (Model.Settings is { } settings)
+{
+    <h2 class="h5 mt-4">Modelli per compito</h2>
+    <p class="text-muted">Ogni compito ha il suo modello: il provider è una manopola dell'AppHost (<code>MODEL_&lt;COMPITO&gt;_PROVIDER</code>).</p>
+    <table class="table table-sm w-auto" id="models">
+        <thead><tr><th>Compito</th><th>Provider</th><th>Modello</th></tr></thead>
+        <tbody>
+            @foreach (TaskModelView taskModel in settings.Models)
+            {
+                <tr><td>@taskModel.Task</td><td>@taskModel.Provider</td><td><code>@taskModel.Model</code></td></tr>
+            }
+        </tbody>
+    </table>
+
+    <h2 class="h5 mt-4">Estrazione dai documenti</h2>
+    <p class="text-muted">La confidenza di un campo la calcola il codice: pesi dei segnali veri diviso pesi dei segnali applicabili.</p>
+    <table class="table table-sm w-auto" id="extraction">
+        <tbody>
+            <tr><th>Soglia di revisione</th><td>@Presentation.Number(settings.Extraction.ReviewThreshold)</td><td class="small text-muted">sotto, il campo va in revisione</td></tr>
+            <tr><th>Peso: scritto nel documento</th><td>@Presentation.Number(settings.Extraction.LiteralWeight)</td><td></td></tr>
+            <tr><th>Peso: formato valido</th><td>@Presentation.Number(settings.Extraction.FormatWeight)</td><td></td></tr>
+            <tr><th>Peso: coincide con la spedizione</th><td>@Presentation.Number(settings.Extraction.TmsWeight)</td><td></td></tr>
+            <tr><th>Peso: le letture concordano</th><td>@Presentation.Number(settings.Extraction.AgreementWeight)</td><td></td></tr>
+            <tr><th>Peso: confermato da una nota a mano</th><td>@Presentation.Number(settings.Extraction.AnnotationWeight)</td><td class="small text-muted">solo campi numerici, in documenti con numeri annotati</td></tr>
+            <tr><th>Letture per documento</th><td>@settings.Extraction.Passes</td><td></td></tr>
+            <tr><th>Accettazione automatica</th><td>@(settings.Extraction.AutoAccept ? "accesa" : "spenta")</td><td class="small text-muted">spenta: ogni proposta la decide una persona</td></tr>
+        </tbody>
+    </table>
+
+    <h2 class="h5 mt-4">Gate simulato</h2>
+    <p id="gate">Una spedizione consegnata resta raggiungibile da un'autorità per <strong>@settings.GateRetentionMinutes minuti</strong>
+        (@Presentation.Number(settings.GateRetentionMinutes / 1440m, "0.#") giorni) dopo la consegna.</p>
+}
+else if (!Model.CanSeeSettings)
+{
+    <p class="text-muted mt-4" id="no-settings">La configurazione in vigore è visibile ai ruoli Dispatcher e Admin.</p>
 }

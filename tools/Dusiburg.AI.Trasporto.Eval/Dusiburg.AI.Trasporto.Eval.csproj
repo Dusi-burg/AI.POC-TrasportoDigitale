@@ -1,14 +1,38 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- CLI di valutazione e confronto dei modelli (Fase 9). -->
+  <!-- CLI di valutazione e confronto dei modelli (Fase 9). Esegue in-process i componenti veri (lettura del PDF, estrazione,
+       confidenza, agenti) con una propria fabbrica dei modelli; tool MCP, permessi e audit li chiede allo stack avviato. -->
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- Solo per generare i CMR sintetici (comandi cmr e golden): nessun servizio dipende da MigraDoc. -->
+    <PackageReference Include="PDFsharp-MigraDoc" />
+    <!-- Rende alcuni CMR come scansione, per il confronto dei modelli sulla lettura da immagine. -->
+    <PackageReference Include="PDFtoImage" />
+    <!-- Chiavi dei modelli e dei ruoli: le stesse dell'AppHost, lette dai suoi user-secrets. -->
+    <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\src\Dusiburg.AI.Trasporto.Shared\Dusiburg.AI.Trasporto.Shared.csproj" />
     <ProjectReference Include="..\..\src\Dusiburg.AI.Trasporto.Ai\Dusiburg.AI.Trasporto.Ai.csproj" />
+    <ProjectReference Include="..\..\src\Dusiburg.AI.Trasporto.Efti.Core\Dusiburg.AI.Trasporto.Efti.Core.csproj" />
+    <ProjectReference Include="..\..\src\Dusiburg.AI.Trasporto.Documents.Extraction\Dusiburg.AI.Trasporto.Documents.Extraction.csproj" />
+    <!-- Ordini del seed e vista del TMS: ciò che il TMS sa di un ordine, senza database. -->
+    <ProjectReference Include="..\..\src\Dusiburg.AI.Trasporto.Tms.Data\Dusiburg.AI.Trasporto.Tms.Data.csproj" />
+    <ProjectReference Include="..\..\src\Dusiburg.AI.Trasporto.Tms.Api\Dusiburg.AI.Trasporto.Tms.Api.csproj" />
+    <!-- Gli agenti veri, con la fabbrica dei modelli del tool: lo stesso comando misura un modello locale o uno cloud. -->
+    <ProjectReference Include="..\..\src\Dusiburg.AI.Trasporto.Agents\Dusiburg.AI.Trasporto.Agents.csproj" />
+    <!-- La mappa tool → operazione del server MCP: i tool attesi per ruolo si ricavano dal codice, non da un elenco copiato. -->
+    <ProjectReference Include="..\..\src\Dusiburg.AI.Trasporto.Efti.Mcp\Dusiburg.AI.Trasporto.Efti.Mcp.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Dusiburg.AI.Trasporto.Eval.Tests" />
   </ItemGroup>
 
 </Project>

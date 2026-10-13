@@ -1,2 +1,9 @@
 * text=auto
 *.sh text eol=lf
+*.pdf binary
+
+# Copie inalterate degli schemi eFTI (Apache-2.0): nessuna normalizzazione dei fine riga.
+data/efti-schema/** -text
+
+# Copie inalterate degli schemi eCMR UN/CEFACT: nessuna normalizzazione dei fine riga.
+data/ecmr-schema/** -text

@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <!-- Runner NUnit su Microsoft.Testing.Platform, come impostato in global.json -->
+    <EnableNUnitRunner>true</EnableNUnitRunner>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Using Include="NUnit.Framework" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NUnit" />
+    <PackageReference Include="NUnit3TestAdapter" />
+    <PackageReference Include="NUnit.Analyzers" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Dusiburg.AI.Trasporto.Documents.Extraction\Dusiburg.AI.Trasporto.Documents.Extraction.csproj" />
+    <!-- Generatore dei CMR sintetici: i test verificano che i PDF del repository siano quelli che il generatore produce -->
+    <ProjectReference Include="..\..\tools\Dusiburg.AI.Trasporto.Eval\Dusiburg.AI.Trasporto.Eval.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- I CMR della demo, copiati accanto ai test -->
+    <Content Include="..\..\data\cmr\*.*" Link="data\cmr\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Modello a copione, lo stesso dei test degli agenti -->
+    <Compile Include="..\Dusiburg.AI.Trasporto.Agents.Tests\Support\ScriptedChatClient.cs" Link="Support\ScriptedChatClient.cs" />
+  </ItemGroup>
+
+</Project>

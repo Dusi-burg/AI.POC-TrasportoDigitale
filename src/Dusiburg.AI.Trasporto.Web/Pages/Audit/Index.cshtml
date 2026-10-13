@@ -1,0 +1,87 @@
+@page
+@using Dusiburg.AI.Trasporto.Shared.Security
+@model Dusiburg.AI.Trasporto.Web.Pages.Audit.IndexModel
+@{
+    ViewData["Title"] = "Audit";
+}
+
+<h1 class="h3">Audit</h1>
+<p class="text-muted">Ogni operazione chiesta alla piattaforma, riuscita o rifiutata. Il registro si può solo accodare: i rifiuti per ruolo restano scritti quanto gli accessi.</p>
+<partial name="_Messages" model="Model" />
+
+<form method="get" class="row g-2 align-items-end mb-3" id="filters">
+    <div class="col-auto">
+        <label for="role-filter" class="form-label small mb-0">Ruolo</label>
+        <select name="role" id="role-filter" class="form-select form-select-sm" onchange="this.form.submit()">
+            <option value="">tutti</option>
+            @foreach (Role role in Enum.GetValues<Role>())
+            {
+                <option value="@role" selected="@(Model.RoleFilter == role.ToString())">@role</option>
+            }
+        </select>
+    </div>
+    <div class="col-auto">
+        <label for="Operation" class="form-label small mb-0">Operazione</label>
+        <select name="Operation" id="Operation" class="form-select form-select-sm" onchange="this.form.submit()">
+            <option value="">tutte</option>
+            @foreach (Operation operation in Enum.GetValues<Operation>())
+            {
+                <option value="@operation" selected="@(Model.Operation == operation.ToString())">@operation</option>
+            }
+        </select>
+    </div>
+    <div class="col-auto">
+        <label for="Outcome" class="form-label small mb-0">Esito</label>
+        <select name="Outcome" id="Outcome" class="form-select form-select-sm" onchange="this.form.submit()">
+            <option value="">tutti</option>
+            @foreach (AuditOutcome outcome in Enum.GetValues<AuditOutcome>())
+            {
+                <option value="@outcome" selected="@(Model.Outcome == outcome.ToString())">@Presentation.Label(outcome)</option>
+            }
+        </select>
+    </div>
+    <div class="col-auto">
+        <label for="ShipmentCode" class="form-label small mb-0">Spedizione</label>
+        <input name="ShipmentCode" id="ShipmentCode" value="@Model.ShipmentCode" class="form-control form-control-sm" placeholder="SH-1004" />
+    </div>
+    <div class="col-auto"><button type="submit" class="btn btn-sm btn-outline-secondary">Filtra</button></div>
+</form>
+
+@if (Model.Events.Count == 0 && Model.Errors.Count == 0)
+{
+    <p class="text-muted" id="empty">Nessun evento.</p>
+}
+else if (Model.Events.Count > 0)
+{
+    <div class="table-responsive">
+        <table class="table table-sm align-middle" id="audit-events">
+            <thead><tr><th>Quando</th><th>Chi</th><th>Ruolo</th><th>Operazione</th><th>Risorsa</th><th>Esito</th><th>Motivo · dettaglio</th><th>Traccia</th></tr></thead>
+            <tbody>
+                @foreach (AuditEventView audit in Model.Events)
+                {
+                    <tr class="@(audit.Outcome == AuditOutcome.Denied ? "table-danger" : "")" data-event="@audit.Id">
+                        <td class="small text-nowrap">@Presentation.Moment(audit.OccurredAt)</td>
+                        <td>@(audit.ActorName ?? "—")</td>
+                        <td>@(audit.Role?.ToString() ?? "—")</td>
+                        <td><code>@audit.Operation</code></td>
+                        <td class="small text-break">
+                            @audit.Resource
+                            @if (audit.ShipmentCode is { } shipmentCode && shipmentCode != audit.Resource)
+                            {
+                                <span class="text-muted">(@shipmentCode)</span>
+                            }
+                        </td>
+                        <td><span class="badge @Presentation.BadgeClass(audit.Outcome)">@Presentation.Label(audit.Outcome)</span></td>
+                        <td class="small">@audit.Reason @audit.Detail</td>
+                        <td>
+                            @if (Presentation.TraceUrl(Model.DashboardUrl, audit.TraceId) is { } traceUrl)
+                            {
+                                <a href="@traceUrl" target="_blank" rel="noopener" class="small">apri</a>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

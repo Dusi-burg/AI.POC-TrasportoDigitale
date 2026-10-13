@@ -1,0 +1,57 @@
+@page
+@using Dusiburg.AI.Trasporto.Web.Demo
+@using Dusiburg.AI.Trasporto.Web.Pages.Demo
+@model Dusiburg.AI.Trasporto.Web.Pages.Demo.IndexModel
+@{
+    ViewData["Title"] = "Dati demo";
+}
+
+<h1 class="h3">Dati demo</h1>
+<p class="text-muted">Sei ordini del TMS con codice fisso, uno per scenario. Tutti i dati sono inventati: ragioni sociali, partite IVA, targhe (serie <code>ZZ</code>/<code>XZ</code>, non assegnate).
+    Le date sono relative al giorno in cui è stato rigenerato il database.</p>
+<partial name="_Messages" model="Model" />
+
+<div class="table-responsive">
+    <table class="table table-sm align-middle" id="demo-orders">
+        <thead><tr><th>Ordine</th><th>Scenari</th><th>Che cosa mostra</th><th>Tratta</th><th>Targhe</th><th>Spedizione</th><th>CMR sintetici</th></tr></thead>
+        <tbody>
+            @foreach (DemoOrderRow row in Model.Orders)
+            {
+                <tr data-order="@row.Order.Code">
+                    <td><code>@row.Order.Code</code></td>
+                    <td>@string.Join(", ", row.Order.Scenarios)</td>
+                    <td>@row.Order.Title</td>
+                    <td class="small">@row.Customer.Name, @row.Customer.City (@row.Customer.CountryCode)<br />→ @row.Order.Consignee.Name, @row.Order.Consignee.City (@row.Order.Consignee.CountryCode)</td>
+                    <td class="small text-nowrap">@row.Order.Trip.TractorPlate<br />@row.Order.Trip.TrailerPlate</td>
+                    <td>
+                        @if (row.Shipment is { } shipment)
+                        {
+                            <a asp-page="/Shipments/Details" asp-route-code="@shipment.Code">@shipment.Code</a>
+                            <span class="badge @Presentation.BadgeClass(shipment.Status)">@Presentation.Label(shipment.Status)</span>
+                            <div class="small text-muted">v@(shipment.DatasetVersion) · @shipment.Errors errori, @shipment.Warnings avvisi</div>
+                        }
+                        else
+                        {
+                            <span class="text-muted">non importata</span>
+                        }
+                    </td>
+                    <td class="small">
+                        @foreach (string cmrCode in row.CmrCodes)
+                        {
+                            <a href="@DemoCmrFiles.UrlFor(cmrCode)" target="_blank" rel="noopener" class="d-block">@cmrCode</a>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<h2 class="h5 mt-4">Come percorrere gli scenari</h2>
+<ol class="small">
+    <li><strong>Spedizione completa</strong> (TO-1001) — come <em>Dispatcher</em>: <a asp-page="/Shipments/Index">Spedizioni</a> → Importa dal TMS. La spedizione nasce valida ed è pubblicata sul gate; si scarica l'XML eFTI.</li>
+    <li><strong>Campi mancanti e ADR incoerente</strong> (TO-1002) — sulla spedizione, "Avvia l'agente": l'agente lascia proposte prese dall'ordine, tu le accetti o le rifiuti. Solo l'accettazione crea una nuova versione del dataset.</li>
+    <li><strong>CMR in PDF</strong> (TO-1003) — sulla spedizione, "Carica il CMR demo": i campi sicuri diventano proposte, quelli dubbi vanno in <a asp-page="/Documents/Review">Revisione</a>. Le varianti <code>CMR-1001-DIFF</code> e <code>CMR-1004-INJ</code> mostrano un documento che contraddice la spedizione e uno che contiene frasi scritte come istruzioni.</li>
+    <li><strong>Controllo su strada</strong> (TO-1004) — come <em>Authority</em>: <a asp-page="/Authority/Index">Controllo su strada</a>, targa <code>ZZ104AA</code>. Poi come <em>Dispatcher</em> la spedizione mostra chi l'ha consultata, e come <em>Admin</em> l'<a asp-page="/Audit/Index">Audit</a> mostra anche i rifiuti.</li>
+</ol>
+<p class="small text-muted">Gli ordini TO-1005 e TO-1006 servono agli scenari dei reclami (5–7), che non fanno parte di questa fase. TO-1006 è consegnato da nove giorni: sul gate è scaduto, e un'autorità non lo trova più.</p>

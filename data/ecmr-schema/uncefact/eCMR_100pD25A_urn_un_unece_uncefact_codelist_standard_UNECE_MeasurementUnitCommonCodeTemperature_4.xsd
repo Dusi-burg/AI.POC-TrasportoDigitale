@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns:clm6Recommendation20Temperature="urn:un:unece:uncefact:codelist:standard:UNECE:MeasurementUnitCommonCodeTemperature:4"
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+    targetNamespace="urn:un:unece:uncefact:codelist:standard:UNECE:MeasurementUnitCommonCodeTemperature:4"
+    elementFormDefault="qualified"
+    version="1.1">
+  <xsd:simpleType name="MeasurementUnitCommonCodeTemperatureContentType">
+    <xsd:restriction base="xsd:token">
+      <xsd:enumeration value="CEL"/>
+      <xsd:enumeration value="FAH"/>
+      <xsd:minLength value="1"/>
+      <xsd:maxLength value="3"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+</xsd:schema>

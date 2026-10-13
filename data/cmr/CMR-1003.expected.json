@@ -1,0 +1,40 @@
+{
+  "code": "CMR-1003",
+  "orderCode": "TO-1003",
+  "shipmentCode": "SH-1003",
+  "title": "Scenario 3: caselle ambigue e un'annotazione a mano",
+  "layout": "BoxesItalian",
+  "fields": {
+    "carrierAcceptanceLocation/postalAddress/cityName": "Treviso",
+    "carrierAcceptanceLocation/postalAddress/countryCode": "IT",
+    "carrierAcceptanceLocation/postalAddress/postcode": "31100",
+    "carrierAcceptanceLocation/postalAddress/streetName": "Viale Venezia 88",
+    "consignee/name": "Elektromontaža Sava d.o.o.",
+    "consignee/postalAddress/cityName": "Ljubljana",
+    "consignee/postalAddress/countryCode": "SI",
+    "consignee/postalAddress/postcode": "1000",
+    "consignee/postalAddress/streetName": "Letališka cesta 27",
+    "consignee/taxRegistration/id": "SI99900033",
+    "consigneeReceiptLocation/postalAddress/cityName": "Ljubljana",
+    "consigneeReceiptLocation/postalAddress/countryCode": "SI",
+    "consigneeReceiptLocation/postalAddress/postcode": "1000",
+    "consigneeReceiptLocation/postalAddress/streetName": "Letališka cesta 27",
+    "consignor/name": "Automazioni Nord-Est S.r.l.",
+    "consignor/postalAddress/cityName": "Treviso",
+    "consignor/postalAddress/countryCode": "IT",
+    "consignor/postalAddress/postcode": "31100",
+    "consignor/postalAddress/streetName": "Viale Venezia 88",
+    "consignor/taxRegistration/id": "IT01000030005",
+    "grossWeight": "2360",
+    "mainCarriageTransportMovement[0]/usedTransportMeans/id": "ZZ103AA",
+    "numberOfPackages": "14",
+    "transportContractDocument/id": "CMR-1003001",
+    "transportPackage[0]/itemQuantity": "14",
+    "usedTransportEquipment[0]/id": "XZ103AA"
+  },
+  "ambiguous": [
+    "grossWeight",
+    "numberOfPackages",
+    "transportPackage[0]/itemQuantity"
+  ]
+}

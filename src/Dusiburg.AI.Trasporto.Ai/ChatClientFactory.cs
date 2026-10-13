@@ -37,8 +37,16 @@ public sealed class ChatClientFactory(AiOptions options, ILoggerFactory loggerFa
             ? CreateAnthropic(task)
             : CreateOllama();
 
-        ChatClientBuilder builder = inner
-            .AsBuilder()
+        ChatClientBuilder builder = inner.AsBuilder();
+
+        // Verso il cloud email e telefoni partono mascherati; in locale i dati non lasciano la macchina. È il primo anello:
+        // log, telemetria e cattura dei prompt vedono ciò che parte davvero.
+        if (provider == ModelProviders.Anthropic)
+        {
+            builder.Use(client => new PiiMaskingChatClient(client));
+        }
+
+        builder
             .UseLogging(loggerFactory)
             .UseOpenTelemetry(loggerFactory, TrasportoTelemetry.Sources.Chat);
 

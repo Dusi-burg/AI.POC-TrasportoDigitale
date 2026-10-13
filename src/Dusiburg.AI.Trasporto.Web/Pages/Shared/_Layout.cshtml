@@ -1,3 +1,9 @@
+@using Dusiburg.AI.Trasporto.Shared.Security
+@using Dusiburg.AI.Trasporto.Web.Identity
+@{
+    Role role = RoleSelection.From(Context);
+    Actor actor = DemoActors.For(role);
+}
 <!DOCTYPE html>
 <html lang="it">
 <head>
@@ -10,17 +16,31 @@
 </head>
 <body>
     <header>
-        <nav class="navbar navbar-expand-md navbar-dark bg-dark box-shadow mb-3">
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark box-shadow mb-3">
             <div class="container">
-                <a class="navbar-brand" asp-page="/Index">Trasporto digitale</a>
+                <a class="navbar-brand" asp-page="@RoleMenu.HomeFor(role)">Trasporto digitale</a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse"
                         aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Apri il menu">
                     <span class="navbar-toggler-icon"></span>
                 </button>
-                <div class="navbar-collapse collapse d-md-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item"><a class="nav-link" asp-page="/Index">Stato</a></li>
+                <div class="navbar-collapse collapse d-lg-inline-flex justify-content-between">
+                    <ul class="navbar-nav flex-grow-1" id="menu">
+                        @foreach (MenuEntry entry in RoleMenu.For(role))
+                        {
+                            <li class="nav-item"><a class="nav-link" asp-page="@entry.Page">@entry.Label</a></li>
+                        }
                     </ul>
+                    @* Identità simulata: scegliere un ruolo cambia la chiave con cui la Web chiama i servizi, non accede a nulla da sé. *@
+                    <form method="post" asp-page="/Role" class="d-flex align-items-center gap-2" id="role-selector">
+                        <label for="role" class="text-white-50 small mb-0">Ruolo</label>
+                        <select name="role" id="role" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
+                            @foreach (Role option in Enum.GetValues<Role>())
+                            {
+                                <option value="@option" selected="@(option == role)">@option — @DemoActors.For(option).Name</option>
+                            }
+                        </select>
+                        <noscript><button type="submit" class="btn btn-sm btn-outline-light">Cambia</button></noscript>
+                    </form>
                 </div>
             </div>
         </nav>
@@ -32,13 +52,14 @@
     </div>
 
     <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2026 - Dusiburg.AI.Trasporto — POC eFTI per il vettore, dati sintetici e fittizi
+        <div class="container small">
+            Stai lavorando come <strong>@actor.Name</strong> (@role), identità simulata — POC eFTI per il vettore, dati sintetici e fittizi
         </div>
     </footer>
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
 
     @await RenderSectionAsync("Scripts", required: false)
 </body>

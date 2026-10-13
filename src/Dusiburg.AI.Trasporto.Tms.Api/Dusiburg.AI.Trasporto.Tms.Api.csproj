@@ -9,4 +9,8 @@
     <ProjectReference Include="..\Dusiburg.AI.Trasporto.Tms.Data\Dusiburg.AI.Trasporto.Tms.Data.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="Dusiburg.AI.Trasporto.Tms.Api.Tests" />
+  </ItemGroup>
+
 </Project>
