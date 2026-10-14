@@ -1,0 +1,371 @@
+{
+  "createdAt": "2026-10-14 17:48",
+  "provider": "anthropic",
+  "model": "claude-haiku-5-5",
+  "source": "image",
+  "passes": 1,
+  "elapsedMs": 34205.1236,
+  "readings": [
+    {
+      "code": "CMR-1001",
+      "elapsedMs": 5803.3094,
+      "inputTokens": 3760,
+      "outputTokens": 1159,
+      "first": {
+        "cmrNumber": "CMR-1001001",
+        "sender": {
+          "name": "Officine Meccaniche Brambilla S.r.l.",
+          "street": "Via dell'Industria 12",
+          "postalCode": "20054",
+          "city": "Segrate",
+          "countryCode": "IT",
+          "vatNumber": "IT01000010007"
+        },
+        "consignee": {
+          "name": "Maschinenbau Neckartal GmbH",
+          "street": "Industriestraße 40",
+          "postalCode": "70565",
+          "city": "Stuttgart",
+          "countryCode": "DE",
+          "vatNumber": "DE999000011"
+        },
+        "placeOfDelivery": {
+          "street": "Industriestraße 40",
+          "postalCode": "70565",
+          "city": "Stuttgart",
+          "countryCode": "DE"
+        },
+        "placeOfTakingOver": {
+          "street": "Via dell'Industria 12",
+          "postalCode": "20054",
+          "city": "Segrate",
+          "countryCode": "IT"
+        },
+        "goods": [
+          {
+            "description": "Cuscinetti e supporti industriali",
+            "packageCount": 6,
+            "grossWeight": "1.840"
+          },
+          {
+            "description": "Motori elettrici trifase",
+            "packageCount": 2,
+            "grossWeight": "620"
+          }
+        ],
+        "totalPackages": 8,
+        "totalGrossWeight": "2.460",
+        "vehiclePlate": "ZZ101AA",
+        "trailerPlate": "XZ101AA"
+      },
+      "attempts": 1,
+      "refused": false
+    },
+    {
+      "code": "CMR-1002",
+      "elapsedMs": 5900.4071,
+      "inputTokens": 3760,
+      "outputTokens": 1189,
+      "first": {
+        "cmrNumber": "CMR-1002001",
+        "sender": {
+          "name": "Cartiera del Brenta S.p.A.",
+          "street": "Via Riviera 3",
+          "postalCode": "35010",
+          "city": "Vigonza",
+          "countryCode": "IT",
+          "vatNumber": "IT01000020006"
+        },
+        "consignee": {
+          "name": "Papeteries du Rhône SAS",
+          "street": "Rue de Gerland 112",
+          "postalCode": "69007",
+          "city": "Lyon",
+          "countryCode": "FR",
+          "vatNumber": "FR99999000022"
+        },
+        "placeOfDelivery": {
+          "street": "Rue de Gerland 112",
+          "postalCode": "69007",
+          "city": "Lyon",
+          "countryCode": "FR"
+        },
+        "placeOfTakingOver": {
+          "street": "Via Riviera 3",
+          "postalCode": "35010",
+          "city": "Vigonza",
+          "countryCode": "IT"
+        },
+        "goods": [
+          {
+            "description": "Additivo sbiancante per cellulosa",
+            "packageCount": 12,
+            "grossWeight": "2.640",
+            "unNumber": "2014",
+            "properShippingName": "PEROSSIDO DI IDROGENO IN SOLUZIONE ACQUOSA",
+            "adrClass": "5.1",
+            "packingGroup": "II"
+          },
+          {
+            "description": "Carta in bobine",
+            "packageCount": 10,
+            "grossWeight": "6.200"
+          }
+        ],
+        "totalPackages": 22,
+        "totalGrossWeight": "8.840",
+        "vehiclePlate": "ZZ102AA",
+        "trailerPlate": "XZ102AA"
+      },
+      "attempts": 1,
+      "refused": false
+    },
+    {
+      "code": "CMR-1003",
+      "elapsedMs": 4477.7368,
+      "inputTokens": 3760,
+      "outputTokens": 993,
+      "first": {
+        "cmrNumber": "CMR-1003001",
+        "sender": {
+          "name": "Automazioni Nord-Est S.r.l.",
+          "street": "Viale Venezia 88",
+          "postalCode": "31100",
+          "city": "Treviso",
+          "countryCode": "IT",
+          "vatNumber": "IT01000030005"
+        },
+        "consignee": {
+          "name": "Elektromontaža Sava d.o.o.",
+          "street": "Letališka cesta 27",
+          "postalCode": "1000",
+          "city": "Ljubljana",
+          "countryCode": "SI",
+          "vatNumber": "SI99900033"
+        },
+        "placeOfDelivery": {
+          "street": "Letališka cesta 27",
+          "postalCode": "1000",
+          "city": "Ljubljana",
+          "countryCode": "SI"
+        },
+        "placeOfTakingOver": {
+          "street": "Viale Venezia 88",
+          "postalCode": "31100",
+          "city": "Treviso",
+          "countryCode": "IT"
+        },
+        "goods": [
+          {
+            "description": "Materiale elettrico: quadri e cavi",
+            "packageCount": 14,
+            "grossWeight": "2.360"
+          }
+        ],
+        "totalPackages": 14,
+        "totalGrossWeight": "2.360",
+        "vehiclePlate": "ZZ103AA",
+        "trailerPlate": "XZ103AA"
+      },
+      "attempts": 1,
+      "refused": false
+    },
+    {
+      "code": "CMR-1004",
+      "elapsedMs": 5765.7123,
+      "inputTokens": 3760,
+      "outputTokens": 1400,
+      "first": {
+        "cmrNumber": "CMR-1004001",
+        "sender": {
+          "name": "Imballaggi Tirreno S.r.l.",
+          "street": "Via Aurelia 150",
+          "postalCode": "57121",
+          "city": "Livorno",
+          "countryCode": "IT",
+          "vatNumber": "IT01000040004"
+        },
+        "consignee": {
+          "name": "Química Levante S.L.",
+          "street": "Carrer dels Fusters 9",
+          "postalCode": "46014",
+          "city": "València",
+          "countryCode": "ES",
+          "vatNumber": "ESB99900044"
+        },
+        "placeOfDelivery": {
+          "street": "Carrer dels Fusters 9",
+          "postalCode": "46014",
+          "city": "València",
+          "countryCode": "ES"
+        },
+        "placeOfTakingOver": {
+          "street": "Via Aurelia 150",
+          "postalCode": "57121",
+          "city": "Livorno",
+          "countryCode": "IT"
+        },
+        "goods": [
+          {
+            "description": "Vernici industriali a solvente – UN 1263 PITTURE, 3, II",
+            "packageCount": 20,
+            "grossWeight": "4.200",
+            "unNumber": "1263",
+            "properShippingName": "PITTURE",
+            "adrClass": "3",
+            "packingGroup": "II"
+          },
+          {
+            "description": "Imballaggi in cartone ondulato",
+            "packageCount": 8,
+            "grossWeight": "1.100"
+          }
+        ],
+        "totalPackages": 28,
+        "totalGrossWeight": "5.300",
+        "vehiclePlate": "ZZ104AA",
+        "trailerPlate": "XZ104AA"
+      },
+      "attempts": 1,
+      "refused": false
+    },
+    {
+      "code": "G-2001",
+      "elapsedMs": 6467.0464,
+      "inputTokens": 3760,
+      "outputTokens": 1352,
+      "first": {
+        "cmrNumber": "CMR-4687636",
+        "sender": {
+          "name": "Pardini Plastica S.p.A.",
+          "street": "Via degli Artigiani 140",
+          "postalCode": "28100",
+          "city": "Novara",
+          "countryCode": "IT",
+          "vatNumber": "IT10000040005"
+        },
+        "consignee": {
+          "name": "Établissements Girard SAS Toulouse",
+          "street": "Avenue de la Gare 5",
+          "postalCode": "31200",
+          "city": "Toulouse",
+          "countryCode": "FR",
+          "vatNumber": "FR99999528859"
+        },
+        "placeOfDelivery": {
+          "street": "Avenue de la Gare 5",
+          "postalCode": "31200",
+          "city": "Toulouse",
+          "countryCode": "FR"
+        },
+        "placeOfTakingOver": {
+          "street": "Via degli Artigiani 140",
+          "postalCode": "28100",
+          "city": "Novara",
+          "countryCode": "IT"
+        },
+        "goods": [
+          {
+            "description": "Granulato plastico",
+            "packageCount": 75,
+            "grossWeight": "1.875"
+          },
+          {
+            "description": "Carta in bobine",
+            "packageCount": 14,
+            "grossWeight": "11.312"
+          },
+          {
+            "description": "Vino in bottiglie",
+            "packageCount": 8,
+            "grossWeight": "6.744"
+          },
+          {
+            "description": "Mobili smontati",
+            "packageCount": 24,
+            "grossWeight": "840"
+          }
+        ],
+        "totalPackages": 121,
+        "totalGrossWeight": "20.771",
+        "vehiclePlate": "ZZ479WW",
+        "trailerPlate": "XZ334VP"
+      },
+      "attempts": 1,
+      "refused": false
+    },
+    {
+      "code": "G-2028",
+      "elapsedMs": 5721.1953,
+      "inputTokens": 3760,
+      "outputTokens": 1591,
+      "first": {
+        "cmrNumber": "LDV-2028",
+        "sender": {
+          "name": "Cecchini Meccanica S.p.A.",
+          "street": "Via dell'Industria 149",
+          "postalCode": "65128",
+          "city": "Pescara",
+          "countryCode": "IT",
+          "vatNumber": "IT10000440007"
+        },
+        "consignee": {
+          "name": "Pozzo Chimica S.p.A.",
+          "street": "Via degli Artigiani 7",
+          "postalCode": "20141",
+          "city": "Milano",
+          "countryCode": "IT",
+          "vatNumber": "IT10000450006"
+        },
+        "placeOfDelivery": {
+          "street": "Via degli Artigiani 7",
+          "postalCode": "20141",
+          "city": "Milano",
+          "countryCode": "IT"
+        },
+        "placeOfTakingOver": {
+          "street": "Via dell'Industria 149",
+          "postalCode": "65128",
+          "city": "Pescara",
+          "countryCode": "IT"
+        },
+        "goods": [
+          {
+            "description": "Tessuti in pezza",
+            "packageCount": 25,
+            "grossWeight": "1.050"
+          },
+          {
+            "description": "Tessuti in pezza",
+            "packageCount": 21,
+            "grossWeight": "1.260"
+          },
+          {
+            "description": "Carta in bobine",
+            "packageCount": 6,
+            "grossWeight": "4.722"
+          },
+          {
+            "description": "Pasta alimentare secca",
+            "packageCount": 19,
+            "grossWeight": "8.607"
+          },
+          {
+            "description": "Diluenti industriali",
+            "packageCount": 23,
+            "grossWeight": "4.232",
+            "unNumber": "1993",
+            "properShippingName": "LIQUIDO INFIAMMABILE, N.A.S.",
+            "adrClass": "3",
+            "packingGroup": "III"
+          }
+        ],
+        "totalPackages": 94,
+        "totalGrossWeight": "19.871",
+        "vehiclePlate": "ZZ859SD"
+      },
+      "attempts": 1,
+      "refused": false
+    }
+  ]
+}
