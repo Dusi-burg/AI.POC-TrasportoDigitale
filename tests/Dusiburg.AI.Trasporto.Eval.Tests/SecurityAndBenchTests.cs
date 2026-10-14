@@ -120,6 +120,7 @@ public class SecurityAndBenchTests
         decimal? sonnet = prices.Cost(ModelCandidate.Parse("anthropic:claude-sonnet-5-5"), 500_000, 100_000);
 
         Assert.That((haiku, sonnet), Is.EqualTo((7.00m, 2.00m)));
+        Assert.That(prices.Cost(ModelCandidate.Parse("anthropic:claude-haiku-5-5"), 2_000_000, 1_000_000), Is.EqualTo(0.70m));
         Assert.That(prices.Cost(ModelCandidate.Parse("ollama:qwen3.5:9b"), 5_000, 5_000), Is.EqualTo(0m));
         Assert.That(prices.Cost(ModelCandidate.Parse("anthropic:modello-senza-listino"), 5_000, 5_000), Is.Null);
         Assert.That(prices.Cost(ModelCandidate.Parse("anthropic:claude-haiku-4-5"), null, null), Is.Null, "senza token non c'è un costo da dichiarare");

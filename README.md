@@ -193,7 +193,8 @@ Set on the AppHost (user-secrets, command line or environment variables).
 |---|---|
 | `MODEL_EXTRACTION_PROVIDER`, `MODEL_MAPPING_PROVIDER`, `MODEL_AUTHORITY_PROVIDER` | `ollama` (or `anthropic`) |
 | `OLLAMA_ENDPOINT`, `OLLAMA_CHAT_MODEL`, `OLLAMA_NUM_CTX` | `http://127.0.0.1:11434`, `qwen3.5:9b`, `8192` |
-| `ANTHROPIC_MODEL` | `claude-haiku-4-5` |
+| `OLLAMA_NUM_GPU` | `99` (chat fully on the GPU; `auto` = Ollama decides) |
+| `ANTHROPIC_MODEL` | `claude-haiku-5-5` (the measurements in `eval/` were taken with `claude-haiku-4-5`) |
 | `EXTRACTION_REVIEW_THRESHOLD`, `EXTRACTION_AUTO_ACCEPT` | `0.80`, `false` |
 | `Extraction__PassesByProvider__ollama`, `Extraction__PassesByProvider__anthropic` | readings per document: `2`, `1` |
 | `Efti__GateRetentionMinutes` | `7200` (five days after delivery) |
@@ -204,7 +205,7 @@ Set on the AppHost (user-secrets, command line or environment variables).
 ```powershell
 dotnet run --project tools/Dusiburg.AI.Trasporto.Eval -- eval validation                                  # no model
 dotnet run --project tools/Dusiburg.AI.Trasporto.Eval -- eval extraction                                  # CMR golden set, demo model
-dotnet run --project tools/Dusiburg.AI.Trasporto.Eval -- eval extraction --model anthropic:claude-haiku-4-5
+dotnet run --project tools/Dusiburg.AI.Trasporto.Eval -- eval extraction --model anthropic:claude-haiku-5-5
 dotnet run --project tools/Dusiburg.AI.Trasporto.Eval -- eval security                                    # needs the running stack
 dotnet run --project tools/Dusiburg.AI.Trasporto.Eval -- bench models --reuse                             # three models; mapping needs the stack
 ```

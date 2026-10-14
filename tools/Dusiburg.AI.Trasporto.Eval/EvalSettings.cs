@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Dusiburg.AI.Trasporto.Eval;
 
-/// <summary>Un modello da misurare: <c>ollama:qwen3.5:9b</c>, <c>anthropic:claude-haiku-4-5</c>.</summary>
+/// <summary>Un modello da misurare: <c>ollama:qwen3.5:9b</c>, <c>anthropic:claude-haiku-5-5</c>.</summary>
 public sealed record ModelCandidate(string Provider, string Model)
 {
     /// <summary>I tre modelli del confronto della Fase 9 (PLAN §4).</summary>
@@ -45,10 +45,15 @@ public sealed record ModelPrice(decimal InputPerMillion, decimal OutputPerMillio
 public sealed class ModelPrices(IReadOnlyDictionary<string, ModelPrice> prices)
 {
     /// <summary>Data a cui valgono i prezzi di default (listino dell'API Anthropic).</summary>
-    public const string DefaultsAsOf = "2026-10-06";
+    public const string DefaultsAsOf = "2026-10-14";
 
+    /// <remarks>
+    /// Haiku 5.5 ha due listini secondo la lunghezza del prompt: 0,10 $ / 0,50 $ fino a 100K token, 0,50 $ / 2,50 $ oltre. I prompt
+    /// del POC restano sotto i 100K, quindi vale il primo. Haiku 4.5 resta per ricalcolare i report misurati con quel modello.
+    /// </remarks>
     public static readonly IReadOnlyDictionary<string, ModelPrice> Defaults = new Dictionary<string, ModelPrice>(StringComparer.OrdinalIgnoreCase)
     {
+        ["claude-haiku-5-5"] = new(0.10m, 0.50m),
         ["claude-haiku-4-5"] = new(1.00m, 5.00m),
         ["claude-sonnet-5-5"] = new(2.00m, 10.00m)
     };
@@ -122,7 +127,7 @@ public sealed class EvalSettings(IConfiguration configuration, string repository
             fromAppHost[$"ApiKeys:{role}"] = secrets[$"Parameters:api-key-{role.ToString().ToLowerInvariant()}"];
         }
 
-        foreach (string knob in new[] { AiOptions.Keys.OllamaEndpoint, AiOptions.Keys.OllamaChatModel, AiOptions.Keys.OllamaNumCtx, AiOptions.Keys.AnthropicModel })
+        foreach (string knob in new[] { AiOptions.Keys.OllamaEndpoint, AiOptions.Keys.OllamaChatModel, AiOptions.Keys.OllamaNumCtx, AiOptions.Keys.OllamaNumGpu, AiOptions.Keys.AnthropicModel })
         {
             fromAppHost[knob] = secrets[knob];
         }

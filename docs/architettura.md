@@ -79,8 +79,8 @@ Il modello si sceglie **per compito**. Chi ha bisogno di un modello chiede a `IC
 
 Regole per provider:
 
-- **Ollama**: temperatura 0,1, thinking spento, finestra di contesto da `OLLAMA_NUM_CTX` (8192), client HTTP dedicato con timeout di 10 minuti. È quello installato sul PC: se all'avvio non risponde, l'AppHost lo avvia come propria risorsa (`ollama serve`) e lo ferma quando si chiude; se è già in esecuzione non lo tocca. Vale solo per un `OLLAMA_ENDPOINT` locale.
-- **Anthropic**: `ANTHROPIC_MODEL` (`claude-haiku-4-5`) per tutti i compiti tranne il giudice, che usa `ANTHROPIC_JUDGE_MODEL` (`claude-sonnet-5-5`). La temperatura 0,1 si invia solo ai modelli Haiku 4.5; agli altri non si invia alcun parametro di campionamento.
+- **Ollama**: temperatura 0,1, thinking spento, finestra di contesto da `OLLAMA_NUM_CTX` (8192), tutti i layer in GPU con `OLLAMA_NUM_GPU` (99), client HTTP dedicato con timeout di 10 minuti. È quello installato sul PC: se all'avvio non risponde, l'AppHost lo avvia come propria risorsa (`ollama serve`) e lo ferma quando si chiude; se è già in esecuzione non lo tocca. Vale solo per un `OLLAMA_ENDPOINT` locale.
+- **Anthropic**: `ANTHROPIC_MODEL` (`claude-haiku-5-5`; fino al 2026-10-14 `claude-haiku-4-5`) per tutti i compiti tranne il giudice, che usa `ANTHROPIC_JUDGE_MODEL` (`claude-sonnet-5-5`). La temperatura 0,1 si invia solo ai modelli Haiku 4.5; agli altri non si invia alcun parametro di campionamento (Haiku 5.5, Sonnet 5.5 e Opus 5.5 rispondono 400). Haiku 5.5 ragiona sempre con l'adaptive thinking (effort di default `medium`), che conta nei token di uscita.
 - **Embedding**: sempre Ollama, sulla CPU (`num_gpu = 0`), per non togliere VRAM alla chat.
 - **Mascheramento verso il cloud**: con il provider `anthropic` email e numeri di telefono, nei messaggi e nei risultati dei tool, partono come `[email]` e `[telefono]`. Si maschera la copia inviata: il codice che controlla i valori vede i dati veri. Un telefono si riconosce solo in forma internazionale o se annunciato (`tel`, `cell`, …), perché CAP, numeri ONU e partite IVA al modello servono. I nomi di persone fisiche non si riconoscono in modo affidabile e non vengono toccati: i dati del POC non ne contengono.
 
@@ -94,7 +94,8 @@ Si impostano sull'AppHost (user-secrets, riga di comando o variabili d'ambiente)
 |---|---|
 | `OLLAMA_ENDPOINT` | `http://127.0.0.1:11434` |
 | `OLLAMA_CHAT_MODEL`, `OLLAMA_NUM_CTX` | `qwen3.5:9b`, `8192` |
-| `ANTHROPIC_MODEL`, `ANTHROPIC_JUDGE_MODEL` | `claude-haiku-4-5`, `claude-sonnet-5-5` |
+| `OLLAMA_NUM_GPU` | `99` (chat tutta in GPU; `auto` = margine automatico di Ollama, che dalla 0.40 su 8 GB lascia un layer sulla CPU) |
+| `ANTHROPIC_MODEL`, `ANTHROPIC_JUDGE_MODEL` | `claude-haiku-5-5`, `claude-sonnet-5-5` |
 | `MODEL_<COMPITO>_PROVIDER` | vedi tabella sopra |
 | `EMBEDDING_MODEL`, `EMBEDDING_DIMENSIONS` | `embeddinggemma`, `768` |
 | `TRASPORTO_PROMPT_CAPTURE_DIR` | — |
@@ -713,7 +714,7 @@ Gli identificativi sono quelli del piano di progetto.
 | P4 | Gli agenti stanno in un servizio a parte, client MCP, senza database | Agenti dentro `Efti.Api` |
 | P8 | Porte locali 5301–5306 | — |
 | D2 | NUnit resta alla 4.6.1 | NUnit 5.0.0, appena uscita |
-| D3 | Cloud di default `claude-haiku-4-5`, giudice `claude-sonnet-5-5` | Un solo modello cloud |
+| D3 | Cloud di default `claude-haiku-4-5`, giudice `claude-sonnet-5-5` (dal 2026-10-14 default `claude-haiku-5-5`; le misure della Fase 9 restano su 4.5) | Un solo modello cloud |
 | F1.1 | Il modello si chiede alla fabbrica per compito; nessun `IChatClient` registrato nel contenitore | Un client unico, come in O2C: non permette il routing per compito |
 | F1.2 | La chiave Anthropic è facoltativa all'avvio dell'AppHost | Parametro obbligatorio: la demo locale non partirebbe senza chiave |
 | F1.3 | Nessun correlation id applicativo: l'audit userà il trace id di OpenTelemetry | Correlation id come in O2C |

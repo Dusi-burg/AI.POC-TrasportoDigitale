@@ -60,15 +60,16 @@ public sealed class ChatClientFactory(AiOptions options, ILoggerFactory loggerFa
     }
 
     /// <summary>
-    /// Solo Haiku 4.5 accetta una temperatura diversa dal default: Sonnet 5.5 e Opus 5.5 la rifiutano (fase-0.md §7).
-    /// Un modello non riconosciuto si tratta come i più recenti: nessun parametro di campionamento.
+    /// Solo Haiku 4.5 accetta una temperatura diversa dal default: Haiku 5.5, Sonnet 5.5 e Opus 5.5 la rifiutano con un 400
+    /// (fase-0.md §7). Un modello non riconosciuto si tratta come i più recenti: nessun parametro di campionamento.
     /// </summary>
     internal static bool AcceptsTemperature(string anthropicModel) =>
         anthropicModel.StartsWith("claude-haiku-4-5", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
     /// Haiku 4.5 non supporta l'adaptive thinking: con la modalità Extended e senza <c>ChatOptions.Reasoning</c> il client
-    /// non invia alcuna configurazione di thinking (come in O2C).
+    /// non invia alcuna configurazione di thinking (come in O2C). Haiku 5.5 invece accetta solo l'adaptive (un budget di
+    /// thinking è un 400) e lo usa anche quando la richiesta non lo chiede, con effort di default <c>medium</c>.
     /// </summary>
     internal static AnthropicThinkingMode ThinkingModeFor(string anthropicModel) =>
         AcceptsTemperature(anthropicModel) ? AnthropicThinkingMode.Extended : AnthropicThinkingMode.Adaptive;
@@ -106,6 +107,11 @@ public sealed class ChatClientFactory(AiOptions options, ILoggerFactory loggerFa
         // Qwen 3.5 con il thinking attivo consuma token e a volte lascia la chiamata al tool dentro il ragionamento.
         defaults.AddOllamaOption(OllamaOption.Think, false);
         defaults.AddOllamaOption(OllamaOption.NumCtx, options.OllamaContextLength);
+
+        if (options.OllamaNumGpu is int numGpu)
+        {
+            defaults.AddOllamaOption(OllamaOption.NumGpu, numGpu);
+        }
 
         return (client, options.OllamaChatModel, defaults);
     }
