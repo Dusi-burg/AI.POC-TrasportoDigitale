@@ -22,10 +22,39 @@ public class ChatClientFactoryTests
         Assert.That(model.DefaultOptions.Temperature, Is.EqualTo(0.1f));
         Assert.That(model.DefaultOptions.AdditionalProperties?[OllamaOption.Think.Name], Is.EqualTo(false));
         Assert.That(model.DefaultOptions.AdditionalProperties?[OllamaOption.NumCtx.Name], Is.EqualTo(12_288));
+        Assert.That(model.DefaultOptions.AdditionalProperties?[OllamaOption.NumGpu.Name], Is.EqualTo(AiOptions.DefaultOllamaNumGpu));
     }
 
     [Test]
-    public void Create_CloudTaskOnHaiku_KeepsLowTemperature()
+    public void Create_LocalTaskWithNumGpuAuto_LeavesChoiceToOllama()
+    {
+        //SETUP
+        ChatClientFactory factory = Factory(new() { ["OLLAMA_NUM_GPU"] = AiOptions.AutomaticNumGpu });
+
+        //SUT
+        using ChatModel model = factory.Create(ModelTask.Extraction);
+
+        Assert.That(model.DefaultOptions.AdditionalProperties?.ContainsKey(OllamaOption.NumGpu.Name), Is.False);
+    }
+
+    [Test]
+    public void Create_CloudTaskOnHaiku45_KeepsLowTemperature()
+    {
+        //SETUP
+        ChatClientFactory factory = Factory(new()
+        {
+            ["ANTHROPIC_API_KEY"] = "test-key", ["ANTHROPIC_MODEL"] = "claude-haiku-4-5", ["MODEL_MAPPING_PROVIDER"] = "anthropic"
+        });
+
+        //SUT
+        using ChatModel model = factory.Create(ModelTask.Mapping);
+
+        Assert.That((model.Provider, model.ModelId), Is.EqualTo((ModelProviders.Anthropic, "claude-haiku-4-5")));
+        Assert.That(model.DefaultOptions.Temperature, Is.EqualTo(0.1f));
+    }
+
+    [Test]
+    public void Create_CloudTaskOnDefaultHaiku55_SendsNoSampling()
     {
         //SETUP
         ChatClientFactory factory = Factory(new() { ["ANTHROPIC_API_KEY"] = "test-key", ["MODEL_MAPPING_PROVIDER"] = "anthropic" });
@@ -33,8 +62,8 @@ public class ChatClientFactoryTests
         //SUT
         using ChatModel model = factory.Create(ModelTask.Mapping);
 
-        Assert.That((model.Provider, model.ModelId), Is.EqualTo((ModelProviders.Anthropic, "claude-haiku-4-5")));
-        Assert.That(model.DefaultOptions.Temperature, Is.EqualTo(0.1f));
+        Assert.That((model.Provider, model.ModelId), Is.EqualTo((ModelProviders.Anthropic, "claude-haiku-5-5")));
+        Assert.That(model.DefaultOptions.Temperature, Is.Null, "Haiku 5.5 rifiuta una temperatura diversa dal default");
     }
 
     [Test]
@@ -78,6 +107,7 @@ public class ChatClientFactoryTests
 
     [TestCase("claude-haiku-4-5", true, AnthropicThinkingMode.Extended)]
     [TestCase("claude-haiku-4-5-20251001", true, AnthropicThinkingMode.Extended)]
+    [TestCase("claude-haiku-5-5", false, AnthropicThinkingMode.Adaptive)]
     [TestCase("claude-sonnet-5-5", false, AnthropicThinkingMode.Adaptive)]
     [TestCase("claude-opus-5-5", false, AnthropicThinkingMode.Adaptive)]
     [TestCase("claude-modello-futuro", false, AnthropicThinkingMode.Adaptive)]

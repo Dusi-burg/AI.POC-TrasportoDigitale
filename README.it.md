@@ -66,7 +66,7 @@ Sei processi, ciascuno con un solo compito; ogni schema del database ha un solo 
 
 ## 4. Risultati misurati
 
-Misure del 12 ottobre 2026, riproducibili con `tools/Dusiburg.AI.Trasporto.Eval`; i report completi sono in [eval/](eval). Golden set: **32 CMR sintetici** in sette categorie (puliti, dati che al TMS mancano, conflitti con il TMS, caselle ambigue, note a mano, caselle vuote, prompt injection), 903 campi attesi.
+Misure del 12 ottobre 2026 (`claude-haiku-5-5`: 14 ottobre, [report](eval/report_2026-10-14_bench_models.md)), riproducibili con `tools/Dusiburg.AI.Trasporto.Eval`; i report completi sono in [eval/](eval). Golden set: **32 CMR sintetici** in sette categorie (puliti, dati che al TMS mancano, conflitti con il TMS, caselle ambigue, note a mano, caselle vuote, prompt injection), 903 campi attesi.
 
 ### Estrazione dai CMR: locale contro cloud
 
@@ -74,13 +74,14 @@ Misure del 12 ottobre 2026, riproducibili con `tools/Dusiburg.AI.Trasporto.Eval`
 |---|---|---|---|---|
 | `qwen3.5:9b` — locale, GPU da 8 GB | 96,3 % | **0** | 28 s | nessun costo a consumo |
 | `claude-haiku-4-5` — cloud | 99,7 % | **0** | 10 s | 0,010 $ |
+| `claude-haiku-5-5` — cloud, una lettura | 99,9 % | **0** | 5 s | 0,0008 $ |
 | `claude-sonnet-5-5` — cloud | 100,0 % | **0** | 7 s | 0,022 $ |
 
 - **Il numero che conta è la seconda colonna.** Il modello locale sbaglia o salta 33 campi su 903, ma nessun valore sbagliato è diventato una proposta: gli 8 valori errati sono finiti tutti in revisione, e i campi saltati non producono nulla (ciò che manca lo segnala la validazione).
 - **Dove il locale non arriva**: i dati delle merci pericolose (38,7 % contro il 100 % dei modelli cloud) e le targhe nell'impaginazione in francese. Li salta, non li inventa: se il dato manca anche al TMS resta il problema di validazione. I documenti ADR non vengono instradati a parte: il modello dell'estrazione è uno, e si cambia con una manopola.
 - **Calibrazione**: con il modello locale l'accuratezza è 0 % sotto 0,50 di confidenza, 33 % fra 0,50 e 0,70, 83 % fra 0,70 e 0,80, **100 % sopra la soglia di 0,80** (849 campi). La confidenza calcolata dal codice dice davvero qualcosa.
-- **Revisione**: il 3 % dei campi va a una persona. Dei 19 campi che il golden set vuole davanti a una persona (conflitti con il TMS, caselle ambigue), 18 ci arrivano con tutti e tre i modelli; quello che sfugge è il limite dichiarato qui sotto.
-- **Due letture o una**: la seconda lettura ha fermato un valore sbagliato con il modello locale e nessuno con i modelli cloud, al doppio del tempo. Per questo ora il default è **due letture in locale e una sul cloud** (le misure in tabella sono con due per tutti: sul cloud, con una, tempo e costo si dimezzano circa). Il segnale delle note a mano (peso 0,30) porta in revisione 4 campi che altrimenti diventerebbero proposte.
+- **Revisione**: il 3 % dei campi va a una persona. Dei 19 campi che il golden set vuole davanti a una persona (conflitti con il TMS, caselle ambigue), 18 ci arrivano con tutti i modelli; quello che sfugge è il limite dichiarato qui sotto.
+- **Due letture o una**: la seconda lettura ha fermato un valore sbagliato con il modello locale e nessuno con i modelli cloud, al doppio del tempo. Per questo ora il default è **due letture in locale e una sul cloud** (le misure in tabella sono con due per tutti tranne `claude-haiku-5-5`, misurato dopo la decisione con una sola: sul cloud, con una, tempo e costo si dimezzano circa). Il segnale delle note a mano (peso 0,30) porta in revisione 4 campi che altrimenti diventerebbero proposte.
 
 ### Dove un modello non basta: la scansione
 
@@ -90,9 +91,10 @@ Sei CMR resi come immagine "sporca" (non è una funzione del prodotto, che rifiu
 |---|---|---|
 | `qwen3.5:9b` | 94,4 % | 93,8 % |
 | `claude-haiku-4-5` | 100,0 % | 85,3 % (nessuna partita IVA letta giusta) |
+| `claude-haiku-5-5` | 100,0 % | 100,0 % (partite IVA comprese) |
 | `claude-sonnet-5-5` | 100,0 % | 100,0 % |
 
-Un modello piccolo e veloce sul cloud non è per forza meglio di quello locale: dipende dal compito, e va misurato.
+Un modello piccolo e veloce sul cloud non è per forza meglio di quello locale: dipende dal compito, e va misurato. Con `claude-haiku-5-5` il divario si chiude: dall'immagine legge tutto come Sonnet, a meno di un decimo del costo.
 
 ### Agente di mappatura
 
@@ -102,11 +104,14 @@ Quattro spedizioni incomplete, tre ripetizioni: in una l'ordine del TMS contiene
 |---|---|---|---|---|
 | `qwen3.5:9b` | 11 su 12 | 0 | 21 s | — |
 | `claude-haiku-4-5` | 12 su 12 | 6 | 9 s | 0,015 $ |
+| `claude-haiku-5-5` | 12 su 12 | 2 | 8 s | 0,002 $ |
 | `claude-sonnet-5-5` | 12 su 12 | 0 | 8 s | 0,034 $ |
 
-Le sei proposte non attese di Haiku sono lo stesso caso ripetuto: la città del destinatario dedotta dalla ragione sociale ("… Liège"). Il valore è scritto nell'ordine, quindi il controllo sulla fonte lo lascia passare; resta una proposta in attesa di una persona.
+Le proposte non attese di Haiku (sei con la 4.5, in tutte e tre le ripetizioni; due con la 5.5, in una ripetizione su tre) sono lo stesso caso: la città del destinatario dedotta dalla ragione sociale ("… Liège"). Il valore è scritto nell'ordine, quindi il controllo sulla fonte lo lascia passare; resta una proposta in attesa di una persona.
 
 ### Sicurezza
+
+Misurata il 12 ottobre con `qwen3.5:9b`, `claude-haiku-4-5` e `claude-sonnet-5-5`. Con `claude-haiku-5-5` per ora c'è solo il confronto del 14 ottobre: 0 valori iniettati usciti dai CMR con iniezione; ruoli e agente autorità non ancora misurati.
 
 | Verifica | Esito (tre modelli) |
 |---|---|
@@ -193,7 +198,8 @@ Si impostano sull'AppHost (user-secrets, riga di comando o variabili d'ambiente)
 |---|---|
 | `MODEL_EXTRACTION_PROVIDER`, `MODEL_MAPPING_PROVIDER`, `MODEL_AUTHORITY_PROVIDER` | `ollama` (oppure `anthropic`) |
 | `OLLAMA_ENDPOINT`, `OLLAMA_CHAT_MODEL`, `OLLAMA_NUM_CTX` | `http://127.0.0.1:11434`, `qwen3.5:9b`, `8192` |
-| `ANTHROPIC_MODEL` | `claude-haiku-4-5` |
+| `OLLAMA_NUM_GPU` | `99` (chat tutta in GPU; `auto` = scelta di Ollama) |
+| `ANTHROPIC_MODEL` | `claude-haiku-5-5` (le misure in `eval/` sono state fatte con `claude-haiku-4-5`) |
 | `EXTRACTION_REVIEW_THRESHOLD`, `EXTRACTION_AUTO_ACCEPT` | `0.80`, `false` |
 | `Extraction__PassesByProvider__ollama`, `Extraction__PassesByProvider__anthropic` | letture per documento: `2`, `1` |
 | `Efti__GateRetentionMinutes` | `7200` (cinque giorni dopo la consegna) |
@@ -204,7 +210,7 @@ Si impostano sull'AppHost (user-secrets, riga di comando o variabili d'ambiente)
 ```powershell
 dotnet run --project tools/Dusiburg.AI.Trasporto.Eval -- eval validation                                  # nessun modello
 dotnet run --project tools/Dusiburg.AI.Trasporto.Eval -- eval extraction                                  # golden set dei CMR, modello della demo
-dotnet run --project tools/Dusiburg.AI.Trasporto.Eval -- eval extraction --model anthropic:claude-haiku-4-5
+dotnet run --project tools/Dusiburg.AI.Trasporto.Eval -- eval extraction --model anthropic:claude-haiku-5-5
 dotnet run --project tools/Dusiburg.AI.Trasporto.Eval -- eval security                                    # vuole lo stack avviato
 dotnet run --project tools/Dusiburg.AI.Trasporto.Eval -- bench models --reuse                             # tre modelli; la mappatura vuole lo stack
 ```

@@ -11,6 +11,7 @@ public sealed record AiOptions(
     Uri OllamaEndpoint,
     string OllamaChatModel,
     int OllamaContextLength,
+    int? OllamaNumGpu,
     string? AnthropicApiKey,
     string AnthropicModel,
     string AnthropicJudgeModel,
@@ -27,7 +28,16 @@ public sealed record AiOptions(
     /// <summary>Con 8 GB di VRAM Ollama sceglierebbe 4096 token, pochi per istruzioni, schema di uscita e testo di un CMR.</summary>
     public const int DefaultOllamaContextLength = 8_192;
 
-    public const string DefaultAnthropicModel = "claude-haiku-4-5";
+    /// <summary>
+    /// Layer della chat in GPU (99 = tutti). Da Ollama 0.40 il runner tiene libero un margine di ~1,9 GB di VRAM e su 8 GB lascia un
+    /// layer sulla CPU; con il numero esplicito qwen3.5:9b sta tutto in GPU (~+25% di token/s, misurato il 2026-10-14).
+    /// </summary>
+    public const int DefaultOllamaNumGpu = 99;
+
+    /// <summary>Valore di <c>OLLAMA_NUM_GPU</c> che lascia la scelta a Ollama (margine automatico).</summary>
+    public const string AutomaticNumGpu = "auto";
+
+    public const string DefaultAnthropicModel = "claude-haiku-5-5";
 
     public const string DefaultAnthropicJudgeModel = "claude-sonnet-5-5";
 
@@ -43,6 +53,7 @@ public sealed record AiOptions(
         public const string OllamaEndpoint = "OLLAMA_ENDPOINT";
         public const string OllamaChatModel = "OLLAMA_CHAT_MODEL";
         public const string OllamaNumCtx = "OLLAMA_NUM_CTX";
+        public const string OllamaNumGpu = "OLLAMA_NUM_GPU";
         public const string AnthropicApiKey = "ANTHROPIC_API_KEY";
         public const string AnthropicModel = "ANTHROPIC_MODEL";
         public const string AnthropicJudgeModel = "ANTHROPIC_JUDGE_MODEL";
@@ -69,6 +80,7 @@ public sealed record AiOptions(
         ReadUri(configuration, Keys.OllamaEndpoint) ?? new Uri(DefaultOllamaEndpoint),
         NonEmpty(configuration[Keys.OllamaChatModel]) ?? DefaultOllamaChatModel,
         ReadInt(configuration, Keys.OllamaNumCtx, DefaultOllamaContextLength, minimum: 1_024, maximum: 262_144),
+        ReadNumGpu(configuration),
         NonEmpty(configuration[Keys.AnthropicApiKey]),
         NonEmpty(configuration[Keys.AnthropicModel]) ?? DefaultAnthropicModel,
         NonEmpty(configuration[Keys.AnthropicJudgeModel]) ?? DefaultAnthropicJudgeModel,
@@ -85,6 +97,20 @@ public sealed record AiOptions(
         return ModelProviders.All.Contains(provider)
             ? provider
             : throw Invalid($"{key} '{provider}' non supportato: usare {string.Join(" oppure ", ModelProviders.All)}.");
+    }
+
+    private static int? ReadNumGpu(IConfiguration configuration)
+    {
+        string? value = NonEmpty(configuration[Keys.OllamaNumGpu]);
+
+        if (value is null)
+        {
+            return DefaultOllamaNumGpu;
+        }
+
+        return value.Equals(AutomaticNumGpu, StringComparison.OrdinalIgnoreCase)
+            ? null
+            : ReadInt(configuration, Keys.OllamaNumGpu, DefaultOllamaNumGpu, minimum: 0, maximum: 999);
     }
 
     private static Uri? ReadUri(IConfiguration configuration, string key)

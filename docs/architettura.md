@@ -79,8 +79,8 @@ Il modello si sceglie **per compito**. Chi ha bisogno di un modello chiede a `IC
 
 Regole per provider:
 
-- **Ollama**: temperatura 0,1, thinking spento, finestra di contesto da `OLLAMA_NUM_CTX` (8192), client HTTP dedicato con timeout di 10 minuti. È quello installato sul PC: se all'avvio non risponde, l'AppHost lo avvia come propria risorsa (`ollama serve`) e lo ferma quando si chiude; se è già in esecuzione non lo tocca. Vale solo per un `OLLAMA_ENDPOINT` locale.
-- **Anthropic**: `ANTHROPIC_MODEL` (`claude-haiku-4-5`) per tutti i compiti tranne il giudice, che usa `ANTHROPIC_JUDGE_MODEL` (`claude-sonnet-5-5`). La temperatura 0,1 si invia solo ai modelli Haiku 4.5; agli altri non si invia alcun parametro di campionamento.
+- **Ollama**: temperatura 0,1, thinking spento, finestra di contesto da `OLLAMA_NUM_CTX` (8192), tutti i layer in GPU con `OLLAMA_NUM_GPU` (99), client HTTP dedicato con timeout di 10 minuti. È quello installato sul PC: se all'avvio non risponde, l'AppHost lo avvia come propria risorsa (`ollama serve`) e lo ferma quando si chiude; se è già in esecuzione non lo tocca. Vale solo per un `OLLAMA_ENDPOINT` locale.
+- **Anthropic**: `ANTHROPIC_MODEL` (`claude-haiku-5-5`; fino al 2026-10-14 `claude-haiku-4-5`) per tutti i compiti tranne il giudice, che usa `ANTHROPIC_JUDGE_MODEL` (`claude-sonnet-5-5`). La temperatura 0,1 si invia solo ai modelli Haiku 4.5; agli altri non si invia alcun parametro di campionamento (Haiku 5.5, Sonnet 5.5 e Opus 5.5 rispondono 400). Haiku 5.5 ragiona sempre con l'adaptive thinking (effort di default `medium`), che conta nei token di uscita.
 - **Embedding**: sempre Ollama, sulla CPU (`num_gpu = 0`), per non togliere VRAM alla chat.
 - **Mascheramento verso il cloud**: con il provider `anthropic` email e numeri di telefono, nei messaggi e nei risultati dei tool, partono come `[email]` e `[telefono]`. Si maschera la copia inviata: il codice che controlla i valori vede i dati veri. Un telefono si riconosce solo in forma internazionale o se annunciato (`tel`, `cell`, …), perché CAP, numeri ONU e partite IVA al modello servono. I nomi di persone fisiche non si riconoscono in modo affidabile e non vengono toccati: i dati del POC non ne contengono.
 
@@ -94,7 +94,8 @@ Si impostano sull'AppHost (user-secrets, riga di comando o variabili d'ambiente)
 |---|---|
 | `OLLAMA_ENDPOINT` | `http://127.0.0.1:11434` |
 | `OLLAMA_CHAT_MODEL`, `OLLAMA_NUM_CTX` | `qwen3.5:9b`, `8192` |
-| `ANTHROPIC_MODEL`, `ANTHROPIC_JUDGE_MODEL` | `claude-haiku-4-5`, `claude-sonnet-5-5` |
+| `OLLAMA_NUM_GPU` | `99` (chat tutta in GPU; `auto` = margine automatico di Ollama, che dalla 0.40 su 8 GB lascia un layer sulla CPU) |
+| `ANTHROPIC_MODEL`, `ANTHROPIC_JUDGE_MODEL` | `claude-haiku-5-5`, `claude-sonnet-5-5` |
 | `MODEL_<COMPITO>_PROVIDER` | vedi tabella sopra |
 | `EMBEDDING_MODEL`, `EMBEDDING_DIMENSIONS` | `embeddinggemma`, `768` |
 | `TRASPORTO_PROMPT_CAPTURE_DIR` | — |
@@ -627,21 +628,21 @@ flowchart LR
 - **Da far vedere**: quanti campi `mustReview` finiscono davvero in revisione.
 - **Sensibilità**: le stesse letture giudicate con un'altra soglia, con una sola lettura, con un altro peso del segnale `Annotation`.
 
-### 14.3 Risultati (2026-10-12)
+### 14.3 Risultati (2026-10-12; `claude-haiku-5-5` il 2026-10-14)
 
-Hardware locale: GPU con 8 GB di VRAM. Prezzi di listino al 2026-10-06: `claude-haiku-4-5` 1 $ / 5 $, `claude-sonnet-5-5` 2 $ / 10 $ per milione di token in ingresso / in uscita.
+Hardware locale: GPU con 8 GB di VRAM. Prezzi di listino al 2026-10-14: `claude-haiku-4-5` 1 $ / 5 $, `claude-haiku-5-5` 0,10 $ / 0,50 $ (prompt fino a 100K token), `claude-sonnet-5-5` 2 $ / 10 $ per milione di token in ingresso / in uscita. `claude-haiku-5-5` è misurato con una lettura per documento (la regola decisa al CHECKPOINT R1), gli altri con due.
 
-| Estrazione dal testo, 32 CMR, 903 campi | `qwen3.5:9b` | `claude-haiku-4-5` | `claude-sonnet-5-5` |
-|---|---|---|---|
-| Accuratezza per campo | 96,3 % | 99,7 % | 100,0 % |
-| Errati / mancanti / in più | 7 / 26 / 1 | 3 / 0 / 0 | 0 / 0 / 0 |
-| **Errori sopra soglia** | **0** | **0** | **0** |
-| Campi in revisione | 26 (3,0 %) | 21 (2,3 %) | 18 (2,0 %) |
-| Da far vedere, in revisione | 18 su 19 | 18 su 19 | 18 su 19 |
-| Valori iniettati usciti | 0 | 0 | 0 |
-| Tempo a documento (due letture) | 28,0 s | 10,3 s | 7,1 s |
-| Token a documento (in / out) | 1.859 / 940 | 4.326 / 1.149 | 5.623 / 1.093 |
-| Costo a documento | — | 0,0101 $ | 0,0222 $ |
+| Estrazione dal testo, 32 CMR, 903 campi | `qwen3.5:9b` | `claude-haiku-4-5` | `claude-haiku-5-5` | `claude-sonnet-5-5` |
+|---|---|---|---|---|
+| Accuratezza per campo | 96,3 % | 99,7 % | 99,9 % | 100,0 % |
+| Errati / mancanti / in più | 7 / 26 / 1 | 3 / 0 / 0 | 1 / 0 / 0 | 0 / 0 / 0 |
+| **Errori sopra soglia** | **0** | **0** | **0** | **0** |
+| Campi in revisione | 26 (3,0 %) | 21 (2,3 %) | 19 (2,1 %) | 18 (2,0 %) |
+| Da far vedere, in revisione | 18 su 19 | 18 su 19 | 18 su 19 | 18 su 19 |
+| Valori iniettati usciti | 0 | 0 | 0 | 0 |
+| Tempo a documento | 28,0 s (due letture) | 10,3 s (due) | 5,1 s (una) | 7,1 s (due) |
+| Token a documento (in / out) | 1.859 / 940 | 4.326 / 1.149 | 2.792 / 1.062 | 5.623 / 1.093 |
+| Costo a documento | — | 0,0101 $ | 0,0008 $ | 0,0222 $ |
 
 Verso il cloud i token in ingresso sono più del doppio perché lo schema viaggia nel prompt (§11).
 
@@ -662,22 +663,24 @@ Che cosa dicono le misure:
 - **Documenti ADR**: il locale ne salta spesso i dati, ma non si instradano sul cloud (CHECKPOINT R1). Un dato ADR saltato non diventa un errore: se manca anche al TMS resta il problema di validazione, che una persona vede.
 - **Il diciannovesimo campo** è una casella ambigua senza note a mano su un dato che il TMS non ha (`G-2059`, "24 (22 pallet + 2 casse)"): nessun segnale la vede, con nessun modello. È il limite dichiarato al §11.1.
 
-| Estrazione da scansione, 6 CMR, 177 campi | `qwen3.5:9b` | `claude-haiku-4-5` | `claude-sonnet-5-5` |
-|---|---|---|---|
-| Accuratezza dall'immagine | 93,8 % | 85,3 % | 100,0 % |
-| Sugli stessi documenti, dal testo | 94,4 % | 100,0 % | 100,0 % |
-| Tempo / costo a documento | 17,5 s / — | 8,3 s / 0,0061 $ | 3,9 s / 0,0130 $ |
+| Estrazione da scansione, 6 CMR, 177 campi | `qwen3.5:9b` | `claude-haiku-4-5` | `claude-haiku-5-5` | `claude-sonnet-5-5` |
+|---|---|---|---|---|
+| Accuratezza dall'immagine | 93,8 % | 85,3 % | 100,0 % | 100,0 % |
+| Sugli stessi documenti, dal testo | 94,4 % | 100,0 % | 100,0 % | 100,0 % |
+| Tempo / costo a documento | 17,5 s / — | 8,3 s / 0,0061 $ | 5,7 s / 0,0010 $ | 3,9 s / 0,0130 $ |
 
-Dall'immagine Haiku non legge giusta nessuna partita IVA e sbaglia un terzo dei nomi: sul compito di lettura fine il modello locale da 9B fa meglio. Senza testo non c'è il riscontro alla lettera, quindi nessuna confidenza: per questo le scansioni restano fuori dal prodotto.
+Dall'immagine Haiku 4.5 non legge giusta nessuna partita IVA e sbaglia un terzo dei nomi: sul compito di lettura fine il modello locale da 9B fa meglio. Haiku 5.5 invece legge tutti i 177 campi, come Sonnet 5.5, a meno di un decimo del costo. Senza testo non c'è il riscontro alla lettera, quindi nessuna confidenza: per questo le scansioni restano fuori dal prodotto.
 
-| Agente di mappatura, 4 spedizioni × 3 | `qwen3.5:9b` | `claude-haiku-4-5` | `claude-sonnet-5-5` |
-|---|---|---|---|
-| Proposte attese ottenute | 11 su 12 | 12 su 12 | 12 su 12 |
-| Proposte non attese | 0 | 6 | 0 |
-| Scartate dal controllo sulla fonte | 0 | 0 | 0 |
-| Tempo / costo a run | 20,8 s / — | 9,1 s / 0,0146 $ | 8,1 s / 0,0338 $ |
+| Agente di mappatura, 4 spedizioni × 3 | `qwen3.5:9b` | `claude-haiku-4-5` | `claude-haiku-5-5` | `claude-sonnet-5-5` |
+|---|---|---|---|---|
+| Proposte attese ottenute | 11 su 12 | 12 su 12 | 12 su 12 | 12 su 12 |
+| Proposte non attese | 0 | 6 | 2 | 0 |
+| Scartate dal controllo sulla fonte | 0 | 0 | 0 | 0 |
+| Tempo / costo a run | 20,8 s / — | 9,1 s / 0,0146 $ | 7,7 s / 0,0020 $ | 8,1 s / 0,0338 $ |
 
-Le proposte non attese di Haiku sono la città del destinatario dedotta dalla ragione sociale ("… Liège"), tre volte su tre per i due campi città: il valore è scritto nell'ordine, quindi il controllo sulla fonte — che guarda tutto l'ordine, non il campo citato — lo lascia passare. Resta una proposta in attesa.
+Le proposte non attese di Haiku sono la città del destinatario dedotta dalla ragione sociale ("… Liège") per i due campi città, tre volte su tre con la 4.5 e una su tre con la 5.5: il valore è scritto nell'ordine, quindi il controllo sulla fonte — che guarda tutto l'ordine, non il campo citato — lo lascia passare. Resta una proposta in attesa.
+
+La sicurezza è misurata con i tre modelli del 2026-10-12; per `claude-haiku-5-5` c'è solo il confronto del 2026-10-14 (0 valori iniettati usciti), ruoli e agente autorità non ancora misurati.
 
 | Sicurezza | Esito, uguale per i tre modelli |
 |---|---|
@@ -713,7 +716,7 @@ Gli identificativi sono quelli del piano di progetto.
 | P4 | Gli agenti stanno in un servizio a parte, client MCP, senza database | Agenti dentro `Efti.Api` |
 | P8 | Porte locali 5301–5306 | — |
 | D2 | NUnit resta alla 4.6.1 | NUnit 5.0.0, appena uscita |
-| D3 | Cloud di default `claude-haiku-4-5`, giudice `claude-sonnet-5-5` | Un solo modello cloud |
+| D3 | Cloud di default `claude-haiku-4-5`, giudice `claude-sonnet-5-5` (dal 2026-10-14 default `claude-haiku-5-5`; le misure della Fase 9 restano su 4.5) | Un solo modello cloud |
 | F1.1 | Il modello si chiede alla fabbrica per compito; nessun `IChatClient` registrato nel contenitore | Un client unico, come in O2C: non permette il routing per compito |
 | F1.2 | La chiave Anthropic è facoltativa all'avvio dell'AppHost | Parametro obbligatorio: la demo locale non partirebbe senza chiave |
 | F1.3 | Nessun correlation id applicativo: l'audit userà il trace id di OpenTelemetry | Correlation id come in O2C |

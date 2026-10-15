@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <!-- Modello dati del TMS simulato (schema tms): usato da Tms.Api e dal tool DbInit. Nessuna migration (G9). -->
 
@@ -6,6 +6,7 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" />
     <!-- Dati sintetici a seed fisso (Seed/): servono a DbInit e a POST /dev/reset di Tms.Api -->
     <PackageReference Include="Bogus" />
+    <PackageReference Include="System.Security.Cryptography.Pkcs" />
   </ItemGroup>
 
   <ItemGroup>
