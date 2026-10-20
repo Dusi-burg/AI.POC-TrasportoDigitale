@@ -40,6 +40,10 @@
     <!-- Rende i PDF come immagini per il confronto dei modelli sulla lettura da scansione (MIT; usa PDFium e SkiaSharp): solo nel tool Eval. -->
     <PackageVersion Include="PDFtoImage" Version="5.4.0" />
   </ItemGroup>
+  <ItemGroup Label="AppHost">
+    <!-- Aspire.Hosting 13.6.1 porta la 2.5.302, con vulnerabilità nota (GHSA-qhrr-8q5h-9q3h, corretta dalla 2.5.303): patch della stessa linea. Da togliere quando Aspire porta una versione corretta. -->
+    <PackageVersion Include="MessagePack" Version="2.5.307" />
+  </ItemGroup>
   <ItemGroup Label="Test">
     <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.12.0" />
     <PackageVersion Include="NUnit" Version="4.6.1" />

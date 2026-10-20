@@ -7,6 +7,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="MessagePack" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Dusiburg.AI.Trasporto.Tms.Api\Dusiburg.AI.Trasporto.Tms.Api.csproj" />
     <ProjectReference Include="..\Dusiburg.AI.Trasporto.Efti.Api\Dusiburg.AI.Trasporto.Efti.Api.csproj" />
     <ProjectReference Include="..\Dusiburg.AI.Trasporto.Efti.Mcp\Dusiburg.AI.Trasporto.Efti.Mcp.csproj" />
