@@ -1,6 +1,8 @@
 # AI.POC-TrasportoDigitale
 
-> 🇬🇧 **English** · 🇮🇹 [Italiano](README.it.md)
+[![CI](https://github.com/Dusi-burg/AI.POC-TrasportoDigitale/actions/workflows/ci.yml/badge.svg)](https://github.com/Dusi-burg/AI.POC-TrasportoDigitale/actions/workflows/ci.yml)
+
+*[Leggi in italiano](README.it.md)*
 
 Proof of concept from the point of view of a **road carrier**: an "eFTI-ready" layer on top of a simulated TMS. It takes transport orders from the TMS, builds the eFTI dataset and the electronic consignment note (eCMR), validates them, completes them with the help of agents and of extraction from CMR PDFs, and lets a control authority read them — with roles, human approval and an audit trail that cannot be rewritten. .NET 10, Aspire, SQL Server LocalDB, MCP, Ollama locally and Claude in the cloud.
 

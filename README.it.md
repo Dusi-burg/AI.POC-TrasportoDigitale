@@ -1,6 +1,8 @@
 # AI.POC-TrasportoDigitale
 
-> 🇮🇹 **Italiano** · 🇬🇧 [English](README.md)
+[![CI](https://github.com/Dusi-burg/AI.POC-TrasportoDigitale/actions/workflows/ci.yml/badge.svg)](https://github.com/Dusi-burg/AI.POC-TrasportoDigitale/actions/workflows/ci.yml)
+
+*[Read in English](README.md)*
 
 Proof of concept dal punto di vista del **vettore su strada**: uno strato "eFTI-ready" sopra un TMS simulato. Prende gli ordini dal gestionale, costruisce il dataset eFTI e la lettera di vettura elettronica (eCMR), li valida, li completa con l'aiuto di agenti e dell'estrazione dai CMR in PDF, e li fa leggere a un'autorità di controllo — con ruoli, approvazione umana e un audit che non si può riscrivere. .NET 10, Aspire, SQL Server LocalDB, MCP, Ollama in locale e Claude sul cloud.
 
